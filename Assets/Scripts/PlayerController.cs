@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using System;
 
 namespace RabbleHouse
 {
@@ -8,8 +9,6 @@ namespace RabbleHouse
     /// Main player controller: movement, state machine, grab/throw/punch.
     /// Designed for Party Animals-style physics combat.
     /// </summary>
-    [RequireComponent(typeof(Rigidbody))]
-    [RequireComponent(typeof(CapsuleCollider))]
     public class PlayerController : MonoBehaviour
     {
         public enum PlayerState
@@ -87,9 +86,9 @@ namespace RabbleHouse
         private bool isGrounded;
 
         // Events
-        public System.Action<int, GrabbableObject> OnObjectGrabbed;
-        public System.Action<int, GrabbableObject> OnObjectThrown;
-        public System.Action<int> OnPunch;
+        public Action<int, GrabbableObject> OnObjectGrabbed;
+        public Action<int, GrabbableObject> OnObjectThrown;
+        public Action<int> OnPunch;
 
         private void Awake()
         {
