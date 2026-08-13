@@ -27,22 +27,38 @@ namespace RabbleHouse
         public Rigidbody CoreRigidbody => coreRigidbody;
 
         // --- COMPONENTS ---
-        private Rigidbody coreRigidbody;          // mixamorig:Hips' Rigidbody (the physics core)
+        private Rigidbody coreRigidbody;
         private PlayerInput playerInput;
         private PhysicInputHandler inputHandler;
         private ActiveRagdollMaster ragdollMaster;
         private PlayerHealth playerHealth;
-        private Animator animatedRig;              // lives on the separate Animated_Character rig
-        private ActiveRagdollBalancer balancer;    // on Hips — drives tilt balance; weight blended while turning
-        private ConfigurableJoint hipJoint;        // Hips' joint — used for facing rotation
+        private Animator animatedRig;
+        private ActiveRagdollBalancer balancer;
+        private ConfigurableJoint hipJoint;
 
-        // --- RAGDOLL BONES (for grabbing arm animation) ---
-        // Hand bones whose ConfigurableJoint targetRotation we override while grabbing.
-        // Specify their names in the Inspector (e.g. "RightHand", "LeftHand").
-        [Header("Ragdoll Arm Bones")]
-        [SerializeField] private string[] armBoneNames = new[] { "RightHand", "LeftHand" };
-        private ActiveRagdollBone[] armBoneScripts;
-        private float[] savedMuscleStrength;
+        // --- HAND REFERENCES (assigned in Inspector) ---
+        // Each hand must have: Transform + Rigidbody + ConfigurableJoint + ActiveRagdollBone + Collider.
+        [Header("Hand Bones")]
+        [SerializeField] private Transform leftHand;
+        [SerializeField] private Transform rightHand;
+        [Header("Left Arm Joints")]
+        [SerializeField] private ConfigurableJoint leftUpperArm;
+        [SerializeField] private ConfigurableJoint leftLowerArm;
+        [Header("Right Arm Joints")]
+        [SerializeField] private ConfigurableJoint rightUpperArm;
+        [SerializeField] private ConfigurableJoint rightLowerArm;
+        private JointDrive originalLeftUpperX, originalLeftUpperYZ, originalLeftLowerX, originalLeftLowerYZ;
+        private JointDrive originalRightUpperX, originalRightUpperYZ, originalRightLowerX, originalRightLowerYZ;
+
+        // Cached components from the hand transforms (resolved at Start).
+        private ConfigurableJoint leftHandJoint;
+        private ConfigurableJoint rightHandJoint;
+        private ActiveRagdollBone leftHandBone;
+        private ActiveRagdollBone rightHandBone;
+        private float savedLeftMuscle;
+        private float savedRightMuscle;
+        private Rigidbody leftHandRb;
+        private Rigidbody rightHandRb;
 
         // --- INPUT ---
         private Vector2 moveInput;
@@ -60,7 +76,7 @@ namespace RabbleHouse
         private bool isGrounded;
         private Vector3 currentMoveDir;
 
-        // Target arm pose while grabbing (raised up) — expressed as a local rotation
+        // Target arm pose while grabbing (raised up)
         private Quaternion armRaiseLocalRot = Quaternion.Euler(90f, 0f, 0f);
 
         // --- SETTINGS ---
@@ -105,11 +121,8 @@ namespace RabbleHouse
 
             coreRigidbody = FindCoreRigidbody();
             if (coreRigidbody == null)
-                Debug.LogError("PhysicCharacterController: no Rigidbody found under Physic_Character. Add one to mixamorig:Hips.", this);
+                Debug.LogError("PhysicCharacterController: no Rigidbody found under Physic_Character.", this);
             hipJoint = coreRigidbody.GetComponent<ConfigurableJoint>();
-
-            if (ragdollMaster != null && ragdollMaster.AnimatedRig != null)
-                animatedRig = ragdollMaster.AnimatedRig.GetComponent<Animator>();
         }
 
         private void Start()
@@ -118,14 +131,36 @@ namespace RabbleHouse
                 PlayerIndex = playerInput.playerIndex;
 
             if (coreRigidbody != null)
-            {
                 balancer = coreRigidbody.GetComponent<ActiveRagdollBalancer>();
+
+            // Cache hand components from the Inspector-assigned transforms.
+            if (leftHand != null)
+            {
+                leftHandJoint = leftHand.GetComponent<ConfigurableJoint>();
+                leftHandBone = leftHand.GetComponent<ActiveRagdollBone>();
+                leftHandRb = leftHand.GetComponent<Rigidbody>();
+            }
+            if (rightHand != null)
+            {
+                rightHandJoint = rightHand.GetComponent<ConfigurableJoint>();
+                rightHandBone = rightHand.GetComponent<ActiveRagdollBone>();
+                rightHandRb = rightHand.GetComponent<Rigidbody>();
             }
 
-            CacheArmBones();
+            // Get the original angular drive
+            originalLeftUpperX = leftUpperArm.angularXDrive; originalLeftUpperYZ = leftUpperArm.angularYZDrive;
+            originalLeftLowerX = leftLowerArm.angularXDrive; originalLeftLowerYZ = leftLowerArm.angularYZDrive;
+
+            originalRightUpperX = rightUpperArm.angularXDrive; originalRightUpperYZ = rightUpperArm.angularYZDrive;
+            originalRightLowerX = rightLowerArm.angularXDrive; originalRightLowerYZ = rightLowerArm.angularYZDrive;
+
+            // Verify we have the required joints.
+            if (leftHandJoint == null || rightHandJoint == null)
+            {
+                Debug.LogWarning("ConfigurableJoint on hand objects not found. Assign a ConfigurableJoint to each hand's root GameObject.", this);
+            }
         }
 
-        /// <summary>Finds the ragdoll core body: prefers a Rigidbody named "Hips", falls back to the first child Rigidbody.</summary>
         private Rigidbody FindCoreRigidbody()
         {
             Rigidbody[] bodies = GetComponentsInChildren<Rigidbody>(true);
@@ -135,50 +170,30 @@ namespace RabbleHouse
             return bodies.Length > 0 ? bodies[0] : null;
         }
 
-        private void CacheArmBones()
-        {
-            if (armBoneNames == null || armBoneNames.Length == 0)
-                return;
-
-            armBoneScripts = new ActiveRagdollBone[armBoneNames.Length];
-            savedMuscleStrength = new float[armBoneNames.Length];
-
-            var allBones = GetComponentsInChildren<ActiveRagdollBone>(true);
-
-            for (int i = 0; i < armBoneNames.Length; i++)
-            {
-                foreach (var b in allBones)
-                {
-                    if (b.gameObject.name.Contains(armBoneNames[i]))
-                    {
-                        armBoneScripts[i] = b;
-                        break;
-                    }
-                }
-            }
-        }
-
         private void LateUpdate()
         {
-            // While holding an object, override the arm bones' targetRotation so the
-            // hands are raised. We do this in LateUpdate (after FixedUpdate) so our
-            // value wins over ActiveRagdollBone's per-frame targetRotation write.
-            if (heldObject != null && armBoneScripts != null)
+            // While holding an object, override both hand joints' targetRotation
+            // so the arms raise.  LateUpdate runs after FixedUpdate, so our
+            // value wins over ActiveRagdollBone's per-frame write.
+            if (heldObject != null)
             {
-                for (int i = 0; i < armBoneScripts.Length; i++)
-                {
-                    if (armBoneScripts[i] == null) continue;
-
-                    var joint = armBoneScripts[i].GetComponent<ConfigurableJoint>();
-                    if (joint == null) continue;
-
-                    // Per the canonical rotation fix: set joint.targetRotation, not transform.
-                    joint.targetRotation = Quaternion.Slerp(
-                        joint.targetRotation,
-                        armRaiseLocalRot,
-                        Time.deltaTime * armTargetUpdateSpeed
-                    );
-                }
+                RaiseBothArms();
+                //if (leftHandJoint != null)
+                //{
+                //    leftHandJoint.targetRotation = Quaternion.Slerp(
+                //        leftHandJoint.targetRotation,
+                //        armRaiseLocalRot,
+                //        Time.deltaTime * armTargetUpdateSpeed
+                //    );
+                //}
+                //if (rightHandJoint != null)
+                //{
+                //    rightHandJoint.targetRotation = Quaternion.Slerp(
+                //        rightHandJoint.targetRotation,
+                //        armRaiseLocalRot,
+                //        Time.deltaTime * armTargetUpdateSpeed
+                //    );
+                //}
             }
         }
 
@@ -189,8 +204,6 @@ namespace RabbleHouse
             UpdateState();
             HandlePunchCooldown();
 
-            // Ease the balancer weight: near-zero while turning so the physics body
-            // can rotate freely, full when idle so the character stands upright.
             if (balancer != null)
             {
                 float target = (currentState == CharacterState.Moving) ? balancerWeightMoving : 1f;
@@ -211,12 +224,7 @@ namespace RabbleHouse
                     HandleRotation();
                     break;
                 case CharacterState.Grabbing:
-                    // While grabbing the character can still move and turn.
                     targetAnimator.SetBool("IsWalking", moveInput.magnitude > 0.01f);
-                    // Release on grab-release input
-                    if (grabReleased && heldObject != null)
-                        ReleaseObject();
-
                     HandleMovement();
                     HandleRotation();
                     break;
@@ -228,16 +236,22 @@ namespace RabbleHouse
         {
             if (inputHandler != null)
             {
-                moveInput     = inputHandler.MoveInput;
-                grabPressed   = inputHandler.GrabPressed;
-                grabReleased  = inputHandler.GrabReleased;
-                punchPressed  = inputHandler.PunchPressed;
-                jumpPressed   = inputHandler.JumpPressed;
-                throwHeld     = inputHandler.ThrowHeld;
+                moveInput = inputHandler.MoveInput;
+                grabPressed = inputHandler.GrabPressed;
+                grabReleased = inputHandler.GrabReleased;
+                punchPressed = inputHandler.PunchPressed;
+                jumpPressed = inputHandler.JumpPressed;
+                throwHeld = inputHandler.ThrowHeld;
             }
 
-            if (grabPressed && heldObject == null)
-                TryGrabObject();
+            // Toggle grab: press to grab, press again to drop.
+            if (grabPressed)
+            {
+                if (heldObject == null)
+                    TryGrabObject();
+                else
+                    ReleaseObject();
+            }
         }
 
         // --- STATE MACHINE ---
@@ -251,6 +265,9 @@ namespace RabbleHouse
                 SetState(CharacterState.Grabbing);
                 return;
             }
+
+            if (grabReleased)
+                ReleaseObject();
 
             SetState(moveInput.magnitude > 0.1f ? CharacterState.Moving : CharacterState.Idle);
         }
@@ -294,8 +311,7 @@ namespace RabbleHouse
             float highestSpeed = forwardSpeed > rightSpeed ? forwardSpeed : rightSpeed;
             if (highestSpeed > 0.1f)
             {
-                float upwardLift = highestSpeed * 5f;
-                coreRigidbody.AddForce(Vector3.up * upwardLift, ForceMode.Impulse);
+                coreRigidbody.AddForce(Vector3.up * highestSpeed * 5f, ForceMode.Impulse);
             }
 
             if (jumpPressed && isGrounded)
@@ -307,8 +323,6 @@ namespace RabbleHouse
             if (coreRigidbody == null) return;
             if (currentMoveDir == Vector3.zero) return;
 
-            // Canonical rotation fix: set targetRotation on the ConfigurableJoint,
-            // NOT transform.rotation. The joint solver applies it cleanly.
             Quaternion targetRot = Quaternion.LookRotation(currentMoveDir);
             hipJoint.targetRotation = Quaternion.Inverse(targetRot);
         }
@@ -316,9 +330,7 @@ namespace RabbleHouse
         // --- GRAB / DROP ---
         private void TryGrabObject()
         {
-            // Use the HIP body position for grab detection — the root can be far
-            // from the ragdoll's actual body since the root is just an
-            // orchestrator with no Rigidbody.
+            // Use HIP body position for detection (stable reference point).
             Vector3 origin = coreRigidbody.position + Vector3.up * 1f;
             Collider[] hits = Physics.OverlapSphere(origin, grabRange, LayerMask.GetMask("Grabbable"));
 
@@ -348,49 +360,39 @@ namespace RabbleHouse
             heldObject = obj;
             obj.GrabByPlayer(this);
 
-            // Attach the grab joint to the FIRST hand bone that has a Rigidbody.
-            Rigidbody handBody = null;
-            for (int i = 0; i < armBoneScripts.Length; i++)
-            {
-                if (armBoneScripts[i] != null)
-                {
-                    var rb = armBoneScripts[i].GetComponent<Rigidbody>();
-                    if (rb != null)
-                    {
-                        handBody = rb;
-                        break;
-                    }
-                }
-            }
+            // Choose the first available hand bone that has a Rigidbody.
+            Rigidbody handBody = rightHandRb ?? leftHandRb;
 
             if (handBody == null)
             {
-                Debug.LogError("Grab failed: no arm bone with Rigidbody found. Check Arm Bone Names in Inspector.", this);
+                Debug.LogError("Grab failed: no hand bone with Rigidbody assigned. Assign Left/Right Hand in Inspector.", this);
                 heldObject = null;
+                obj.ReleaseByPlayer();
                 return;
             }
 
-            // Create the grab joint on the hand bone's body.
+            // Create the grab joint on the hand bone.
             grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
             grabJoint.connectedBody = heldObject.Rigidbody;
+
+            // Enable connected target auto? set to false to manually configure.
             grabJoint.autoConfigureConnectedAnchor = true;
 
-            // Anchor at the hand bone's local origin.
+            // Anchor at the hand bone's local origin (hand center).
             grabJoint.anchor = Vector3.zero;
             grabJoint.connectedAnchor = Vector3.zero;
 
-            // Lock all linear motion — object sticks to hand.
+            // Lock linear motion — object sticks to hand.
             grabJoint.xMotion = ConfigurableJointMotion.Locked;
             grabJoint.yMotion = ConfigurableJointMotion.Locked;
             grabJoint.zMotion = ConfigurableJointMotion.Locked;
 
-            // Free angular — let the object dangle naturally from the hand.
+            // Free angular — let the object dangle naturally.
             grabJoint.angularXMotion = ConfigurableJointMotion.Free;
             grabJoint.angularYMotion = ConfigurableJointMotion.Free;
             grabJoint.angularZMotion = ConfigurableJointMotion.Free;
 
-            // Position spring-damper to hold the object against gravity.
-            // Without this drive, gravity pulls the object away from the hand.
+            // Position spring-damper to hold object against gravity.
             JointDrive drive = new JointDrive
             {
                 positionSpring = grabSpring,
@@ -405,23 +407,10 @@ namespace RabbleHouse
             grabJoint.breakTorque = 1500f;
             grabJoint.enablePreprocessing = false;
 
-            // Ignore collisions to prevent clipping stutter
+            // Ignore collisions
             Physics.IgnoreCollision(coreRigidbody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
 
-            // Weaken arm bones' tracking so our LateUpdate targetRotation override
-            // isn't immediately overwritten by ActiveRagdollBone's FixedUpdate.
-            for (int i = 0; i < armBoneScripts.Length; i++)
-            {
-                if (armBoneScripts[i] != null)
-                {
-                    savedMuscleStrength[i] = 1f;
-                    armBoneScripts[i].SetMuscleStrength(0.1f);
-                }
-            }
-
             SetState(CharacterState.Grabbing);
-
-            // Suppress the ragdoll balancer while arms are raised
             if (balancer != null)
                 balancer.weight *= 0.5f;
         }
@@ -438,14 +427,7 @@ namespace RabbleHouse
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
-
-            // Restore arm bone muscle strength
-            for (int i = 0; i < armBoneScripts.Length; i++)
-            {
-                if (armBoneScripts[i] != null)
-                    armBoneScripts[i].SetMuscleStrength(savedMuscleStrength[i]);
-            }
-
+            ResetBothArms();
             if (balancer != null)
                 balancer.weight = 1f;
 
@@ -464,22 +446,63 @@ namespace RabbleHouse
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
-
-            for (int i = 0; i < armBoneScripts.Length; i++)
-            {
-                if (armBoneScripts[i] != null)
-                    armBoneScripts[i].SetMuscleStrength(savedMuscleStrength[i]);
-            }
-
+            ResetBothArms();
             if (balancer != null)
                 balancer.weight = 1f;
+        }
+
+        // --- ARM MUSCLE HELPERS ---
+        public void RaiseBothArms()
+        {
+            float grabSpringStrength = 6000f;
+            float grabDamper = 120f;
+            // Boost X and YZ joint drives for both arms
+            SetXYZJointStrength(leftUpperArm, grabSpringStrength, grabDamper);
+            SetXYZJointStrength(leftLowerArm, grabSpringStrength, grabDamper);
+            SetXYZJointStrength(rightUpperArm, grabSpringStrength, grabDamper);
+            SetXYZJointStrength(rightLowerArm, grabSpringStrength, grabDamper);
+
+            // Force target velocities to zero to stop current physics momentum
+            leftUpperArm.targetAngularVelocity = Vector3.zero;
+            rightUpperArm.targetAngularVelocity = Vector3.zero;
+
+            // Assign target rotations
+            Quaternion targetPose = Quaternion.Euler(-90, 0, 0); // Your desired lift angle
+            leftUpperArm.targetRotation = Quaternion.Inverse(targetPose);
+            leftLowerArm.targetRotation = Quaternion.Euler(0, 0, 0);
+
+            rightUpperArm.targetRotation = Quaternion.Inverse(targetPose);
+            rightLowerArm.targetRotation = Quaternion.Euler(0, 0, 0);
+        }
+
+        public void ResetBothArms()
+        {
+            // Revert Left Arm
+            leftUpperArm.angularXDrive = originalRightUpperX; leftUpperArm.angularYZDrive = originalLeftUpperYZ;
+            leftLowerArm.angularXDrive = originalLeftLowerX; leftLowerArm.angularYZDrive = originalLeftLowerYZ;
+
+            // Revert Right Arm
+            rightUpperArm.angularXDrive = originalRightUpperX; rightUpperArm.angularYZDrive = originalRightUpperYZ;
+            rightLowerArm.angularXDrive = originalRightLowerX; rightLowerArm.angularYZDrive = originalRightLowerYZ;
+        }
+        private void SetXYZJointStrength(ConfigurableJoint joint, float spring, float damper)
+        {
+            // Must update BOTH drives individually for X/YZ mode to react correctly
+            JointDrive xDrive = joint.angularXDrive;
+            xDrive.positionSpring = spring;
+            xDrive.positionDamper = damper;
+            joint.angularXDrive = xDrive;
+
+            JointDrive yzDrive = joint.angularYZDrive;
+            yzDrive.positionSpring = spring;
+            yzDrive.positionDamper = damper;
+            joint.angularYZDrive = yzDrive;
         }
 
         // --- COMBAT ---
         private void HandlePunchCooldown()
         {
-            if (punchCooldownTimer > 0f)
-                punchCooldownTimer -= Time.deltaTime;
+            if (punchCooldownTimer > 0f) punchCooldownTimer -= Time.deltaTime;
 
             if (punchPressed && punchCooldownTimer <= 0f && currentState != CharacterState.Punching)
                 Punch();
@@ -503,9 +526,7 @@ namespace RabbleHouse
 
                 var grabbable = hit.collider.GetComponentInParent<GrabbableObject>();
                 if (grabbable != null && !grabbable.IsHeld)
-                {
                     grabbable.ApplyForce(dir * punchForce);
-                }
             }
 
             if (animatedRig != null)

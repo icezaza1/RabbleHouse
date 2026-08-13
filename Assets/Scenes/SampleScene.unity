@@ -667,7 +667,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 141532853}
   serializedVersion: 5
-  m_Mass: 1
+  m_Mass: 10
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -2290,7 +2290,7 @@ CapsuleCollider:
   m_Enabled: 1
   serializedVersion: 2
   m_Radius: 0.03
-  m_Height: 0.1207739
+  m_Height: 0.145
   m_Direction: 1
   m_Center: {x: 0, y: 0.075, z: 0}
 --- !u!153 &1125321284
@@ -2380,8 +2380,8 @@ ConfigurableJoint:
     useAcceleration: 0
   m_SlerpDrive:
     serializedVersion: 4
-    positionSpring: 0
-    positionDamper: 0
+    positionSpring: 10000
+    positionDamper: 500
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_ProjectionMode: 0
@@ -3764,9 +3764,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4fbc7d1b1dc6404e84fe0c5ae9c69af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PhysicCharacterController
-  armBoneNames:
-  - RightHand
-  - LeftHand
+  leftHand: {fileID: 6502182839827224805}
+  rightHand: {fileID: 1852576806352433902}
+  leftUpperArm: {fileID: 557250453}
+  leftLowerArm: {fileID: 911390959}
+  rightUpperArm: {fileID: 1241653587}
+  rightLowerArm: {fileID: 195735304}
   targetAnimator: {fileID: 5866666020241253361}
   moveSpeed: 1.5
   rotationSpeed: 10
@@ -3779,7 +3782,7 @@ MonoBehaviour:
   balancerWeightMoving: 1
   balancerBlendSpeed: 6
   armTargetUpdateSpeed: 10
-  grabRange: 2
+  grabRange: 1
   throwForce: 20
   maxThrowForce: 40
   throwChargeTime: 1
@@ -4466,8 +4469,8 @@ ConfigurableJoint:
     useAcceleration: 0
   m_SlerpDrive:
     serializedVersion: 4
-    positionSpring: 0
-    positionDamper: 0
+    positionSpring: 2000
+    positionDamper: 20
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_ProjectionMode: 0
@@ -5979,8 +5982,8 @@ ConfigurableJoint:
     useAcceleration: 0
   m_SlerpDrive:
     serializedVersion: 4
-    positionSpring: 0
-    positionDamper: 0
+    positionSpring: 2000
+    positionDamper: 20
     maximumForce: 3.4028233e+38
     useAcceleration: 0
   m_ProjectionMode: 0
