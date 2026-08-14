@@ -32,7 +32,6 @@ namespace RabbleHouse
         private PhysicInputHandler inputHandler;
         private ActiveRagdollMaster ragdollMaster;
         private PlayerHealth playerHealth;
-        private Animator animatedRig;
         private ActiveRagdollBalancer balancer;
         private ConfigurableJoint hipJoint;
 
@@ -41,6 +40,8 @@ namespace RabbleHouse
         [Header("Hand Bones")]
         [SerializeField] private Transform leftHand;
         [SerializeField] private Transform rightHand;
+
+        // Mainly handle arm rotation for punching/grabbing
         [Header("Left Arm Joints")]
         [SerializeField] private ConfigurableJoint leftUpperArm;
         [SerializeField] private ConfigurableJoint leftLowerArm;
@@ -53,7 +54,9 @@ namespace RabbleHouse
         // Cached components from the hand transforms (resolved at Start).
         private ActiveRagdollBone LUpperBoneScript, LLowerBoneScript, RUpperBoneScript, RLowerBoneScript;
         private Rigidbody leftHandRb;
+        private ConfigurableJoint leftHandJoint;
         private Rigidbody rightHandRb;
+        private ConfigurableJoint rightHandJoint;
 
         // --- INPUT ---
         private Vector2 moveInput;
@@ -67,28 +70,22 @@ namespace RabbleHouse
         // --- STATE ---
         private CharacterState currentState = CharacterState.Idle;
         private GrabbableObject heldObject;
-        private ConfigurableJoint grabJoint;
         private float punchCooldownTimer;
         private bool isGrounded;
         private bool isSprinting;
         private Vector3 currentMoveDir;
-
-        // Target arm pose while grabbing (raised up)
-        private Quaternion armRaiseLocalRot = Quaternion.Euler(90f, 0f, 0f);
 
         // --- SETTINGS ---
         [Header("Reference")]
         [SerializeField] private Animator targetAnimator;
         [Header("Movement")]
         [SerializeField] private float moveSpeed = 5f;
-        [SerializeField] private float rotationSpeed = 10f;
         [SerializeField] private float jumpForce = 6f;
         [SerializeField] private LayerMask groundLayer = 1 << 0;
         [SerializeField] private float groundCheckDistance = 0.2f;
         [SerializeField] private float hipHeight = 0.95f;
         [SerializeField] private float balancerWeightMoving = 0.3f;
         [SerializeField] private float balancerBlendSpeed = 6f;
-        [SerializeField] private float armTargetUpdateSpeed = 10f;
 
         [Header("Combat")]
         [SerializeField] private float grabRange = 1.5f;
@@ -237,9 +234,6 @@ namespace RabbleHouse
                 return;
             }
 
-            if (grabReleased)
-                ReleaseObject();
-
             SetState(moveInput.magnitude > 0.1f ? CharacterState.Moving : CharacterState.Idle);
         }
 
@@ -266,6 +260,7 @@ namespace RabbleHouse
 
             // Sprint Handle
             isSprinting = sprintPressed ? true : false;
+            targetAnimator.SetFloat("AnimationSpeed", sprintPressed ? 1 : 2);
 
             Vector3 forward = Camera.main ? Camera.main.transform.forward : Vector3.forward;
             Vector3 right = Camera.main ? Camera.main.transform.right : Vector3.right;
@@ -286,7 +281,7 @@ namespace RabbleHouse
             float highestSpeed = forwardSpeed > rightSpeed ? forwardSpeed : rightSpeed;
             if (highestSpeed > 0.1f)
             {
-                coreRigidbody.AddForce(Vector3.up * highestSpeed * (isSprinting ? 3.5f : 5f), ForceMode.Impulse);
+                coreRigidbody.AddForce(Vector3.up * highestSpeed * (isSprinting ? 3.5f : 4f), ForceMode.Impulse);
             }
 
             if (jumpPressed && isGrounded)
@@ -326,33 +321,27 @@ namespace RabbleHouse
                 }
             }
 
+            // Let both hand grab an object
             if (closest != null)
-                GrabObject(closest);
+            {
+                //GrabObject(closest, rightHandRb);
+                //GrabObject(closest, leftHandRb);
+                leftHandJoint = SetupGrabJoint(leftHandRb, closest);
+                rightHandJoint = SetupGrabJoint(rightHandRb, closest);
+                SetState(CharacterState.Grabbing);
+            }
         }
 
-        private void GrabObject(GrabbableObject obj)
+        private ConfigurableJoint SetupGrabJoint(Rigidbody handBody, GrabbableObject obj)
         {
             heldObject = obj;
             obj.GrabByPlayer(this);
 
-            // Choose the first available hand bone that has a Rigidbody.
-            Rigidbody handBody = rightHandRb ?? leftHandRb;
-
-            if (handBody == null)
-            {
-                Debug.LogError("Grab failed: no hand bone with Rigidbody assigned. Assign Left/Right Hand in Inspector.", this);
-                heldObject = null;
-                obj.ReleaseByPlayer();
-                return;
-            }
-
             // Create the grab joint on the hand bone.
-            grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
+            ConfigurableJoint grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
             grabJoint.connectedBody = heldObject.Rigidbody;
-
             // Enable connected target auto? set to false to manually configure.
             grabJoint.autoConfigureConnectedAnchor = true;
-            //grabJoint.connectedAnchor = new Vector3(0f, 1f, 0f);
 
             // Anchor at the hand bone's local origin (hand center).
             grabJoint.anchor = Vector3.zero;
@@ -363,10 +352,10 @@ namespace RabbleHouse
             grabJoint.yMotion = ConfigurableJointMotion.Locked;
             grabJoint.zMotion = ConfigurableJointMotion.Locked;
 
-            // Free angular — let the object dangle naturally.
-            grabJoint.angularXMotion = ConfigurableJointMotion.Free;
-            grabJoint.angularYMotion = ConfigurableJointMotion.Free;
-            grabJoint.angularZMotion = ConfigurableJointMotion.Free;
+            // Lock Free angular — so object doesn't randomly rotate while getting grabbed.
+            grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
+            grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
+            grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
 
             // Position spring-damper to hold object against gravity.
             JointDrive drive = new JointDrive
@@ -386,23 +375,89 @@ namespace RabbleHouse
             // Ignore collisions
             Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
 
-            SetState(CharacterState.Grabbing);
             if (balancer != null)
                 balancer.weight *= 0.5f;
+
+            return grabJoint;
         }
+        //private void GrabObject(GrabbableObject obj, Rigidbody handBody)
+        //{
+        //    heldObject = obj;
+        //    obj.GrabByPlayer(this);
+
+        //    if (handBody == null)
+        //    {
+        //        Debug.LogError("Grab failed: no hand bone with Rigidbody assigned. Assign Left/Right Hand in Inspector.", this);
+        //        heldObject = null;
+        //        obj.ReleaseByPlayer();
+        //        return;
+        //    }
+
+        //    // Create the grab joint on the hand bone.
+        //    grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
+        //    grabJoint.connectedBody = heldObject.Rigidbody;
+
+        //    // Enable connected target auto? set to false to manually configure.
+        //    grabJoint.autoConfigureConnectedAnchor = true;
+        //    //grabJoint.connectedAnchor = new Vector3(0f, 1f, 0f);
+
+        //    // Anchor at the hand bone's local origin (hand center).
+        //    grabJoint.anchor = Vector3.zero;
+        //    grabJoint.connectedAnchor = Vector3.zero;
+
+        //    // Lock linear motion — object sticks to hand.
+        //    grabJoint.xMotion = ConfigurableJointMotion.Locked;
+        //    grabJoint.yMotion = ConfigurableJointMotion.Locked;
+        //    grabJoint.zMotion = ConfigurableJointMotion.Locked;
+
+        //    // Lock Free angular — so object doesn't randomly rotate while getting grabbed.
+        //    grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
+        //    grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
+        //    grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+        //    // Position spring-damper to hold object against gravity.
+        //    JointDrive drive = new JointDrive
+        //    {
+        //        positionSpring = 15000f,
+        //        positionDamper = 15000f,
+        //        maximumForce = 15000f
+        //    };
+        //    grabJoint.xDrive = drive;
+        //    grabJoint.yDrive = drive;
+        //    grabJoint.zDrive = drive;
+
+        //    grabJoint.breakForce = 1500f;
+        //    grabJoint.breakTorque = 1500f;
+        //    grabJoint.enablePreprocessing = false;
+
+        //    // Ignore collisions
+        //    Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
+
+        //    SetState(CharacterState.Grabbing);
+        //    if (balancer != null)
+        //        balancer.weight *= 0.5f;
+        //}
 
         private void ReleaseObject()
         {
             if (heldObject == null) return;
 
-            if (grabJoint != null)
-            {
-                Destroy(grabJoint);
-                grabJoint = null;
-            }
+            // Clean up left joint
+            if (leftHandJoint != null) Destroy(leftHandJoint);
+
+            // Clean up right joint
+            if (rightHandJoint != null) Destroy(rightHandJoint);
+
+            //if (grabJoint != null)
+            //{
+            //    Destroy(grabJoint);
+            //    grabJoint = null;
+            //}
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
+            leftHandJoint = null;
+            rightHandJoint = null;
             ResetBothArms();
             if (balancer != null)
                 balancer.weight = 1f;
@@ -414,14 +469,22 @@ namespace RabbleHouse
         {
             if (heldObject == null) return;
 
-            if (grabJoint != null)
-            {
-                Destroy(grabJoint);
-                grabJoint = null;
-            }
+            // Clean up left joint
+            if (leftHandJoint != null) Destroy(leftHandJoint);
+
+            // Clean up right joint
+            if (rightHandJoint != null) Destroy(rightHandJoint);
+
+            //if (grabJoint != null)
+            //{
+            //    Destroy(grabJoint);
+            //    grabJoint = null;
+            //}
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
+            leftHandJoint = null;
+            rightHandJoint = null;
             ResetBothArms();
             if (balancer != null)
                 balancer.weight = 1f;
@@ -465,7 +528,7 @@ namespace RabbleHouse
             RUpperBoneScript.enabled = true;
             RLowerBoneScript.enabled = true;
             // Revert Left Arm
-            leftUpperArm.angularXDrive = originalRightUpperX; leftUpperArm.angularYZDrive = originalLeftUpperYZ;
+            leftUpperArm.angularXDrive = originalLeftUpperX; leftUpperArm.angularYZDrive = originalLeftUpperYZ;
             leftLowerArm.angularXDrive = originalLeftLowerX; leftLowerArm.angularYZDrive = originalLeftLowerYZ;
 
             // Revert Right Arm
@@ -523,8 +586,8 @@ namespace RabbleHouse
                     grabbable.ApplyForce(dir * punchForce);
             }
 
-            if (animatedRig != null)
-                animatedRig.SetTrigger("Punch");
+            if (targetAnimator != null)
+                targetAnimator.SetTrigger("Punch");
         }
 
         // --- STUN / RAGDOLL ---

@@ -241,7 +241,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 55232590}
   serializedVersion: 5
-  m_Mass: 2
+  m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -792,7 +792,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 141532853}
   serializedVersion: 5
-  m_Mass: 10
+  m_Mass: 6
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -3930,7 +3930,6 @@ MonoBehaviour:
   rightLowerArm: {fileID: 195735304}
   targetAnimator: {fileID: 5866666020241253361}
   moveSpeed: 1.5
-  rotationSpeed: 10
   jumpForce: 6
   groundLayer:
     serializedVersion: 2
@@ -3939,8 +3938,7 @@ MonoBehaviour:
   hipHeight: 0.1
   balancerWeightMoving: 1
   balancerBlendSpeed: 6
-  armTargetUpdateSpeed: 10
-  grabRange: 1
+  grabRange: 0.8
   throwForce: 20
   maxThrowForce: 40
   throwChargeTime: 1
