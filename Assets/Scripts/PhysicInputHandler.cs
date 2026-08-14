@@ -19,6 +19,7 @@ namespace RabbleHouse
         public bool GrabReleased => playerInput?.actions["Grab"].WasReleasedThisFrame() ?? false;
         public bool PunchPressed => playerInput?.actions["Punch"].WasPressedThisFrame() ?? false;
         public bool JumpPressed => playerInput?.actions["Jump"].WasPressedThisFrame() ?? false;
+        public bool SprintPressed => playerInput?.actions["Sprint"].IsPressed() ?? false;
         public bool ThrowHeld => playerInput?.actions["Throw"].IsPressed() ?? false;
 
         // --- LIFECYCLE ---

@@ -51,12 +51,7 @@ namespace RabbleHouse
         private JointDrive originalRightUpperX, originalRightUpperYZ, originalRightLowerX, originalRightLowerYZ;
 
         // Cached components from the hand transforms (resolved at Start).
-        private ConfigurableJoint leftHandJoint;
-        private ConfigurableJoint rightHandJoint;
-        private ActiveRagdollBone leftHandBone;
-        private ActiveRagdollBone rightHandBone;
-        private float savedLeftMuscle;
-        private float savedRightMuscle;
+        private ActiveRagdollBone LUpperBoneScript, LLowerBoneScript, RUpperBoneScript, RLowerBoneScript;
         private Rigidbody leftHandRb;
         private Rigidbody rightHandRb;
 
@@ -66,6 +61,7 @@ namespace RabbleHouse
         private bool grabReleased;
         private bool punchPressed;
         private bool jumpPressed;
+        private bool sprintPressed;
         private bool throwHeld;
 
         // --- STATE ---
@@ -74,6 +70,7 @@ namespace RabbleHouse
         private ConfigurableJoint grabJoint;
         private float punchCooldownTimer;
         private bool isGrounded;
+        private bool isSprinting;
         private Vector3 currentMoveDir;
 
         // Target arm pose while grabbing (raised up)
@@ -106,11 +103,6 @@ namespace RabbleHouse
         [SerializeField] private float stunDuration = 2f;
         [SerializeField] private float knockdownDuration = 1.2f;
 
-        [Header("Grab")]
-        [SerializeField] private float grabSpring = 1000f;
-        [SerializeField] private float grabDamper = 1000f;
-        [SerializeField] private float grabMaxForce = 10000f;
-
         // --- LIFECYCLE ---
         private void Awake()
         {
@@ -136,15 +128,15 @@ namespace RabbleHouse
             // Cache hand components from the Inspector-assigned transforms.
             if (leftHand != null)
             {
-                leftHandJoint = leftHand.GetComponent<ConfigurableJoint>();
-                leftHandBone = leftHand.GetComponent<ActiveRagdollBone>();
                 leftHandRb = leftHand.GetComponent<Rigidbody>();
+                LUpperBoneScript = leftUpperArm.GetComponent<ActiveRagdollBone>();
+                LLowerBoneScript = leftLowerArm.GetComponent<ActiveRagdollBone>();
             }
             if (rightHand != null)
             {
-                rightHandJoint = rightHand.GetComponent<ConfigurableJoint>();
-                rightHandBone = rightHand.GetComponent<ActiveRagdollBone>();
                 rightHandRb = rightHand.GetComponent<Rigidbody>();
+                RUpperBoneScript = rightUpperArm.GetComponent<ActiveRagdollBone>();
+                RLowerBoneScript = rightLowerArm.GetComponent<ActiveRagdollBone>();
             }
 
             // Get the original angular drive
@@ -153,12 +145,6 @@ namespace RabbleHouse
 
             originalRightUpperX = rightUpperArm.angularXDrive; originalRightUpperYZ = rightUpperArm.angularYZDrive;
             originalRightLowerX = rightLowerArm.angularXDrive; originalRightLowerYZ = rightLowerArm.angularYZDrive;
-
-            // Verify we have the required joints.
-            if (leftHandJoint == null || rightHandJoint == null)
-            {
-                Debug.LogWarning("ConfigurableJoint on hand objects not found. Assign a ConfigurableJoint to each hand's root GameObject.", this);
-            }
         }
 
         private Rigidbody FindCoreRigidbody()
@@ -178,22 +164,6 @@ namespace RabbleHouse
             if (heldObject != null)
             {
                 RaiseBothArms();
-                //if (leftHandJoint != null)
-                //{
-                //    leftHandJoint.targetRotation = Quaternion.Slerp(
-                //        leftHandJoint.targetRotation,
-                //        armRaiseLocalRot,
-                //        Time.deltaTime * armTargetUpdateSpeed
-                //    );
-                //}
-                //if (rightHandJoint != null)
-                //{
-                //    rightHandJoint.targetRotation = Quaternion.Slerp(
-                //        rightHandJoint.targetRotation,
-                //        armRaiseLocalRot,
-                //        Time.deltaTime * armTargetUpdateSpeed
-                //    );
-                //}
             }
         }
 
@@ -241,6 +211,7 @@ namespace RabbleHouse
                 grabReleased = inputHandler.GrabReleased;
                 punchPressed = inputHandler.PunchPressed;
                 jumpPressed = inputHandler.JumpPressed;
+                sprintPressed = inputHandler.SprintPressed;
                 throwHeld = inputHandler.ThrowHeld;
             }
 
@@ -293,6 +264,9 @@ namespace RabbleHouse
             if (coreRigidbody == null) return;
             if (!isGrounded) return;
 
+            // Sprint Handle
+            isSprinting = sprintPressed ? true : false;
+
             Vector3 forward = Camera.main ? Camera.main.transform.forward : Vector3.forward;
             Vector3 right = Camera.main ? Camera.main.transform.right : Vector3.right;
             forward.y = right.y = 0f;
@@ -300,18 +274,19 @@ namespace RabbleHouse
             right.Normalize();
 
             Vector3 moveDir = (forward * moveInput.y + right * moveInput.x).normalized;
-            Vector3 targetVel = moveDir * moveSpeed;
+            Vector3 targetVel = moveDir * (isSprinting ? moveSpeed * 1.5f : moveSpeed);
             targetVel.y = coreRigidbody.linearVelocity.y;
 
             coreRigidbody.linearVelocity = Vector3.Lerp(coreRigidbody.linearVelocity, targetVel, Time.fixedDeltaTime * 10f);
             currentMoveDir = moveDir;
 
+            // Lift Body Upward
             float forwardSpeed = Mathf.Abs(Vector3.Dot(coreRigidbody.linearVelocity, transform.forward));
             float rightSpeed = Mathf.Abs(Vector3.Dot(coreRigidbody.linearVelocity, transform.right));
             float highestSpeed = forwardSpeed > rightSpeed ? forwardSpeed : rightSpeed;
             if (highestSpeed > 0.1f)
             {
-                coreRigidbody.AddForce(Vector3.up * highestSpeed * 5f, ForceMode.Impulse);
+                coreRigidbody.AddForce(Vector3.up * highestSpeed * (isSprinting ? 3.5f : 5f), ForceMode.Impulse);
             }
 
             if (jumpPressed && isGrounded)
@@ -377,6 +352,7 @@ namespace RabbleHouse
 
             // Enable connected target auto? set to false to manually configure.
             grabJoint.autoConfigureConnectedAnchor = true;
+            //grabJoint.connectedAnchor = new Vector3(0f, 1f, 0f);
 
             // Anchor at the hand bone's local origin (hand center).
             grabJoint.anchor = Vector3.zero;
@@ -395,9 +371,9 @@ namespace RabbleHouse
             // Position spring-damper to hold object against gravity.
             JointDrive drive = new JointDrive
             {
-                positionSpring = grabSpring,
-                positionDamper = grabDamper,
-                maximumForce = grabMaxForce
+                positionSpring = 15000f,
+                positionDamper = 15000f,
+                maximumForce = 15000f
             };
             grabJoint.xDrive = drive;
             grabJoint.yDrive = drive;
@@ -408,7 +384,7 @@ namespace RabbleHouse
             grabJoint.enablePreprocessing = false;
 
             // Ignore collisions
-            Physics.IgnoreCollision(coreRigidbody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
+            Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
 
             SetState(CharacterState.Grabbing);
             if (balancer != null)
@@ -454,8 +430,15 @@ namespace RabbleHouse
         // --- ARM MUSCLE HELPERS ---
         public void RaiseBothArms()
         {
-            float grabSpringStrength = 6000f;
+            float grabSpringStrength = 12000f;
             float grabDamper = 120f;
+
+            // Disable ActiveRagdollBone Script so the animation from animated rig doesn't override target rotation
+            LUpperBoneScript.enabled = false;
+            LLowerBoneScript.enabled = false;
+            RUpperBoneScript.enabled = false;
+            RLowerBoneScript.enabled = false;
+
             // Boost X and YZ joint drives for both arms
             SetXYZJointStrength(leftUpperArm, grabSpringStrength, grabDamper);
             SetXYZJointStrength(leftLowerArm, grabSpringStrength, grabDamper);
@@ -467,16 +450,20 @@ namespace RabbleHouse
             rightUpperArm.targetAngularVelocity = Vector3.zero;
 
             // Assign target rotations
-            Quaternion targetPose = Quaternion.Euler(-90, 0, 0); // Your desired lift angle
-            leftUpperArm.targetRotation = Quaternion.Inverse(targetPose);
-            leftLowerArm.targetRotation = Quaternion.Euler(0, 0, 0);
+            leftUpperArm.targetRotation = Quaternion.Euler(0, -90, 60);
+            leftLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
 
-            rightUpperArm.targetRotation = Quaternion.Inverse(targetPose);
-            rightLowerArm.targetRotation = Quaternion.Euler(0, 0, 0);
+            rightUpperArm.targetRotation = Quaternion.Euler(0, 90, -60);
+            rightLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
         }
 
         public void ResetBothArms()
         {
+            // Enable ActiveRagdollBone Script
+            LUpperBoneScript.enabled = true;
+            LLowerBoneScript.enabled = true;
+            RUpperBoneScript.enabled = true;
+            RLowerBoneScript.enabled = true;
             // Revert Left Arm
             leftUpperArm.angularXDrive = originalRightUpperX; leftUpperArm.angularYZDrive = originalLeftUpperYZ;
             leftLowerArm.angularXDrive = originalLeftLowerX; leftLowerArm.angularYZDrive = originalLeftLowerYZ;
@@ -484,6 +471,13 @@ namespace RabbleHouse
             // Revert Right Arm
             rightUpperArm.angularXDrive = originalRightUpperX; rightUpperArm.angularYZDrive = originalRightUpperYZ;
             rightLowerArm.angularXDrive = originalRightLowerX; rightLowerArm.angularYZDrive = originalRightLowerYZ;
+
+            // Reset target rotations
+            leftUpperArm.targetRotation = Quaternion.Euler(0, 0, 0);
+            leftLowerArm.targetRotation = Quaternion.Euler(0, 0, 0);
+
+            rightUpperArm.targetRotation = Quaternion.Euler(0, 0, 0);
+            rightLowerArm.targetRotation = Quaternion.Euler(0, 0, 0);
         }
         private void SetXYZJointStrength(ConfigurableJoint joint, float spring, float damper)
         {
