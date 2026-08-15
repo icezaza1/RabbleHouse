@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using System.Collections;
 
 namespace RabbleHouse
 {
@@ -41,13 +42,14 @@ namespace RabbleHouse
         [SerializeField] private Transform leftHand;
         [SerializeField] private Transform rightHand;
 
-        // Mainly handle arm rotation for punching/grabbing
+        // Arm joints for punching/grabbing
         [Header("Left Arm Joints")]
         [SerializeField] private ConfigurableJoint leftUpperArm;
         [SerializeField] private ConfigurableJoint leftLowerArm;
         [Header("Right Arm Joints")]
         [SerializeField] private ConfigurableJoint rightUpperArm;
         [SerializeField] private ConfigurableJoint rightLowerArm;
+
         private JointDrive originalLeftUpperX, originalLeftUpperYZ, originalLeftLowerX, originalLeftLowerYZ;
         private JointDrive originalRightUpperX, originalRightUpperYZ, originalRightLowerX, originalRightLowerYZ;
 
@@ -62,7 +64,8 @@ namespace RabbleHouse
         private Vector2 moveInput;
         private bool grabPressed;
         private bool grabReleased;
-        private bool punchPressed;
+        private bool lightPunchPressed;
+        private bool heavyPunchPressed;
         private bool jumpPressed;
         private bool sprintPressed;
         private bool throwHeld;
@@ -74,6 +77,48 @@ namespace RabbleHouse
         private bool isGrounded;
         private bool isSprinting;
         private Vector3 currentMoveDir;
+
+        // --- PUNCHING ---
+        [Header("Punching")]
+        [SerializeField] private float lightPunchCooldown = 0.5f;
+        [SerializeField] private float lightPunchWindow = 2.0f;
+        [SerializeField] private float punchTravelTime = 0.18f;
+        [SerializeField] private float punchHoldTime = 0.12f;
+        private float lastLightPunchTime;
+        private bool isInLightPunchWindow => Time.time - lastLightPunchTime <= lightPunchWindow;
+        private bool lightPunchActive = false;
+        private bool lightPunchDirection = false; // false = left, true = right
+        private bool leftPunching = false;
+        private bool rightPunching = false;
+        private bool leftArmWaitingForWindow = false;
+        private bool rightArmWaitingForWindow = false;
+
+        // --- HEAVY PUNCH ---
+        [Header("Heavy Punching")]
+        [SerializeField] private float heavyPunchCooldown = 1.0f;
+        [SerializeField] private float heavyTravelTime = 0.5f;
+        [SerializeField] private float heavyHoldTime = 0.5f;
+        private bool isHeavyPunching = false;
+        private bool hipRotationSuppressed = false;
+        private bool heavyPunchLeftArm = true; // toggle for next arm
+
+        [Header("Heavy Punch Profiles")]
+        [SerializeField] private ArmPunchProfile leftHeavyProfile;
+        [SerializeField] private ArmPunchProfile rightHeavyProfile;
+        [SerializeField] private float HipHookRotation;
+
+        [System.Serializable]
+        private class ArmPunchProfile
+        {
+            public Vector3 windUpUpper;
+            public Vector3 windUpLower;
+            public Vector3 punchUpper;
+            public Vector3 punchLower;
+        }
+
+        [Header("Arm Punch Profiles")]
+        [SerializeField] private ArmPunchProfile leftArmProfile;   // UpperLeft/LowerLeft
+        [SerializeField] private ArmPunchProfile rightArmProfile;  // UpperRight/LowerRight
 
         // --- SETTINGS ---
         [Header("Reference")]
@@ -139,7 +184,6 @@ namespace RabbleHouse
             // Get the original angular drive
             originalLeftUpperX = leftUpperArm.angularXDrive; originalLeftUpperYZ = leftUpperArm.angularYZDrive;
             originalLeftLowerX = leftLowerArm.angularXDrive; originalLeftLowerYZ = leftLowerArm.angularYZDrive;
-
             originalRightUpperX = rightUpperArm.angularXDrive; originalRightUpperYZ = rightUpperArm.angularYZDrive;
             originalRightLowerX = rightLowerArm.angularXDrive; originalRightLowerYZ = rightLowerArm.angularYZDrive;
         }
@@ -162,6 +206,15 @@ namespace RabbleHouse
             {
                 RaiseBothArms();
             }
+
+            // Handle light punch logic - run every frame to check input
+            HandleLightPunch();
+
+            // Handle heavy punch input
+            if (heavyPunchPressed)
+            {
+                HandleHeavyPunch();
+            }
         }
 
         private void Update()
@@ -170,12 +223,7 @@ namespace RabbleHouse
             CheckGrounded();
             UpdateState();
             HandlePunchCooldown();
-
-            if (balancer != null)
-            {
-                float target = (currentState == CharacterState.Moving) ? balancerWeightMoving : 1f;
-                balancer.weight = Mathf.Lerp(balancer.weight, target, Time.deltaTime * balancerBlendSpeed);
-            }
+            CheckLightPunchWindowExpiry();
         }
 
         private void FixedUpdate()
@@ -195,7 +243,23 @@ namespace RabbleHouse
                     HandleMovement();
                     HandleRotation();
                     break;
+                case CharacterState.Punching:
+                    // This will be overridden by HandleLightPunch if a light punch is in progress
+                    break;
             }
+
+            // Handle balancer weight
+            if (balancer != null)
+            {
+                float target = (currentState == CharacterState.Moving) ? balancerWeightMoving : 1f;
+                balancer.weight = Mathf.Lerp(balancer.weight, target, Time.fixedDeltaTime * balancerBlendSpeed);
+            }
+        }
+
+        private void SetState(CharacterState newState)
+        {
+            if (currentState == newState) return;
+            currentState = newState;
         }
 
         // --- INPUT HANDLING ---
@@ -206,7 +270,8 @@ namespace RabbleHouse
                 moveInput = inputHandler.MoveInput;
                 grabPressed = inputHandler.GrabPressed;
                 grabReleased = inputHandler.GrabReleased;
-                punchPressed = inputHandler.PunchPressed;
+                lightPunchPressed = inputHandler.LightPunchPressed;
+                heavyPunchPressed = inputHandler.HeavyPunchPressed;
                 jumpPressed = inputHandler.JumpPressed;
                 sprintPressed = inputHandler.SprintPressed;
                 throwHeld = inputHandler.ThrowHeld;
@@ -235,12 +300,6 @@ namespace RabbleHouse
             }
 
             SetState(moveInput.magnitude > 0.1f ? CharacterState.Moving : CharacterState.Idle);
-        }
-
-        private void SetState(CharacterState newState)
-        {
-            if (currentState == newState) return;
-            currentState = newState;
         }
 
         // --- CHECK GROUNDED ---
@@ -292,6 +351,7 @@ namespace RabbleHouse
         {
             if (coreRigidbody == null) return;
             if (currentMoveDir == Vector3.zero) return;
+            if (hipRotationSuppressed) return;  // don't fight the hip hook
 
             Quaternion targetRot = Quaternion.LookRotation(currentMoveDir);
             hipJoint.targetRotation = Quaternion.Inverse(targetRot);
@@ -321,11 +381,11 @@ namespace RabbleHouse
                 }
             }
 
-            // Let both hand grab an object
             if (closest != null)
             {
-                //GrabObject(closest, rightHandRb);
-                //GrabObject(closest, leftHandRb);
+                heldObject = closest;
+                closest.GrabByPlayer(this);
+
                 leftHandJoint = SetupGrabJoint(leftHandRb, closest);
                 rightHandJoint = SetupGrabJoint(rightHandRb, closest);
                 SetState(CharacterState.Grabbing);
@@ -340,19 +400,19 @@ namespace RabbleHouse
             // Create the grab joint on the hand bone.
             ConfigurableJoint grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
             grabJoint.connectedBody = heldObject.Rigidbody;
-            // Enable connected target auto? set to false to manually configure.
+
+            // autoConfigureConnectedAnchor = true lets Unity auto-calculate the
+            // object anchor so it sticks to the hand naturally.
             grabJoint.autoConfigureConnectedAnchor = true;
 
-            // Anchor at the hand bone's local origin (hand center).
             grabJoint.anchor = Vector3.zero;
-            grabJoint.connectedAnchor = Vector3.zero;
 
             // Lock linear motion — object sticks to hand.
             grabJoint.xMotion = ConfigurableJointMotion.Locked;
             grabJoint.yMotion = ConfigurableJointMotion.Locked;
             grabJoint.zMotion = ConfigurableJointMotion.Locked;
 
-            // Lock Free angular — so object doesn't randomly rotate while getting grabbed.
+            // Lock angular — so object doesn't randomly rotate while getting grabbed.
             grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
             grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
             grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
@@ -372,7 +432,7 @@ namespace RabbleHouse
             grabJoint.breakTorque = 1500f;
             grabJoint.enablePreprocessing = false;
 
-            // Ignore collisions
+            // Ignore collisions between the hand and the held object.
             Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
 
             if (balancer != null)
@@ -380,79 +440,14 @@ namespace RabbleHouse
 
             return grabJoint;
         }
-        //private void GrabObject(GrabbableObject obj, Rigidbody handBody)
-        //{
-        //    heldObject = obj;
-        //    obj.GrabByPlayer(this);
-
-        //    if (handBody == null)
-        //    {
-        //        Debug.LogError("Grab failed: no hand bone with Rigidbody assigned. Assign Left/Right Hand in Inspector.", this);
-        //        heldObject = null;
-        //        obj.ReleaseByPlayer();
-        //        return;
-        //    }
-
-        //    // Create the grab joint on the hand bone.
-        //    grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
-        //    grabJoint.connectedBody = heldObject.Rigidbody;
-
-        //    // Enable connected target auto? set to false to manually configure.
-        //    grabJoint.autoConfigureConnectedAnchor = true;
-        //    //grabJoint.connectedAnchor = new Vector3(0f, 1f, 0f);
-
-        //    // Anchor at the hand bone's local origin (hand center).
-        //    grabJoint.anchor = Vector3.zero;
-        //    grabJoint.connectedAnchor = Vector3.zero;
-
-        //    // Lock linear motion — object sticks to hand.
-        //    grabJoint.xMotion = ConfigurableJointMotion.Locked;
-        //    grabJoint.yMotion = ConfigurableJointMotion.Locked;
-        //    grabJoint.zMotion = ConfigurableJointMotion.Locked;
-
-        //    // Lock Free angular — so object doesn't randomly rotate while getting grabbed.
-        //    grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
-        //    grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
-        //    grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
-
-        //    // Position spring-damper to hold object against gravity.
-        //    JointDrive drive = new JointDrive
-        //    {
-        //        positionSpring = 15000f,
-        //        positionDamper = 15000f,
-        //        maximumForce = 15000f
-        //    };
-        //    grabJoint.xDrive = drive;
-        //    grabJoint.yDrive = drive;
-        //    grabJoint.zDrive = drive;
-
-        //    grabJoint.breakForce = 1500f;
-        //    grabJoint.breakTorque = 1500f;
-        //    grabJoint.enablePreprocessing = false;
-
-        //    // Ignore collisions
-        //    Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
-
-        //    SetState(CharacterState.Grabbing);
-        //    if (balancer != null)
-        //        balancer.weight *= 0.5f;
-        //}
 
         private void ReleaseObject()
         {
             if (heldObject == null) return;
 
-            // Clean up left joint
+            // Clean up both joints
             if (leftHandJoint != null) Destroy(leftHandJoint);
-
-            // Clean up right joint
             if (rightHandJoint != null) Destroy(rightHandJoint);
-
-            //if (grabJoint != null)
-            //{
-            //    Destroy(grabJoint);
-            //    grabJoint = null;
-            //}
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
@@ -469,17 +464,9 @@ namespace RabbleHouse
         {
             if (heldObject == null) return;
 
-            // Clean up left joint
+            // Clean up both joints
             if (leftHandJoint != null) Destroy(leftHandJoint);
-
-            // Clean up right joint
             if (rightHandJoint != null) Destroy(rightHandJoint);
-
-            //if (grabJoint != null)
-            //{
-            //    Destroy(grabJoint);
-            //    grabJoint = null;
-            //}
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
@@ -493,55 +480,55 @@ namespace RabbleHouse
         // --- ARM MUSCLE HELPERS ---
         public void RaiseBothArms()
         {
-            float grabSpringStrength = 12000f;
-            float grabDamper = 120f;
-
-            // Disable ActiveRagdollBone Script so the animation from animated rig doesn't override target rotation
+            // Disable ActiveRagdollBone scripts so they don't fight our target rotation
             LUpperBoneScript.enabled = false;
             LLowerBoneScript.enabled = false;
             RUpperBoneScript.enabled = false;
             RLowerBoneScript.enabled = false;
 
             // Boost X and YZ joint drives for both arms
-            SetXYZJointStrength(leftUpperArm, grabSpringStrength, grabDamper);
-            SetXYZJointStrength(leftLowerArm, grabSpringStrength, grabDamper);
-            SetXYZJointStrength(rightUpperArm, grabSpringStrength, grabDamper);
-            SetXYZJointStrength(rightLowerArm, grabSpringStrength, grabDamper);
+            SetXYZJointStrength(leftUpperArm, 12000f, 120f);
+            SetXYZJointStrength(leftLowerArm, 12000f, 120f);
+            SetXYZJointStrength(rightUpperArm, 12000f, 120f);
+            SetXYZJointStrength(rightLowerArm, 12000f, 120f);
 
-            // Force target velocities to zero to stop current physics momentum
+            // Zero out any existing angular velocity
             leftUpperArm.targetAngularVelocity = Vector3.zero;
             rightUpperArm.targetAngularVelocity = Vector3.zero;
 
-            // Assign target rotations
+            // Set target rotations for the raised arms
             leftUpperArm.targetRotation = Quaternion.Euler(0, -90, 60);
             leftLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
-
             rightUpperArm.targetRotation = Quaternion.Euler(0, 90, -60);
             rightLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
         }
 
         public void ResetBothArms()
         {
-            // Enable ActiveRagdollBone Script
+            // Enable ActiveRagdollBone Scripts
             LUpperBoneScript.enabled = true;
             LLowerBoneScript.enabled = true;
             RUpperBoneScript.enabled = true;
             RLowerBoneScript.enabled = true;
-            // Revert Left Arm
-            leftUpperArm.angularXDrive = originalLeftUpperX; leftUpperArm.angularYZDrive = originalLeftUpperYZ;
-            leftLowerArm.angularXDrive = originalLeftLowerX; leftLowerArm.angularYZDrive = originalLeftLowerYZ;
 
-            // Revert Right Arm
-            rightUpperArm.angularXDrive = originalRightUpperX; rightUpperArm.angularYZDrive = originalRightUpperYZ;
-            rightLowerArm.angularXDrive = originalRightLowerX; rightLowerArm.angularYZDrive = originalRightLowerYZ;
+            // Revert arm joint drives to their original values
+            leftUpperArm.angularXDrive = originalLeftUpperX;
+            leftUpperArm.angularYZDrive = originalLeftUpperYZ;
+            leftLowerArm.angularXDrive = originalLeftLowerX;
+            leftLowerArm.angularYZDrive = originalLeftLowerYZ;
 
-            // Reset target rotations
+            rightUpperArm.angularXDrive = originalRightUpperX;
+            rightUpperArm.angularYZDrive = originalRightUpperYZ;
+            rightLowerArm.angularXDrive = originalRightLowerX;
+            rightLowerArm.angularYZDrive = originalRightLowerYZ;
+
+            // Reset target rotations to neutral
             leftUpperArm.targetRotation = Quaternion.Euler(0, 0, 0);
             leftLowerArm.targetRotation = Quaternion.Euler(0, 0, 0);
-
             rightUpperArm.targetRotation = Quaternion.Euler(0, 0, 0);
             rightLowerArm.targetRotation = Quaternion.Euler(0, 0, 0);
         }
+
         private void SetXYZJointStrength(ConfigurableJoint joint, float spring, float damper)
         {
             // Must update BOTH drives individually for X/YZ mode to react correctly
@@ -556,48 +543,255 @@ namespace RabbleHouse
             joint.angularYZDrive = yzDrive;
         }
 
-        // --- COMBAT ---
+        // --- LIGHT / HEAVY PUNCH ---
         private void HandlePunchCooldown()
         {
-            if (punchCooldownTimer > 0f) punchCooldownTimer -= Time.deltaTime;
-
-            if (punchPressed && punchCooldownTimer <= 0f && currentState != CharacterState.Punching)
-                Punch();
+            if (punchCooldownTimer > 0f)
+                punchCooldownTimer -= Time.deltaTime;
         }
 
-        private void Punch()
+        private void CheckLightPunchWindowExpiry()
         {
-            SetState(CharacterState.Punching);
-            punchCooldownTimer = 0.5f;
-
-            Vector3 origin = coreRigidbody.position + Vector3.up * 1f;
-            Vector3 dir = transform.forward;
-
-            if (Physics.Raycast(origin, dir, out RaycastHit hit, punchRange))
+            if (leftArmWaitingForWindow || rightArmWaitingForWindow)
             {
-                var otherHealth = hit.collider.GetComponentInParent<PlayerHealth>();
-                if (otherHealth != null && otherHealth != playerHealth)
+                if (!isInLightPunchWindow)
                 {
-                    otherHealth.TakeDamage(punchDamage, dir * punchForce, PlayerIndex);
+                    LUpperBoneScript.enabled = true;
+                    LLowerBoneScript.enabled = true;
+                    RUpperBoneScript.enabled = true;
+                    RLowerBoneScript.enabled = true;
+                    leftArmWaitingForWindow = false;
+                    rightArmWaitingForWindow = false;
+                    leftPunching = false;
+                    rightPunching = false;
+                    lightPunchActive = false;
                 }
+            }
+        }
 
-                var grabbable = hit.collider.GetComponentInParent<GrabbableObject>();
-                if (grabbable != null && !grabbable.IsHeld)
-                    grabbable.ApplyForce(dir * punchForce);
+        private void HandleLightPunch()
+        {
+            if (currentState == CharacterState.Grabbing) return;
+
+            // Determine which arm is next based on toggle direction
+            bool nextIsLeft = !lightPunchDirection;
+
+            // Check if that arm is free (not currently punching)
+            bool armFree = nextIsLeft ? !leftPunching : !rightPunching;
+
+            // Start a new punch if the button is pressed, the target arm is free, and cooldown is ready
+            if (lightPunchPressed && armFree && punchCooldownTimer <= 0f)
+            {
+                StartLightPunch();
+            }
+        }
+
+        private void StartLightPunch()
+        {
+            // Determine which arm is about to punch based on toggle direction
+            bool isLeft = !lightPunchDirection;
+            // Mark that arm as punching
+            if (isLeft) leftPunching = true;
+            else rightPunching = true;
+
+            lastLightPunchTime = Time.time;
+            punchCooldownTimer = lightPunchCooldown;
+
+            // Disable bone scripts so we can manually set target rotations
+            LUpperBoneScript.enabled = false;
+            LLowerBoneScript.enabled = false;
+            RUpperBoneScript.enabled = false;
+            RLowerBoneScript.enabled = false;
+
+            // Call PerformPunch with the correct arm
+            PerformPunch(isLeft);
+
+            // Flip the direction for the next press
+            lightPunchDirection = !lightPunchDirection;
+
+            // Mark the punch as active (used elsewhere)
+            lightPunchActive = true;
+        }
+
+        private void PerformPunch(bool isLeft)
+        {
+            // Grab the appropriate profile for the arm
+            ArmPunchProfile profile = isLeft ? leftArmProfile : rightArmProfile;
+
+            // Capture the current target rotations (the wind-up pose)
+            Quaternion startUpper = Quaternion.Euler(profile.windUpUpper.x, profile.windUpUpper.y, profile.windUpUpper.z);
+            Quaternion startLower = Quaternion.Euler(profile.windUpLower.x, profile.windUpLower.y, profile.windUpLower.z);
+
+            // Compute the target punch rotations using the stored profile values.
+            Quaternion targetUpper = Quaternion.Euler(profile.punchUpper.x, profile.punchUpper.y, profile.punchUpper.z);
+            Quaternion targetLower = Quaternion.Euler(profile.punchLower.x, profile.punchLower.y, profile.punchLower.z);
+                                                  
+
+            // Start the lerp coroutine
+            StartCoroutine(PunchLerpRoutine(isLeft, startUpper, targetUpper, startLower, targetLower));
+        }
+
+        private IEnumerator PunchLerpRoutine(bool isLeft, 
+            Quaternion startUpper,
+            Quaternion targetUpper,
+            Quaternion startLower,
+            Quaternion targetLower)
+        {
+            // Get the joint references for the arm being punched
+            ConfigurableJoint upperJoint = (isLeft) ? leftUpperArm : rightUpperArm;
+            ConfigurableJoint lowerJoint = (isLeft) ? leftLowerArm : rightLowerArm;
+
+            // --- Move from wind-up to punch rotation ---
+            float elapsed = 0f;
+            float total = punchTravelTime;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                upperJoint.targetRotation = Quaternion.Slerp(startUpper, targetUpper, t);
+                lowerJoint.targetRotation = Quaternion.Slerp(startLower, targetLower, t);
+                yield return null;
             }
 
-            if (targetAnimator != null)
-                targetAnimator.SetTrigger("Punch");
+            // --- Hold the apex briefly ---
+            elapsed = 0f;
+            while (elapsed < punchHoldTime)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // --- Move back from punch to wind-up ---
+            elapsed = 0f;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                upperJoint.targetRotation = Quaternion.Slerp(targetUpper, startUpper, t);
+                lowerJoint.targetRotation = Quaternion.Slerp(targetLower, startLower, t);
+                yield return null;
+            }
+
+            // Clean-up: mark arm as finished
+            if (isLeft)
+            {
+                leftPunching = false;
+                leftArmWaitingForWindow = true;
+            }
+            else
+            {
+                rightPunching = false;
+                rightArmWaitingForWindow = true;
+            }
         }
 
         // --- STUN / RAGDOLL ---
+        public void HandleHeavyPunch()
+        {
+            if (isHeavyPunching) return;
+            if (lightPunchActive) return;            // block if light punch is in progress
+            if (punchCooldownTimer > 0f) return;      // respect light punch cooldown
+
+            heavyPunchLeftArm = !heavyPunchLeftArm;   // alternate arms
+            isHeavyPunching = true;
+            StartCoroutine(HeavyPunchRoutine(heavyPunchLeftArm));
+        }
+
+        private IEnumerator HeavyPunchRoutine(bool isLeft)
+        {
+            ArmPunchProfile profile = isLeft ? leftHeavyProfile : rightHeavyProfile;
+
+            // Capture wind-up hip rotation (rotate hips toward the punching arm)
+            Quaternion hipStart = hipJoint.targetRotation;
+            // Compute relative Y-rotation deltas from the current hip target
+            float windupYaw = isLeft ? HipHookRotation : -HipHookRotation;
+            float hookYaw   = isLeft ? -HipHookRotation : HipHookRotation;
+            Quaternion relativeWindupYaw = Quaternion.Euler(0, windupYaw, 0);
+            Quaternion relativeHookYaw   = Quaternion.Euler(0, hookYaw, 0);
+            Quaternion hipWindupRot = hipStart * relativeWindupYaw;
+            Quaternion hipHookRot   = hipStart * relativeHookYaw;
+
+            // Suppress movement-based hip rotation during heavy punch
+            hipRotationSuppressed = true;
+
+            // Disable bone scripts for the punching arm + raise the OTHER arm (wind-up pose)
+            if (isLeft)
+            {
+                LUpperBoneScript.enabled = false;
+                LLowerBoneScript.enabled = false;
+            }
+            else
+            {
+                RUpperBoneScript.enabled = false;
+                RLowerBoneScript.enabled = false;
+            }
+
+            // Phase 1: Hip rotates to wind-up, arm goes to wind-up pose
+            float elapsed = 0f;
+            float total = heavyTravelTime;
+            Quaternion startUpper = Quaternion.Euler(profile.windUpUpper);
+            Quaternion targetUpper = Quaternion.Euler(profile.punchUpper);
+            Quaternion startLower = Quaternion.Euler(profile.windUpLower);
+            Quaternion targetLower = Quaternion.Euler(profile.punchLower);
+
+            ConfigurableJoint upperJoint = isLeft ? leftUpperArm : rightUpperArm;
+            ConfigurableJoint lowerJoint = isLeft ? leftLowerArm : rightLowerArm;
+
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
+                yield return null;
+            }
+
+            // Phase 2: Hip hooks to opposite side, arm stays extended (hold)
+            elapsed = 0f;
+            while (elapsed < heavyHoldTime)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / heavyHoldTime);
+                hipJoint.targetRotation = Quaternion.Lerp(hipWindupRot, hipHookRot, t);
+                upperJoint.targetRotation = Quaternion.Lerp(startUpper, targetUpper, t);
+                lowerJoint.targetRotation = Quaternion.Lerp(startLower, targetLower, t);
+                yield return null;
+            }
+
+            // Phase 3: Return hip to neutral and arm back to wind-up
+            elapsed = 0f;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                hipJoint.targetRotation = Quaternion.Slerp(hipHookRot, hipStart, t);
+                upperJoint.targetRotation = Quaternion.Slerp(targetUpper, startUpper, t);
+                lowerJoint.targetRotation = Quaternion.Slerp(targetLower, startLower, t);
+                yield return null;
+            }
+
+            // Re-enable bone scripts
+            LUpperBoneScript.enabled = true;
+            LLowerBoneScript.enabled = true;
+            RUpperBoneScript.enabled = true;
+            RLowerBoneScript.enabled = true;
+
+            // Restore hip rotation to current facing direction
+            hipRotationSuppressed = false;
+            if (currentMoveDir != Vector3.zero)
+            {
+                hipJoint.targetRotation = Quaternion.Inverse(Quaternion.LookRotation(currentMoveDir));
+            }
+
+            isHeavyPunching = false;
+        }
+
         public void OnStunned(float duration)
         {
             SetState(CharacterState.Stunned);
             StartCoroutine(StunRoutine(duration));
         }
 
-        private System.Collections.IEnumerator StunRoutine(float duration)
+        private IEnumerator StunRoutine(float duration)
         {
             ForceDropObject();
             ragdollMaster.EnableFullRagdoll();
@@ -614,7 +808,7 @@ namespace RabbleHouse
             StartCoroutine(KnockdownRoutine(duration));
         }
 
-        private System.Collections.IEnumerator KnockdownRoutine(float duration)
+        private IEnumerator KnockdownRoutine(float duration)
         {
             yield return new WaitForSeconds(duration);
 
