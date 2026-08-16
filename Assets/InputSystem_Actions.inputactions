@@ -43,7 +43,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "LightPunch",
+                    "name": "LightAttack",
                     "type": "Button",
                     "id": "c3d4e5f6-a7b8-9012-cdef-123456789012",
                     "expectedControlType": "",
@@ -52,7 +52,7 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "HeavyPunch",
+                    "name": "HeavyAttack",
                     "type": "Button",
                     "id": "bedd7cdf-b81f-4637-a06a-8f46ec3baa7c",
                     "expectedControlType": "",
@@ -173,7 +173,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "LightPunch",
+                    "action": "LightAttack",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
@@ -228,7 +228,7 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
-                    "action": "HeavyPunch",
+                    "action": "HeavyAttack",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

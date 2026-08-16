@@ -16,12 +16,9 @@ namespace RabbleHouse
         public Vector2 MoveInput => playerInput?.actions["Move"].ReadValue<Vector2>() ?? Vector2.zero;
         public Vector2 LookInput => playerInput?.actions["Look"].ReadValue<Vector2>() ?? Vector2.zero;
         public bool GrabPressed => playerInput?.actions["Grab"].WasPressedThisFrame() ?? false;
-        public bool GrabReleased => playerInput?.actions["Grab"].WasReleasedThisFrame() ?? false;
-        public bool LightPunchPressed => playerInput?.actions["LightPunch"].WasPressedThisFrame() ?? false;
-        public bool HeavyPunchPressed => playerInput?.actions["HeavyPunch"].WasPressedThisFrame() ?? false;
-        public bool JumpPressed => playerInput?.actions["Jump"].WasPressedThisFrame() ?? false;
+        public bool LightAttackPressed => playerInput?.actions["LightAttack"].WasPressedThisFrame() ?? false;
+        public bool HeavyAttackPressed => playerInput?.actions["HeavyAttack"].WasPressedThisFrame() ?? false;
         public bool SprintPressed => playerInput?.actions["Sprint"].IsPressed() ?? false;
-        public bool ThrowHeld => playerInput?.actions["Throw"].IsPressed() ?? false;
 
         // --- LIFECYCLE ---
         private void Awake()

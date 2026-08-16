@@ -63,12 +63,12 @@ namespace RabbleHouse
         // --- INPUT ---
         private Vector2 moveInput;
         private bool grabPressed;
-        private bool grabReleased;
-        private bool lightPunchPressed;
-        private bool heavyPunchPressed;
-        private bool jumpPressed;
+        private bool lightAttackPressed;
+        private bool heavyAttackPressed;
         private bool sprintPressed;
-        private bool throwHeld;
+
+        // --- GRAB TYPES ---
+        private GrabbableType heldGrabbableType = GrabbableType.SmallObject;
 
         // --- STATE ---
         private CharacterState currentState = CharacterState.Idle;
@@ -101,11 +101,13 @@ namespace RabbleHouse
         private bool isHeavyPunching = false;
         private bool hipRotationSuppressed = false;
         private bool heavyPunchLeftArm = true; // toggle for next arm
+        private float swingCooldownTimer = 0f;
 
         [Header("Heavy Punch Profiles")]
         [SerializeField] private ArmPunchProfile leftHeavyProfile;
         [SerializeField] private ArmPunchProfile rightHeavyProfile;
         [SerializeField] private float HipHookRotation;
+        [SerializeField] private float smallObjectSwingAngle = 45f;
 
         [System.Serializable]
         private class ArmPunchProfile
@@ -123,6 +125,7 @@ namespace RabbleHouse
         // --- SETTINGS ---
         [Header("Reference")]
         [SerializeField] private Animator targetAnimator;
+        [SerializeField] private Transform grabAnchorPoint;
         [Header("Movement")]
         [SerializeField] private float moveSpeed = 5f;
         [SerializeField] private float jumpForce = 6f;
@@ -135,8 +138,6 @@ namespace RabbleHouse
         [Header("Combat")]
         [SerializeField] private float grabRange = 1.5f;
         [SerializeField] private float throwForce = 20f;
-        [SerializeField] private float maxThrowForce = 40f;
-        [SerializeField] private float throwChargeTime = 1f;
         [SerializeField] private float punchForce = 15f;
         [SerializeField] private float punchRange = 1f;
         [SerializeField] private int punchDamage = 10;
@@ -207,13 +208,13 @@ namespace RabbleHouse
                 RaiseBothArms();
             }
 
-            // Handle light punch logic - run every frame to check input
-            HandleLightPunch();
+            // Handle light attack (punch or swing depending on held object)
+            HandleLightAttack();
 
-            // Handle heavy punch input
-            if (heavyPunchPressed)
+            // Handle heavy attack (heavy punch or throw depending on held object)
+            if (heavyAttackPressed)
             {
-                HandleHeavyPunch();
+                HandleHeavyAttack();
             }
         }
 
@@ -269,12 +270,9 @@ namespace RabbleHouse
             {
                 moveInput = inputHandler.MoveInput;
                 grabPressed = inputHandler.GrabPressed;
-                grabReleased = inputHandler.GrabReleased;
-                lightPunchPressed = inputHandler.LightPunchPressed;
-                heavyPunchPressed = inputHandler.HeavyPunchPressed;
-                jumpPressed = inputHandler.JumpPressed;
+                lightAttackPressed = inputHandler.LightAttackPressed;
+                heavyAttackPressed = inputHandler.HeavyAttackPressed;
                 sprintPressed = inputHandler.SprintPressed;
-                throwHeld = inputHandler.ThrowHeld;
             }
 
             // Toggle grab: press to grab, press again to drop.
@@ -342,9 +340,6 @@ namespace RabbleHouse
             {
                 coreRigidbody.AddForce(Vector3.up * highestSpeed * (isSprinting ? 3.5f : 4f), ForceMode.Impulse);
             }
-
-            if (jumpPressed && isGrounded)
-                coreRigidbody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
         }
 
         private void HandleRotation()
@@ -354,7 +349,18 @@ namespace RabbleHouse
             if (hipRotationSuppressed) return;  // don't fight the hip hook
 
             Quaternion targetRot = Quaternion.LookRotation(currentMoveDir);
-            hipJoint.targetRotation = Quaternion.Inverse(targetRot);
+
+            // LargeObject: heavy object dragging behind makes hip rotation sluggish
+            if (heldGrabbableType == GrabbableType.LargeObject && heldObject != null)
+            {
+                // Blend the target rotation based on the object's mass (higher = slower hip turn)
+                float massFactor = Mathf.Clamp01(heldObject.Rigidbody.mass / 50f);
+                hipJoint.targetRotation = Quaternion.Slerp(hipJoint.targetRotation, Quaternion.Inverse(targetRot), massFactor * Time.fixedDeltaTime * balancerBlendSpeed);
+            }
+            else
+            {
+                hipJoint.targetRotation = Quaternion.Inverse(targetRot);
+            }
         }
 
         // --- GRAB / DROP ---
@@ -384,10 +390,21 @@ namespace RabbleHouse
             if (closest != null)
             {
                 heldObject = closest;
+                heldGrabbableType = closest.grabbableType;
                 closest.GrabByPlayer(this);
 
-                leftHandJoint = SetupGrabJoint(leftHandRb, closest);
-                rightHandJoint = SetupGrabJoint(rightHandRb, closest);
+                if (heldGrabbableType == GrabbableType.Tool)
+                {
+                    // One-handed grab — only right hand holds
+                    rightHandJoint = SetupGrabJoint(rightHandRb, closest);
+                    leftHandJoint = null;
+                }
+                else
+                {
+                    // Two-handed grab
+                    leftHandJoint = SetupGrabJoint(leftHandRb, closest);
+                    rightHandJoint = SetupGrabJoint(rightHandRb, closest);
+                }
                 SetState(CharacterState.Grabbing);
             }
         }
@@ -401,10 +418,8 @@ namespace RabbleHouse
             ConfigurableJoint grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
             grabJoint.connectedBody = heldObject.Rigidbody;
 
-            // autoConfigureConnectedAnchor = true lets Unity auto-calculate the
-            // object anchor so it sticks to the hand naturally.
+            // autoConfigureConnectedAnchor = true lets Unity auto-calculate the object anchor so it sticks to the hand naturally.
             grabJoint.autoConfigureConnectedAnchor = true;
-
             grabJoint.anchor = Vector3.zero;
 
             // Lock linear motion — object sticks to hand.
@@ -416,6 +431,11 @@ namespace RabbleHouse
             grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
             grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
             grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+            // Set the limit distance to 0 so it snaps tight to the Target Position
+            SoftJointLimit limit = new SoftJointLimit();
+            limit.limit = 0.01f;
+            grabJoint.linearLimit = limit;
 
             // Position spring-damper to hold object against gravity.
             JointDrive drive = new JointDrive
@@ -451,6 +471,7 @@ namespace RabbleHouse
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
+            heldGrabbableType = GrabbableType.SmallObject;
             leftHandJoint = null;
             rightHandJoint = null;
             ResetBothArms();
@@ -470,6 +491,7 @@ namespace RabbleHouse
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
+            heldGrabbableType = GrabbableType.SmallObject;
             leftHandJoint = null;
             rightHandJoint = null;
             ResetBothArms();
@@ -548,6 +570,8 @@ namespace RabbleHouse
         {
             if (punchCooldownTimer > 0f)
                 punchCooldownTimer -= Time.deltaTime;
+            if (swingCooldownTimer > 0f)
+                swingCooldownTimer -= Time.deltaTime;
         }
 
         private void CheckLightPunchWindowExpiry()
@@ -569,8 +593,21 @@ namespace RabbleHouse
             }
         }
 
-        private void HandleLightPunch()
+        private void HandleLightAttack()
         {
+            if (isHeavyPunching) return;
+
+            if (heldObject != null)
+            {
+                // Holding an object: LightAttack = swing (when button is pressed)
+                if (lightAttackPressed && swingCooldownTimer <= 0f)
+                {
+                    HandleHeldObjectSwing();
+                }
+                return;
+            }
+
+            // Unarmed: LightAttack = light punch
             if (currentState == CharacterState.Grabbing) return;
 
             // Determine which arm is next based on toggle direction
@@ -580,9 +617,75 @@ namespace RabbleHouse
             bool armFree = nextIsLeft ? !leftPunching : !rightPunching;
 
             // Start a new punch if the button is pressed, the target arm is free, and cooldown is ready
-            if (lightPunchPressed && armFree && punchCooldownTimer <= 0f)
+            if (lightAttackPressed && armFree && punchCooldownTimer <= 0f)
             {
                 StartLightPunch();
+            }
+        }
+
+        private void HandleHeldObjectSwing()
+        {
+            if (heldObject == null || swingCooldownTimer > 0f) return;
+            swingCooldownTimer = heavyPunchCooldown;
+            StartCoroutine(HeldObjectSwingRoutine());
+        }
+
+        private IEnumerator HeldObjectSwingRoutine()
+        {
+            // Use hip rotation for swing — like heavy punch but simpler
+            hipRotationSuppressed = true;
+
+            Quaternion hipStart = hipJoint.targetRotation;
+            float swingYaw = smallObjectSwingAngle; // positive = rightward swing
+            Quaternion windupRot = Quaternion.Euler(0, -swingYaw, 0);
+            Quaternion swingRot = Quaternion.Euler(0, swingYaw, 0);
+            Quaternion hipWindupRot = hipStart * windupRot;
+            Quaternion hipSwingTarget = hipStart * swingRot;
+
+            // Rotate hip to windup angle
+            float elapsed = 0f;
+            float total = heavyTravelTime;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
+                yield return null;
+            }
+
+            // Rotate windup to swing
+            elapsed = 0f;
+            total = heavyTravelTime / 2;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
+                yield return null;
+            }
+            // Phase 2: Hold briefly
+            elapsed = 0f;
+            while (elapsed < heavyHoldTime)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // Phase 3: Return to facing direction
+            elapsed = 0f;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
+                yield return null;
+            }
+
+            // Restore hip rotation to current facing
+            hipRotationSuppressed = false;
+            if (currentMoveDir != Vector3.zero)
+            {
+                hipJoint.targetRotation = Quaternion.Inverse(Quaternion.LookRotation(currentMoveDir));
             }
         }
 
@@ -685,16 +788,51 @@ namespace RabbleHouse
             }
         }
 
-        // --- STUN / RAGDOLL ---
-        public void HandleHeavyPunch()
+        // --- HEAVY ATTACK ---
+        public void HandleHeavyAttack()
         {
             if (isHeavyPunching) return;
+
+            if (heldObject != null)
+            {
+                // Holding a SmallObject: HeavyAttack = throw (mid‑swing)
+                if (heldGrabbableType == GrabbableType.SmallObject)
+                {
+                    // Start the full wind‑up → swing → throw → return animation
+                    isHeavyPunching = true;
+                    StartCoroutine(SmallObjectThrowRoutine());
+                }
+                return;
+            }
+
+            // Unarmed: HeavyAttack = heavy punch (unless light punch is in progress
+            // or we’re on the light‑punch cooldown)
             if (lightPunchActive) return;            // block if light punch is in progress
             if (punchCooldownTimer > 0f) return;      // respect light punch cooldown
 
             heavyPunchLeftArm = !heavyPunchLeftArm;   // alternate arms
             isHeavyPunching = true;
             StartCoroutine(HeavyPunchRoutine(heavyPunchLeftArm));
+        }
+
+        private void ThrowHeldObject()
+        {
+            if (heldObject == null) return;
+
+            // Release grab joints
+            if (leftHandJoint != null) Destroy(leftHandJoint);
+            if (rightHandJoint != null) Destroy(rightHandJoint);
+            leftHandJoint = rightHandJoint = null;
+
+            // Throw in character's forward direction
+            Vector3 throwDir = coreRigidbody.transform.forward;
+            throwDir.y = 0.2f;
+            throwDir.Normalize();
+            heldObject.ThrowByDirection(throwDir * throwForce);
+
+            heldObject = null;
+            heldGrabbableType = GrabbableType.SmallObject;
+            SetState(CharacterState.Idle);
         }
 
         private IEnumerator HeavyPunchRoutine(bool isLeft)
@@ -705,11 +843,11 @@ namespace RabbleHouse
             Quaternion hipStart = hipJoint.targetRotation;
             // Compute relative Y-rotation deltas from the current hip target
             float windupYaw = isLeft ? HipHookRotation : -HipHookRotation;
-            float hookYaw   = isLeft ? -HipHookRotation : HipHookRotation;
+            float hookYaw = isLeft ? -HipHookRotation : HipHookRotation;
             Quaternion relativeWindupYaw = Quaternion.Euler(0, windupYaw, 0);
-            Quaternion relativeHookYaw   = Quaternion.Euler(0, hookYaw, 0);
+            Quaternion relativeHookYaw = Quaternion.Euler(0, hookYaw, 0);
             Quaternion hipWindupRot = hipStart * relativeWindupYaw;
-            Quaternion hipHookRot   = hipStart * relativeHookYaw;
+            Quaternion hipHookRot = hipStart * relativeHookYaw;
 
             // Suppress movement-based hip rotation during heavy punch
             hipRotationSuppressed = true;
@@ -782,6 +920,76 @@ namespace RabbleHouse
                 hipJoint.targetRotation = Quaternion.Inverse(Quaternion.LookRotation(currentMoveDir));
             }
 
+            isHeavyPunching = false;
+        }
+
+        private IEnumerator SmallObjectThrowRoutine()
+        {
+            // Wind-up → Swing → THROW (mid-swing) → Return
+            hipRotationSuppressed = true;
+
+            Quaternion hipStart = hipJoint.targetRotation;
+            float swingYaw = smallObjectSwingAngle;
+            Quaternion windupRot = Quaternion.Euler(0, -swingYaw, 0);
+            Quaternion swingRot = Quaternion.Euler(0, swingYaw, 0);
+            Quaternion hipWindupRot = hipStart * windupRot;
+            Quaternion hipSwingTarget = hipStart * swingRot;
+            
+            // Rotate hip to windup angle
+            float elapsed = 0f;
+            float total = heavyTravelTime;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
+                yield return null;
+            }
+
+            // Phase 2: Swing forward — at ~50% of this phase, THROW the object
+            elapsed = 0f;
+            total = heavyTravelTime / 2;
+            bool objectThrown = false;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
+
+                // Throw mid-swing (at 70% of the swing phase)
+                if (!objectThrown && t >= 0.70f)
+                {
+                    ThrowHeldObject();
+                    objectThrown = true;
+                }
+                yield return null;
+            }
+
+            // Phase 3: Hold briefly
+            elapsed = 0f;
+            while (elapsed < heavyHoldTime)
+            {
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+
+            // Phase 4: Return to facing direction
+            elapsed = 0f;
+            while (elapsed < total)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / total);
+                hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
+                yield return null;
+            }
+
+            // Restore hip rotation to current facing
+            hipRotationSuppressed = false;
+            if (currentMoveDir != Vector3.zero)
+            {
+                hipJoint.targetRotation = Quaternion.Inverse(Quaternion.LookRotation(currentMoveDir));
+            }
+            ResetBothArms();
             isHeavyPunching = false;
         }
 
