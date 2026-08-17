@@ -24,17 +24,20 @@ namespace RabbleHouse
 
         public CharacterState CurrentState => currentState;
         public bool IsHoldingObject => heldObject != null;
+        public bool IsGrounded => isGrounded;
+        public bool SprintPressed => sprintPressed;
         public int PlayerIndex { get; set; } = 0;
         public Rigidbody CoreRigidbody => coreRigidbody;
 
         // --- COMPONENTS ---
         private Rigidbody coreRigidbody;
         private PlayerInput playerInput;
-        private PhysicInputHandler inputHandler;
-        private ActiveRagdollMaster ragdollMaster;
-        private PlayerHealth playerHealth;
-        private ActiveRagdollBalancer balancer;
-        private ConfigurableJoint hipJoint;
+                private PhysicInputHandler inputHandler;
+                private AIInputHandler aiInputHandler;
+                private ActiveRagdollMaster ragdollMaster;
+                private PlayerHealth playerHealth;
+                private ActiveRagdollBalancer balancer;
+                private ConfigurableJoint hipJoint;
 
         // --- HAND REFERENCES (assigned in Inspector) ---
         // Each hand must have: Transform + Rigidbody + ConfigurableJoint + ActiveRagdollBone + Collider.
@@ -56,9 +59,9 @@ namespace RabbleHouse
         // Cached components from the hand transforms (resolved at Start).
         private ActiveRagdollBone LUpperBoneScript, LLowerBoneScript, RUpperBoneScript, RLowerBoneScript;
         private Rigidbody leftHandRb;
-        private ConfigurableJoint leftHandJoint;
+        private Joint leftHandJoint;
         private Rigidbody rightHandRb;
-        private ConfigurableJoint rightHandJoint;
+        private Joint rightHandJoint;
 
         // --- INPUT ---
         private Vector2 moveInput;
@@ -108,6 +111,7 @@ namespace RabbleHouse
         [SerializeField] private ArmPunchProfile rightHeavyProfile;
         [SerializeField] private float HipHookRotation;
         [SerializeField] private float smallObjectSwingAngle = 45f;
+        [SerializeField] private float smallObjectHoldOffset = 0.4f; // distance ahead of character
 
         [System.Serializable]
         private class ArmPunchProfile
@@ -151,6 +155,7 @@ namespace RabbleHouse
         {
             playerInput = GetComponent<PlayerInput>();
             inputHandler = GetComponent<PhysicInputHandler>();
+            aiInputHandler = GetComponent<AIInputHandler>();
             ragdollMaster = GetComponent<ActiveRagdollMaster>();
             playerHealth = GetComponent<PlayerHealth>();
 
@@ -266,7 +271,16 @@ namespace RabbleHouse
         // --- INPUT HANDLING ---
         private void ReadInput()
         {
-            if (inputHandler != null)
+            // Priority: AIInputHandler (if present) > PhysicInputHandler
+            if (aiInputHandler != null)
+            {
+                moveInput = aiInputHandler.MoveInput;
+                grabPressed = aiInputHandler.GrabPressed;
+                lightAttackPressed = aiInputHandler.LightAttackPressed;
+                heavyAttackPressed = aiInputHandler.HeavyAttackPressed;
+                sprintPressed = aiInputHandler.SprintPressed;
+            }
+            else if (inputHandler != null)
             {
                 moveInput = inputHandler.MoveInput;
                 grabPressed = inputHandler.GrabPressed;
@@ -316,7 +330,7 @@ namespace RabbleHouse
             if (!isGrounded) return;
 
             // Sprint Handle
-            isSprinting = sprintPressed ? true : false;
+            isSprinting = heldObject == null && (sprintPressed ? true : false);
             targetAnimator.SetFloat("AnimationSpeed", sprintPressed ? 1 : 2);
 
             Vector3 forward = Camera.main ? Camera.main.transform.forward : Vector3.forward;
@@ -366,9 +380,10 @@ namespace RabbleHouse
         // --- GRAB / DROP ---
         private void TryGrabObject()
         {
-            // Use HIP body position for detection (stable reference point).
-            Vector3 origin = coreRigidbody.position + Vector3.up * 1f;
-            Collider[] hits = Physics.OverlapSphere(origin, grabRange, LayerMask.GetMask("Grabbable"));
+            // Use HIP body position + forward offset for detection (check in front, not around)
+            Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
+            // Thin box extending forward, narrow on sides — only grabs in front
+            Collider[] hits = Physics.OverlapBox(origin, new Vector3(0.1f, 0.5f, grabRange * 0.5f), coreRigidbody.rotation, LayerMask.GetMask("Grabbable"));
 
             GrabbableObject closest = null;
             float bestDist = float.MaxValue;
@@ -393,72 +408,109 @@ namespace RabbleHouse
                 heldGrabbableType = closest.grabbableType;
                 closest.GrabByPlayer(this);
 
-                if (heldGrabbableType == GrabbableType.Tool)
+                if (heldGrabbableType == GrabbableType.SmallObject)
+                {
+                    // Two-handed grab for SmallObject — both hands hold with FixedJoint
+                    leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
+                    rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+                }
+                else if (heldGrabbableType == GrabbableType.Tool)
                 {
                     // One-handed grab — only right hand holds
-                    rightHandJoint = SetupGrabJoint(rightHandRb, closest);
+                    rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
                     leftHandJoint = null;
                 }
                 else
                 {
                     // Two-handed grab
-                    leftHandJoint = SetupGrabJoint(leftHandRb, closest);
-                    rightHandJoint = SetupGrabJoint(rightHandRb, closest);
+                    leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
+                    rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
                 }
                 SetState(CharacterState.Grabbing);
             }
         }
-
-        private ConfigurableJoint SetupGrabJoint(Rigidbody handBody, GrabbableObject obj)
+        
+        private Joint SetupGrabJoint(Rigidbody handBody, GrabbableObject obj, bool isLeftHand)
         {
             heldObject = obj;
             obj.GrabByPlayer(this);
 
-            // Create the grab joint on the hand bone.
-            ConfigurableJoint grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
-            grabJoint.connectedBody = heldObject.Rigidbody;
-
-            // autoConfigureConnectedAnchor = true lets Unity auto-calculate the object anchor so it sticks to the hand naturally.
-            grabJoint.autoConfigureConnectedAnchor = true;
-            grabJoint.anchor = Vector3.zero;
-
-            // Lock linear motion — object sticks to hand.
-            grabJoint.xMotion = ConfigurableJointMotion.Locked;
-            grabJoint.yMotion = ConfigurableJointMotion.Locked;
-            grabJoint.zMotion = ConfigurableJointMotion.Locked;
-
-            // Lock angular — so object doesn't randomly rotate while getting grabbed.
-            grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
-            grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
-            grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
-
-            // Set the limit distance to 0 so it snaps tight to the Target Position
-            SoftJointLimit limit = new SoftJointLimit();
-            limit.limit = 0.01f;
-            grabJoint.linearLimit = limit;
-
-            // Position spring-damper to hold object against gravity.
-            JointDrive drive = new JointDrive
+            // For SmallObject: use ConfigurableJoint with very high position spring to hold object at front
+            if (heldGrabbableType == GrabbableType.SmallObject)
             {
-                positionSpring = 15000f,
-                positionDamper = 15000f,
-                maximumForce = 15000f
-            };
-            grabJoint.xDrive = drive;
-            grabJoint.yDrive = drive;
-            grabJoint.zDrive = drive;
+                // Create ConfigurableJoint on the hand
+                ConfigurableJoint configJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
+                configJoint.connectedBody = heldObject.Rigidbody;
+                configJoint.anchor = Vector3.zero;
 
-            grabJoint.breakForce = 1500f;
-            grabJoint.breakTorque = 1500f;
-            grabJoint.enablePreprocessing = false;
+                // connectedAnchor is in object local space — place ahead of character
+                Vector3 targetPos = coreRigidbody.position + coreRigidbody.transform.forward * smallObjectHoldOffset;
+                configJoint.autoConfigureConnectedAnchor = false;
+                configJoint.connectedAnchor = heldObject.Rigidbody.transform.InverseTransformPoint(targetPos);
 
-            // Ignore collisions between the hand and the held object.
-            Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
+                // Lock angular so object doesn't rotate independently
+                configJoint.angularXMotion = ConfigurableJointMotion.Locked;
+                configJoint.angularYMotion = ConfigurableJointMotion.Locked;
+                configJoint.angularZMotion = ConfigurableJointMotion.Locked;
 
-            if (balancer != null)
-                balancer.weight *= 0.5f;
+                // Lock linear to hold position (will be driven by spring below)
+                configJoint.xMotion = ConfigurableJointMotion.Locked;
+                configJoint.yMotion = ConfigurableJointMotion.Locked;
+                configJoint.zMotion = ConfigurableJointMotion.Locked;
 
-            return grabJoint;
+                // Very high position spring to minimize snap-to-hand while allowing physics
+                JointDrive drive = new JointDrive
+                {
+                    positionSpring = 50000f,
+                    positionDamper = 500f,
+                    maximumForce = float.MaxValue
+                };
+                configJoint.xDrive = drive;
+                configJoint.yDrive = drive;
+                configJoint.zDrive = drive;
+
+                configJoint.breakForce = float.MaxValue;
+                configJoint.breakTorque = float.MaxValue;
+                configJoint.enablePreprocessing = false;
+                Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
+                if (balancer != null)
+                    balancer.weight *= 0.5f;
+
+                return configJoint;
+            }
+            else
+            {
+                // LargeObject: ConfigurableJoint with spring-damper
+                ConfigurableJoint grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
+                grabJoint.connectedBody = heldObject.Rigidbody;
+                grabJoint.autoConfigureConnectedAnchor = true;
+                grabJoint.anchor = Vector3.zero;
+
+                grabJoint.xMotion = ConfigurableJointMotion.Locked;
+                grabJoint.yMotion = ConfigurableJointMotion.Locked;
+                grabJoint.zMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
+
+                JointDrive drive = new JointDrive
+                {
+                    positionSpring = 15000f,
+                    positionDamper = 15000f,
+                    maximumForce = 15000f
+                };
+                grabJoint.xDrive = drive;
+                grabJoint.yDrive = drive;
+                grabJoint.zDrive = drive;
+                grabJoint.breakForce = 1500f;
+                grabJoint.breakTorque = 1500f;
+                grabJoint.enablePreprocessing = false;
+                Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
+                if (balancer != null)
+                    balancer.weight *= 0.5f;
+
+                return grabJoint;
+            }
         }
 
         private void ReleaseObject()
@@ -1042,6 +1094,17 @@ namespace RabbleHouse
                 Vector3 feet = (coreRigidbody != null ? coreRigidbody.position : transform.position) - Vector3.up * hipHeight;
                 Debug.DrawRay(feet, Vector3.down * groundCheckDistance, Color.green);
             }
+
+            if (coreRigidbody == null) return;
+            Gizmos.color = Color.green;
+            Matrix4x4 oldMatrix = Gizmos.matrix;
+
+            Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
+            Vector3 halfExtents = new Vector3(0.1f, 0.5f, grabRange * 0.5f);
+
+            Gizmos.matrix = Matrix4x4.TRS(origin, coreRigidbody.rotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, halfExtents * 2f); // DrawCube needs full size
+            Gizmos.matrix = oldMatrix;
         }
     }
 }
