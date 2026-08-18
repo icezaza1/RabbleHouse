@@ -20,18 +20,7 @@ public class ActiveRagdollMaster : MonoBehaviour
 
     void Update()
     {
-        // Example: Press Spacebar to toggle between Active and Limp states, this is for debugging purpose
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            if (isFullRagdoll)
-            {
-                EnableActiveRagdoll();
-            }
-            else
-            {
-                EnableFullRagdoll();
-            }
-        }
+
     }
 
     public void EnableFullRagdoll()

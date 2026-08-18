@@ -23,7 +23,7 @@ namespace RabbleHouse
         }
 
         public CharacterState CurrentState => currentState;
-        public bool IsHoldingObject => heldObject != null;
+        public bool IsHoldingObject => heldObject != null ? true : false;
         public bool IsGrounded => isGrounded;
         public bool SprintPressed => sprintPressed;
         public int PlayerIndex { get; set; } = 0;
@@ -352,7 +352,7 @@ namespace RabbleHouse
             float highestSpeed = forwardSpeed > rightSpeed ? forwardSpeed : rightSpeed;
             if (highestSpeed > 0.1f)
             {
-                coreRigidbody.AddForce(Vector3.up * highestSpeed * (isSprinting ? 3.5f : 4f), ForceMode.Impulse);
+                coreRigidbody.AddForce(Vector3.up * highestSpeed * (isSprinting ? 3.5f : 4.5f), ForceMode.Impulse);
             }
         }
 

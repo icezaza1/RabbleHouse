@@ -20,6 +20,7 @@ namespace RabbleHouse
         [Header("Detection")]
         [SerializeField] private float chaseRange = 15f;
         [SerializeField] private float grabRange = 2.5f;
+        [SerializeField] private float grabSearchRadius = 5f; // wider search for retreat-to-grab
         [SerializeField] private float attackRange = 2f;
 
         [Header("Timing")]
@@ -34,15 +35,49 @@ namespace RabbleHouse
         [Header("Intercept")]
         [SerializeField] private float moveSpeed = 5f; // predicted speed for intercept calculation
 
+        [Header("Personality / Variance")]
+        [SerializeField] private float dodgeChance = 0.2f;
+        [SerializeField] private float circleChance = 0.15f;
+        [SerializeField] private float retreatChance = 0.1f;
+        [SerializeField] private float feintChance = 0.1f;
+        [SerializeField] private float minAttackInterval = 0.8f;
+        [SerializeField] private float maxAttackInterval = 2.5f;
+
+        [Header("Unarmed vs Armed Behaviors")]
+        [SerializeField] private float baitChance = 0.2f;          // sprint in, sprint out when target swings
+        [SerializeField] private float backingUpChance = 0.25f;    // maintain distance from armed target
+        [SerializeField] private float chargeChance = 0.15f;       // sprint in with heavy punch
+        [SerializeField] private float baitDistance = 3f;          // distance to approach when baiting
+        [SerializeField] private float safeDistance = 4f;          // preferred distance from armed target
+        [SerializeField] private float minThrowHoldTime = 2f;      // randomized throw timing
+        [SerializeField] private float maxThrowHoldTime = 5f;
+
+        // Internal personality state
+        private float nextAttackTime;
+        private bool isDodging = false;
+        private bool isCircling = false;
+        private float circleDirection = 1f;
+        private float dodgeEndTime;
+        private float circleEndTime;
+        private float objectGrabTime = -1f;
+        private bool isBaiting = false;
+        private float baitEndTime;
+        private bool isBackingUp = false;
+        [SerializeField] private float chargeDuration = 1.5f; // max time to charge before giving up
+        private float randomThrowHoldTime;
+        private bool isCharging = false;
+        private float chargeEndTime;
+        private float backUpEndTime;
+
         // --- AI STATE ---
-        private enum AIBehavior { Idle, Chase, Grab, Attack, Retreat }
+        private enum AIBehavior { Idle, Chase, Grab, Attack, Retreat, Throw, Charge }
         private AIBehavior currentBehavior = AIBehavior.Idle;
         private float nextDecisionTime;
         private float nextGrabTime;
-        private float nextAttackTime;
         private Transform targetPlayer;
         private Rigidbody targetRb;
         private PhysicCharacterController.CharacterState currentState = PhysicCharacterController.CharacterState.Idle;
+        private GrabbableObject nearestGrabbableStatic;
 
         // Cached references
         private Rigidbody coreRb;
@@ -84,6 +119,7 @@ namespace RabbleHouse
             // Periodic decision-making
             if (Time.time >= nextDecisionTime)
             {
+                SprintPressed = false;
                 nextDecisionTime = Time.time + decisionInterval;
                 MakeDecision();
             }
@@ -95,39 +131,112 @@ namespace RabbleHouse
         private void MakeDecision()
         {
             targetPlayer = FindNearestPlayer();
-            GrabbableObject nearestGrabbable = FindNearestGrabbable();
+            nearestGrabbableStatic = FindNearestGrabbable();
             bool isHolding = controller != null && controller.IsHoldingObject;
             float distToTarget = targetPlayer != null ? Vector3.Distance(coreRb.position, targetPlayer.position) : float.MaxValue;
 
+            // Track object grab time and randomize throw timing (only when holding)
+            if (isHolding && objectGrabTime < 0f)
+            {
+                objectGrabTime = Time.time;
+                randomThrowHoldTime = Random.Range(minThrowHoldTime, maxThrowHoldTime);
+            }
+
             if (isHolding)
             {
-                // Holding an object — throw when target is FAR, swing when CLOSE
-                if (targetPlayer != null)
+                // Holding an object — make armed-target decisions
+                bool targetIsArmed = targetPlayer != null && IsTargetArmed(targetPlayer);
+                float timeHeld = Time.time - objectGrabTime;
+
+                if (targetIsArmed)
                 {
-                    if (distToTarget < attackRange)
-                        currentBehavior = AIBehavior.Attack; // Swing (LightAttack) at close range
+                    // Target is armed — decide between bait/charge/throw based on chance and distance
+                    int roll = Random.Range(0, 100);
+
+                    if (distToTarget > attackRange)
+                    {
+                        // Far — decide between charge or retreat-to-grab
+                        if (roll < chargeChance * 100)
+                        {
+                            currentBehavior = AIBehavior.Charge; // Sprint in with heavy punch
+                        }
+                        else
+                        {
+                            // Throw the held object at the armed target
+                            if ((Time.time - objectGrabTime) > randomThrowHoldTime)
+                            {
+                                currentBehavior = AIBehavior.Throw;
+                            }
+                            else
+                            {
+                                currentBehavior = AIBehavior.Chase; // Close with swing, then throw
+                            }
+                        }
+                    }
                     else
-                        currentBehavior = AIBehavior.Chase;  // Chase to get closer, then throw
+                    {
+                        // Close range against armed target — back off or throw
+                        if (roll < backingUpChance * 100)
+                        {
+                            currentBehavior = AIBehavior.Retreat;
+                        }
+                        else if ((Time.time - objectGrabTime) > randomThrowHoldTime)
+                        {
+                            currentBehavior = AIBehavior.Throw; // Throw when close enough
+                        }
+                        else
+                        {
+                            currentBehavior = AIBehavior.Attack; // Swing at close range
+                        }
+                    }
                 }
                 else
-                    currentBehavior = AIBehavior.Idle;
+                {
+                    // Target is unarmed — standard armed AI behavior
+                    if (distToTarget < attackRange)
+                    {
+                        if (timeHeld > randomThrowHoldTime)
+                            currentBehavior = AIBehavior.Throw;
+                        else
+                            currentBehavior = AIBehavior.Attack; // Swing at close range
+                    }
+                    else
+                    {
+                        if (distToTarget > attackRange * 3f)
+                            currentBehavior = AIBehavior.Chase; // Far — chase
+                        else
+                        {
+                            if (timeHeld > randomThrowHoldTime)
+                                currentBehavior = AIBehavior.Throw;
+                            else
+                                currentBehavior = AIBehavior.Chase; // Use swing to close distance
+                        }
+                    }
+                }
             }
             else
             {
-                // Not holding — PRIORITIZE GRABBING OBJECT
-                // Only fight unarmed if target is VERY close (within 1.5f)
-                if (nearestGrabbable != null && distToTarget > 1.5f)
+                // Reset object grab time when not holding
+                objectGrabTime = -1f;
+
+                bool targetIsArmed = targetPlayer != null && IsTargetArmed(targetPlayer);
+                if (targetIsArmed)
                 {
+                    // ---- UNARMED AI vs ARMED TARGET ----
+                    // This is where bait/charge/backing-up logic should go
+                    // The actual behavior selection happens in HandleUnarmedCombat()
+                    // which has the proper chance-based decision logic
+                    currentBehavior = AIBehavior.Attack; // HandleUnarmedCombat decides sub-behavior
+                    return;
+                }
+
+                // Not holding — prioritize grabbing objects
+                if (nearestGrabbableStatic != null && distToTarget > 1.5f)
                     currentBehavior = AIBehavior.Grab;
-                }
                 else if (targetPlayer != null && distToTarget <= 1.5f)
-                {
-                    currentBehavior = AIBehavior.Attack; // Unarmed fight only when REALLY close
-                }
+                    currentBehavior = AIBehavior.Attack; // Only fight unarmed if really close
                 else if (targetPlayer != null)
-                {
                     currentBehavior = AIBehavior.Chase;
-                }
                 else
                     currentBehavior = AIBehavior.Idle;
             }
@@ -143,7 +252,24 @@ namespace RabbleHouse
 
                 case AIBehavior.Chase:
                     if (targetPlayer != null)
-                        MoveToward(InterceptPosition(targetPlayer));
+                    {
+                        float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
+                        bool targetIsArmed = IsTargetArmed(targetPlayer);
+
+                        // Unarmed AI vs armed target — back away, don't chase
+                        if (!controller.IsHoldingObject && targetIsArmed && distToTarget < safeDistance)
+                        {
+                            Vector3 awayFromTarget = (coreRb.position - targetPlayer.position).normalized;
+                            awayFromTarget.y = 0;
+                            MoveInput = new Vector2(awayFromTarget.x, awayFromTarget.z).normalized;
+                        }
+                        else
+                        {
+                            if (distToTarget > 2.5f)
+                                SprintPressed = true;
+                            MoveToward(InterceptPosition(targetPlayer));
+                        }
+                    }
                     else
                         MoveInput = Vector2.zero;
                     break;
@@ -152,12 +278,18 @@ namespace RabbleHouse
                     GrabbableObject grabbable = FindNearestGrabbable();
                     if (grabbable != null)
                     {
+                        float distToGrabbable = Vector3.Distance(coreRb.position, grabbable.transform.position);
+                        if (distToGrabbable > 1f)
+                            SprintPressed = true;
                         MoveToward(grabbable.transform.position);
-                        if (Time.time >= nextGrabTime && Vector3.Distance(coreRb.position, grabbable.transform.position) < grabRange)
+                        if (Time.time >= nextGrabTime && distToGrabbable < grabRange)
                         {
                             GrabPressed = true;
                             nextGrabTime = Time.time + grabCooldown;
-                            currentBehavior = AIBehavior.Chase; // After grabbing, chase nearest player
+                            objectGrabTime = Time.time;
+                            randomThrowHoldTime = Random.Range(minThrowHoldTime, maxThrowHoldTime);
+                            // Force transition to Chase — don't wait for MakeDecision to catch up
+                            currentBehavior = AIBehavior.Chase;
                         }
                     }
                     else
@@ -166,50 +298,52 @@ namespace RabbleHouse
                     }
                     break;
 
+                case AIBehavior.Charge:
+                    SprintPressed = true;
+                    MoveToward(targetPlayer.position);
+                    if (Vector3.Distance(transform.position, targetPlayer.position) <= attackRange)
+                    {
+                        HeavyAttackPressed = true;
+                    }
+                    break;
+
                 case AIBehavior.Attack:
                     if (targetPlayer != null)
                     {
-                        float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
-
-                        if (controller != null && controller.IsHoldingObject)
+                        if (controller == null || !controller.IsHoldingObject)
                         {
-                            // Holding object: THROW when far, SWING when close
-                            if (distToTarget > attackRange)
-                            {
-                                // Move to intercept and throw
-                                MoveToward(InterceptPosition(targetPlayer));
-                                if (Time.time >= nextAttackTime)
-                                {
-                                    HeavyAttackPressed = true; // Throw
-                                    nextAttackTime = Time.time + attackCooldown;
-                                }
-                            }
-                            else
+                            // Unarmed — fight with personality
+                            float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
+                            HandleUnarmedCombat(targetPlayer, distToTarget);
+                        }
+                        else
+                        {
+                            // Holding object — swing when close, throw when too long
+                            float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
+                            if (distToTarget < attackRange)
                             {
                                 MoveInput = Vector2.zero;
                                 if (Time.time >= nextAttackTime)
                                 {
                                     LightAttackPressed = true; // Swing
-                                    nextAttackTime = Time.time + attackCooldown;
+                                    nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
                                 }
                             }
-                        }
-                        else
-                        {
-                            // Unarmed fight
-                            if (distToTarget > attackRange)
-                                MoveToward(InterceptPosition(targetPlayer));
-                            else
+                            else if ((Time.time - objectGrabTime) > randomThrowHoldTime)
                             {
+                                // Close but held too long, or far — throw it
                                 MoveInput = Vector2.zero;
                                 if (Time.time >= nextAttackTime)
                                 {
-                                    if (Random.value < 0.6f)
-                                        LightAttackPressed = true;
-                                    else
-                                        HeavyAttackPressed = true;
+                                    HeavyAttackPressed = true; // Throw
                                     nextAttackTime = Time.time + attackCooldown;
+                                    objectGrabTime = -1f;
                                 }
+                            }
+                            else
+                            {
+                                // Target is far — chase to get in range
+                                MoveToward(targetPlayer.position);
                             }
                         }
                     }
@@ -220,7 +354,6 @@ namespace RabbleHouse
                     break;
 
                 case AIBehavior.Retreat:
-                    // Move away from nearest threat
                     Transform threat = FindNearestPlayer();
                     if (threat != null)
                     {
@@ -228,13 +361,29 @@ namespace RabbleHouse
                         MoveInput = new Vector2(awayDir.x, awayDir.z).normalized;
                     }
                     else
-                    {
                         currentBehavior = AIBehavior.Idle;
+                    break;
+
+                case AIBehavior.Throw:
+                    if (targetPlayer != null)
+                    {
+                        MoveInput = Vector2.zero;
+                        if (Time.time >= nextAttackTime)
+                        {
+                            HeavyAttackPressed = true;
+                            nextAttackTime = Time.time + attackCooldown;
+                            objectGrabTime = -1f;
+                        }
                     }
+                    else
+                        currentBehavior = AIBehavior.Idle;
                     break;
             }
         }
 
+        // -----------------------------------------------------------------------
+        //  MOVEMENT HELPERS
+        // -----------------------------------------------------------------------
         private void MoveToward(Vector3 targetPos)
         {
             if (coreRb == null) return;
@@ -262,49 +411,27 @@ namespace RabbleHouse
                 float highestSpeed = forwardSpeed > rightSpeed ? forwardSpeed : rightSpeed;
                 if (highestSpeed > 0.1f)
                 {
-                    coreRb.AddForce(Vector3.up * highestSpeed * (controller.SprintPressed ? 0.175f : 0.2f), ForceMode.Impulse);
+                    coreRb.AddForce(Vector3.up * highestSpeed * (controller.SprintPressed ? 0.1f : 0.23f), ForceMode.Impulse);
                 }
             }
         }
 
+
         /// <summary>
-        /// Predict where the target will be by the time we reach them, based on their current velocity.
-        /// Simple linear intercept: targetPos + targetVelocity * (distance / aiSpeed)
+        /// Find nearest player within chase range
         /// </summary>
-        private Vector3 InterceptPosition(Transform target)
-        {
-            if (target == null) return coreRb.position;
-
-            Rigidbody targetRb = target.GetComponent<Rigidbody>();
-            if (targetRb == null) return target.position;
-
-            Vector3 toTarget = target.position - coreRb.position;
-            toTarget.y = 0;
-            float distance = toTarget.magnitude;
-
-            // Predict time to reach target (based on AI speed and distance)
-            float eta = distance / moveSpeed;
-            eta = Mathf.Clamp(eta, 0.1f, 5f);
-
-            // Predict target's future position based on their velocity
-            Vector3 predictedPos = target.position + targetRb.linearVelocity * eta;
-            return predictedPos;
-        }
-
         private Transform FindNearestPlayer()
         {
             if (coreRb == null) return null;
 
-            PhysicCharacterController[] allControllers = FindObjectsByType<PhysicCharacterController>(FindObjectsSortMode.None);
+            PhysicCharacterController[] allControllers = FindObjectsByType<PhysicCharacterController>();
             Transform nearest = null;
             float nearestDist = chaseRange;
 
             foreach (var ctrl in allControllers)
             {
-                // Skip self
                 if (ctrl == controller) continue;
 
-                // Skip dead characters
                 var health = ctrl.GetComponent<PlayerHealth>();
                 if (health != null && health.CurrentHealth <= 0) continue;
 
@@ -315,6 +442,8 @@ namespace RabbleHouse
                 if (dist < nearestDist)
                 {
                     nearestDist = dist;
+                    // Return the Hips bone (core rigidbody) for correct position/movement targeting.
+                    // IsTargetArmed uses GetComponentInParent<> so it still finds the controller on the root.
                     nearest = otherRb.transform;
                 }
             }
@@ -322,16 +451,16 @@ namespace RabbleHouse
             return nearest;
         }
 
+        /// <summary>
+        /// Find nearest grabbable object in a wider radius around the AI
+        /// Uses sphere overlap for 360-degree detection (not just in front)
+        /// </summary>
         private GrabbableObject FindNearestGrabbable()
         {
             if (coreRb == null) return null;
 
-            Collider[] hits = Physics.OverlapBox(
-                coreRb.position + coreRb.transform.forward * grabRange,
-                new Vector3(0.5f, 0.5f, grabRange),
-                coreRb.rotation,
-                LayerMask.GetMask("Grabbable")
-            );
+            // Use sphere around the AI for wider detection — not just in front
+            Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up * 1f, grabSearchRadius, LayerMask.GetMask("Grabbable"));
 
             GrabbableObject nearest = null;
             float nearestDist = float.MaxValue;
@@ -351,6 +480,301 @@ namespace RabbleHouse
             }
 
             return nearest;
+        }
+
+        /// <summary>
+        /// Check if target is holding a grabbable object (armed)
+        /// </summary>
+        private bool IsTargetArmed(Transform target)
+        {
+            if (target == null) return false;
+            // The target passed in may be a child bone (e.g. Hips). Climb to the
+            // root GameObject where PhysicCharacterController actually lives.
+            var targetController = target.GetComponentInParent<PhysicCharacterController>();
+            if (targetController == null)
+            {
+                return false;
+            }
+            return targetController.IsHoldingObject;
+        }
+
+        /// <summary>
+        /// Predict where the target will be by the time we reach them, based on their current velocity.
+        /// Simple linear intercept: targetPos + targetVelocity * (distance / aiSpeed)
+        /// </summary>
+        private Vector3 InterceptPosition(Transform target)
+        {
+            if (target == null) return coreRb.position;
+            // targetPlayer may now be the root GameObject (so we can find
+            // PhysicCharacterController).  Get the rigidbody from the controller
+            // directly if the root itself doesn't carry one.
+            Rigidbody targetRb = target.GetComponent<Rigidbody>();
+            if (targetRb == null)
+            {
+                var pc = target.GetComponent<PhysicCharacterController>();
+                if (pc != null) targetRb = pc.CoreRigidbody;
+            }
+            if (targetRb == null) return target.position;
+
+            Vector3 rootPos = target.position;
+            Vector3 toTarget = rootPos - coreRb.position;
+            toTarget.y = 0;
+            float distance = toTarget.magnitude;
+
+            float eta = distance / moveSpeed;
+            eta = Mathf.Clamp(eta, 0.1f, 5f);
+
+            Vector3 predictedPos = rootPos + targetRb.linearVelocity * eta;
+            return predictedPos;
+        }
+
+        /// <summary>
+        /// Given a desired retreat direction, check if it hits a wall.
+        /// If clear, return it as-is. If blocked, try sliding left/right
+        /// along the wall. If both sides are blocked, return zero (stop).
+        /// </summary>
+        private Vector2 GetSafeRetreatDirection(Vector3 desiredDir)
+        {
+            float checkDist = 2f;
+            int wallMask = LayerMask.GetMask("Default", "Wall", "Environment");
+
+            // Try the desired direction first
+            if (!Physics.Raycast(coreRb.position + Vector3.up * 0.5f, desiredDir, checkDist, wallMask))
+            {
+                return new Vector2(desiredDir.x, desiredDir.z);
+            }
+
+            // Blocked — try perpendicular slide (left then right)
+            Vector3 leftDir = Vector3.Cross(desiredDir, Vector3.up);  // perpendicular left
+            Vector3 rightDir = -leftDir;                                // perpendicular right
+
+            if (!Physics.Raycast(coreRb.position + Vector3.up * 0.5f, leftDir, checkDist, wallMask))
+            {
+                return new Vector2(leftDir.x, leftDir.z);
+            }
+            if (!Physics.Raycast(coreRb.position + Vector3.up * 0.5f, rightDir, checkDist, wallMask))
+            {
+                return new Vector2(rightDir.x, rightDir.z);
+            }
+
+            // Completely boxed in — stop
+            return Vector2.zero;
+        }
+
+        /// <summary>
+        /// Combat logic executed when the AI is unarmed.
+        /// ARMED TARGET  -> only Bait / Back-Up / Charge can run (never punch/dodge/circle).
+        /// UNARMED TARGET -> full personality (dodge, circle, retreat, punch).
+        /// </summary>
+        private void HandleUnarmedCombat(Transform target, float distToTarget)
+        {
+            if (controller == null || target == null) return;
+
+            bool targetIsArmed = IsTargetArmed(target);
+
+            // ===================================================================
+            //  ARMED TARGET — ONLY these three behaviors are allowed.
+            // ===================================================================
+            if (targetIsArmed)
+            {
+                // --- Currently in an active armed-target sub-state? ----------
+                // (These states persist across frames so the AI commits to one
+                //  behaviour instead of re-rolling every frame.)
+
+                // 1) BAIT: sprint in until within baitDistance, then step away
+                if (isBaiting && Time.time < baitEndTime)
+                {
+                    // Phase A: close distance to baitDistance — sprint toward target
+                    SprintPressed = true;
+                    MoveToward(target.position);
+                    // Transition to Phase B once we are close enough to bait
+                    if (distToTarget <= baitDistance)
+                    {
+                        baitEndTime = Time.time; // force Phase B next frame
+                    }
+                    return;
+                }
+                if (isBaiting && Time.time >= baitEndTime)
+                {
+                    // Phase B: step away briefly after reaching bait distance
+                    isBaiting = false;
+                    Vector3 awayDir = (coreRb.position - target.position).normalized;
+                    awayDir.y = 0;
+                    // Wall-aware retreat: if backing into a wall, slide along it
+                    MoveInput = GetSafeRetreatDirection(awayDir);
+                    SprintPressed = false;
+                    // High chance to immediately follow up with a charge
+                    if (Random.value < 0.7f)
+                    {
+                        isCharging = true;
+                        chargeEndTime = Time.time + chargeDuration;
+                    }
+                    return;
+                }
+
+                // 2) CHARGE: sprint in and heavy punch when in range
+                if (isCharging && Time.time < chargeEndTime)
+                {
+                    SprintPressed = true;
+                    MoveToward(target.position);
+                    if (distToTarget < attackRange && Time.time >= nextAttackTime)
+                    {
+                        HeavyAttackPressed = true;
+                        nextAttackTime = Time.time + attackCooldown;
+                    }
+                    return;
+                }
+                isCharging = false;
+
+                // 3) BACK-UP: keep safeDistance, occasionally seek a grab/other target
+                if (isBackingUp && Time.time < backUpEndTime)
+                {
+                    if (distToTarget < safeDistance)
+                    {
+                        Vector3 awayDir = (coreRb.position - target.position).normalized;
+                        awayDir.y = 0;
+                        // Wall-aware retreat: slide along the wall instead of pushing into it
+                        MoveInput = GetSafeRetreatDirection(awayDir);
+                    }
+                    else
+                    {
+                        MoveInput = Vector2.zero;
+                    }
+                    SprintPressed = false;
+                    return;
+                }
+                isBackingUp = false;
+
+                // --- No active sub-state: pick one based on chances ----------
+                float roll = Random.value;
+                float cumulative = 0f;
+
+                cumulative += baitChance;
+                if (roll < cumulative)
+                {
+                    isBaiting = true;
+                    // Phase A ends either when close enough (baitDistance) or after this max time
+                    baitEndTime = Time.time + 1.5f;
+                    return;
+                }
+
+                cumulative += backingUpChance;
+                if (roll < cumulative)
+                {
+                    isBackingUp = true;
+                    backUpEndTime = Time.time + Random.Range(0.8f, 1.8f);
+                    // Chance to look for a nearby object or new unarmed target
+                    if (Random.value < 0.5f)
+                    {
+                        GrabbableObject nearby = FindNearestGrabbable();
+                        if (nearby != null)
+                        {
+                            currentBehavior = AIBehavior.Grab;
+                            return;
+                        }
+                    }
+                    return;
+                }
+
+                cumulative += chargeChance;
+                if (roll < cumulative)
+                {
+                    isCharging = true;
+                    chargeEndTime = Time.time + chargeDuration;
+                    return;
+                }
+
+                // Default fallback: back up
+                isBackingUp = true;
+                backUpEndTime = Time.time + Random.Range(0.8f, 1.8f);
+                return;
+            }
+
+            // ===================================================================
+            //  UNARMED TARGET — full combat personality.
+            // ===================================================================
+
+            // Currently dodging
+            if (isDodging && Time.time < dodgeEndTime)
+            {
+                Vector3 awayFromTarget = (coreRb.position - target.position).normalized;
+                awayFromTarget.y = 0;
+                MoveInput = new Vector2(awayFromTarget.x, awayFromTarget.z).normalized;
+                return;
+            }
+            isDodging = false;
+
+            // Currently circling
+            if (isCircling && Time.time < circleEndTime)
+            {
+                Vector3 toTarget = (target.position - coreRb.position).normalized;
+                Vector3 perp = Vector3.Cross(toTarget, Vector3.up) * circleDirection;
+                MoveInput = new Vector2(perp.x, perp.z).normalized;
+
+                // Wall collision during circling -> reverse direction
+                if (Physics.Raycast(coreRb.position, perp.normalized, 1.5f, LayerMask.GetMask("Default", "Wall", "Environment")))
+                {
+                    circleDirection *= -1f;
+                }
+                return;
+            }
+            isCircling = false;
+
+            // In combat range — decide action
+            MoveInput = Vector2.zero;
+            SprintPressed = false;
+
+            // Retreat?
+            if (Random.value < retreatChance)
+            {
+                GrabbableObject nearbyObject = FindNearestGrabbable();
+                if (nearbyObject != null)
+                    currentBehavior = AIBehavior.Grab;
+                else
+                    currentBehavior = AIBehavior.Retreat;
+                return;
+            }
+
+            // Dodge?
+            if (Random.value < dodgeChance)
+            {
+                isDodging = true;
+                dodgeEndTime = Time.time + Random.Range(0.3f, 0.6f);
+                return;
+            }
+
+            // Circle?
+            if (Random.value < circleChance)
+            {
+                isCircling = true;
+                circleDirection = Random.value > 0.5f ? 1f : -1f;
+                circleEndTime = Time.time + Random.Range(1f, 2.5f);
+                return;
+            }
+
+            // Attack (light combo / heavy / feint)
+            if (Time.time >= nextAttackTime)
+            {
+                if (Random.value < 0.6f)
+                {
+                    LightAttackPressed = true;
+                    nextAttackTime = Time.time + Random.Range(0.2f, 0.4f);
+                }
+                else
+                {
+                    if (Random.value < feintChance)
+                    {
+                        HeavyAttackPressed = true;
+                        isDodging = true;
+                        dodgeEndTime = Time.time + 0.2f;
+                    }
+                    else
+                    {
+                        HeavyAttackPressed = true;
+                        nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
+                    }
+                }
+            }
         }
     }
 }
