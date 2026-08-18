@@ -17,6 +17,7 @@ namespace RabbleHouse
             Moving,
             Stunned,
             Ragdoll,
+            Dead,
             Grabbing,
             Throwing,
             Punching
@@ -28,6 +29,8 @@ namespace RabbleHouse
         public bool SprintPressed => sprintPressed;
         public int PlayerIndex { get; set; } = 0;
         public Rigidbody CoreRigidbody => coreRigidbody;
+        public float StunDuration => stunDuration;
+        public float KnockdownDuration => knockdownDuration;
 
         // --- COMPONENTS ---
         private Rigidbody coreRigidbody;
@@ -145,10 +148,15 @@ namespace RabbleHouse
         [SerializeField] private float punchForce = 15f;
         [SerializeField] private float punchRange = 1f;
         [SerializeField] private int punchDamage = 10;
+        [SerializeField] private int heavyPunchDamage = 20;
+        [Tooltip("Chance a heavy punch stuns (vs knockdown). Mirrors a critical hit.")]
+        [SerializeField] private float heavyPunchStunChance = 0.4f;
 
         [Header("Stun/Recovery")]
         [SerializeField] private float stunDuration = 2f;
         [SerializeField] private float knockdownDuration = 1.2f;
+        [Tooltip("Impulse applied to the core body when knocked down / hit by a swung object.")]
+        [SerializeField] private float knockbackForce = 8f;
 
         // --- LIFECYCLE ---
         private void Awake()
@@ -205,6 +213,10 @@ namespace RabbleHouse
 
         private void LateUpdate()
         {
+            // Dead characters do nothing — no movement, no attacks
+            if (currentState == CharacterState.Dead)
+                return;
+
             // While holding an object, override both hand joints' targetRotation
             // so the arms raise.  LateUpdate runs after FixedUpdate, so our
             // value wins over ActiveRagdollBone's per-frame write.
@@ -303,6 +315,9 @@ namespace RabbleHouse
         private void UpdateState()
         {
             if (currentState == CharacterState.Stunned || currentState == CharacterState.Ragdoll)
+                return;
+
+            if (currentState == CharacterState.Dead)
                 return;
 
             if (heldObject != null)
@@ -708,11 +723,22 @@ namespace RabbleHouse
             // Rotate windup to swing
             elapsed = 0f;
             total = heavyTravelTime / 2;
+            bool swingHitDone = false;
             while (elapsed < total)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
+
+                // Swing impact lands at ~50% of the swing arc
+                if (!swingHitDone && t >= 0.5f)
+                {
+                    // Use held object's damage if available, otherwise default punch damage
+                    int objDamage = heldObject != null ? heldObject.SwingDamage : punchDamage;
+                    float objStunChance = heldObject != null ? heldObject.SwingStunChance : -1f;
+                    CheckHit(objDamage, punchForce, objStunChance, true);
+                    swingHitDone = true;
+                }
                 yield return null;
             }
             // Phase 2: Hold briefly
@@ -766,6 +792,15 @@ namespace RabbleHouse
 
             // Mark the punch as active (used elsewhere)
             lightPunchActive = true;
+
+            // Deal damage if a target is in range — called once per punch
+            CheckLightPunchHit();
+        }
+
+        /// <summary>Light punch damage check — small damage, no stun.</summary>
+        private void CheckLightPunchHit()
+        {
+            CheckHit(punchDamage, punchForce, -1f, false);
         }
 
         private void PerformPunch(bool isLeft)
@@ -871,6 +906,9 @@ namespace RabbleHouse
         {
             if (heldObject == null) return;
 
+            // Tell the object who threw it (for self-damage prevention)
+            heldObject.SetThrower(this);
+
             // Release grab joints
             if (leftHandJoint != null) Destroy(leftHandJoint);
             if (rightHandJoint != null) Destroy(rightHandJoint);
@@ -935,8 +973,9 @@ namespace RabbleHouse
                 yield return null;
             }
 
-            // Phase 2: Hip hooks to opposite side, arm stays extended (hold)
+            // Phase 2: Hip hooks to opposite side, arm stays extended (hold) — THIS IS IMPACT
             elapsed = 0f;
+            bool heavyHitDone = false;
             while (elapsed < heavyHoldTime)
             {
                 elapsed += Time.deltaTime;
@@ -944,6 +983,13 @@ namespace RabbleHouse
                 hipJoint.targetRotation = Quaternion.Lerp(hipWindupRot, hipHookRot, t);
                 upperJoint.targetRotation = Quaternion.Lerp(startUpper, targetUpper, t);
                 lowerJoint.targetRotation = Quaternion.Lerp(startLower, targetLower, t);
+
+                // Heavy hit lands at the very start of the hook phase
+                if (!heavyHitDone && t >= 0.5f)
+                {
+                    CheckHit(heavyPunchDamage, punchForce, heavyPunchStunChance, true);
+                    heavyHitDone = true;
+                }
                 yield return null;
             }
 
@@ -1058,6 +1104,7 @@ namespace RabbleHouse
             yield return new WaitForSeconds(duration);
             ragdollMaster.EnableActiveRagdoll();
             SetState(CharacterState.Idle);
+            if (playerHealth != null) playerHealth.NotifyRecovered();
         }
 
         public void OnKnockdown(float duration)
@@ -1083,6 +1130,61 @@ namespace RabbleHouse
             coreRigidbody.linearVelocity = Vector3.zero;
             coreRigidbody.angularVelocity = Vector3.zero;
             SetState(CharacterState.Idle);
+            if (playerHealth != null) playerHealth.NotifyRecovered();
+        }
+
+        /// <summary>Called by PlayerHealth when health reaches 0 — character is "dead".</summary>
+        public void OnDead()
+        {
+            SetState(CharacterState.Dead);
+            ForceDropObject();
+            ragdollMaster.EnableFullRagdoll();
+        }
+
+        /// <summary>Apply an impulse to the core body (used for knockback / sent-flying).</summary>
+        public void ApplyKnockback(Vector3 direction)
+        {
+            if (coreRigidbody == null) return;
+            Vector3 dir = direction.normalized;
+            dir.y = 0.3f; // slight upward pop
+            coreRigidbody.AddForce(dir.normalized * knockbackForce, ForceMode.Impulse);
+        }
+
+        /// <summary>
+        /// Check for a damageable character within punchRange in front of us and apply damage.
+        /// Uses an OverlapSphere at the core body position, filtering to a forward cone.
+        /// </summary>
+        private void CheckHit(int damage, float force, float stunChanceOverride, bool sendAway)
+        {
+            if (coreRigidbody == null) return;
+
+            Collider[] hits = Physics.OverlapSphere(coreRigidbody.position + Vector3.up * 0.5f, punchRange);
+            Vector3 forward = coreRigidbody.transform.forward;
+
+            foreach (var hit in hits)
+            {
+                var targetHealth = hit.GetComponent<PlayerHealth>();
+                if (targetHealth == null) continue;
+                if (targetHealth.gameObject == this.gameObject) continue; // don't hit self
+
+                // Must be roughly in front of us
+                Vector3 toTarget = (hit.transform.position - coreRigidbody.position).normalized;
+                if (Vector3.Dot(toTarget, forward) < 0.2f) continue;
+
+                Vector3 knockDir = sendAway ? toTarget : Vector3.zero;
+                targetHealth.TakeDamage(damage, knockDir, stunChanceOverride, PlayerIndex);
+
+                if (sendAway)
+                    ApplyKnockbackTo(targetHealth, knockDir);
+                break; // one hit per swing
+            }
+        }
+
+        private void ApplyKnockbackTo(PlayerHealth target, Vector3 direction)
+        {
+            var ctrl = target.GetComponent<PhysicCharacterController>();
+            if (ctrl != null)
+                ctrl.ApplyKnockback(direction);
         }
 
         // --- GIZMOS ---

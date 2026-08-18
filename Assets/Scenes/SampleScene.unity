@@ -274,6 +274,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 0
   hipRotationResistance: 10
+  swingDamage: 15
+  swingStunChance: 0.3
+  throwDamage: 20
+  throwStunChance: 0.7
+  throwMinSpeed: 3
 --- !u!1 &111625743
 GameObject:
   m_ObjectHideFlags: 0
@@ -429,6 +434,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 0
   hipRotationResistance: 10
+  swingDamage: 15
+  swingStunChance: 0.3
+  throwDamage: 20
+  throwStunChance: 0.7
+  throwMinSpeed: 3
 --- !u!1 &123116764
 GameObject:
   m_ObjectHideFlags: 0
@@ -615,6 +625,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 0
   hipRotationResistance: 10
+  swingDamage: 15
+  swingStunChance: 0.3
+  throwDamage: 20
+  throwStunChance: 0.7
+  throwMinSpeed: 3
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1701,6 +1716,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 1
   hipRotationResistance: 10
+  swingDamage: 15
+  swingStunChance: 0.3
+  throwDamage: 20
+  throwStunChance: 0.7
+  throwMinSpeed: 3
 --- !u!1 &1180864534
 GameObject:
   m_ObjectHideFlags: 0
@@ -2249,6 +2269,14 @@ PrefabInstance:
     - target: {fileID: 3179066425933449663, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3476896830541794910, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: heavyPunchDamage
+      value: 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 3476896830541794910, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: heavyPunchStunChance
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
