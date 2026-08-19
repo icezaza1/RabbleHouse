@@ -286,7 +286,7 @@ namespace RabbleHouse
                         }
                         else
                         {
-                            if (distToTarget > 2.5f)
+                            if (distToTarget > 0.5f)
                                 SprintPressed = true;
                             MoveToward(InterceptPosition(targetPlayer));
                         }
@@ -391,6 +391,7 @@ namespace RabbleHouse
                                 Vector3 awayDir = (coreRb.position - threat.position).normalized;
 
                                 // Blend: mostly toward the object, slightly away from threat
+                                SprintPressed = true;
                                 Vector3 blended = (toObj * 0.7f + awayDir * 0.3f).normalized;
                                 Vector2 safeDir = GetSafeRetreatDirection(blended);
                                 MoveInput = safeDir != Vector2.zero ? safeDir : new Vector2(awayDir.x, awayDir.z).normalized;
@@ -454,18 +455,6 @@ namespace RabbleHouse
 
             Vector3 dir = toTarget.normalized;
             MoveInput = new Vector2(dir.x, dir.z).normalized;
-
-            // Lift Body Upward when grounded (mirrors HandleMovement in PhysicCharacterController)
-            if (controller != null && controller.IsGrounded)
-            {
-                float forwardSpeed = Mathf.Abs(Vector3.Dot(coreRb.linearVelocity, transform.forward));
-                float rightSpeed = Mathf.Abs(Vector3.Dot(coreRb.linearVelocity, transform.right));
-                float highestSpeed = forwardSpeed > rightSpeed ? forwardSpeed : rightSpeed;
-                if (highestSpeed > 0.1f)
-                {
-                    coreRb.AddForce(Vector3.up * highestSpeed * (controller.SprintPressed ? 0.08f : 0.23f), ForceMode.Impulse);
-                }
-            }
         }
 
 
@@ -581,15 +570,16 @@ namespace RabbleHouse
         }
 
         /// <summary>
-        /// Predict where the target will be by the time we reach them, based on their current velocity.
-        /// Simple linear intercept: targetPos + targetVelocity * (distance / aiSpeed)
+        /// Predict where the target will be and aim to cut them off.
+        /// Instead of naively extrapolating current velocity (which makes the AI
+        /// orbit alongside a circling player), we bias the aim point toward the
+        /// inside of the player's path so the AI closes the gap across the circle.
         /// </summary>
         private Vector3 InterceptPosition(Transform target)
         {
             if (target == null) return coreRb.position;
-            // targetPlayer may now be the root GameObject (so we can find
-            // PhysicCharacterController).  Get the rigidbody from the controller
-            // directly if the root itself doesn't carry one.
+
+            // Get the target's core rigidbody (may be on a child Hips bone)
             Rigidbody targetRb = target.GetComponent<Rigidbody>();
             if (targetRb == null)
             {
@@ -598,16 +588,26 @@ namespace RabbleHouse
             }
             if (targetRb == null) return target.position;
 
-            Vector3 rootPos = target.position;
-            Vector3 toTarget = rootPos - coreRb.position;
+            Vector3 targetPos = targetRb.position;
+            Vector3 toTarget = targetPos - coreRb.position;
             toTarget.y = 0;
             float distance = toTarget.magnitude;
+            if (distance < 0.001f) return targetPos;
 
-            float eta = distance / moveSpeed;
-            eta = Mathf.Clamp(eta, 0.1f, 5f);
+            // ETA using the AI's actual sprint speed (matches HandleMovement)
+            float aiSpeed = (controller != null && controller.SprintPressed) ? moveSpeed * 1.5f : moveSpeed;
+            float eta = Mathf.Clamp(distance / aiSpeed, 0.1f, 5f);
 
-            Vector3 predictedPos = rootPos + targetRb.linearVelocity * eta;
-            return predictedPos;
+            // Pure velocity extrapolation
+            Vector3 predicted = targetPos + targetRb.linearVelocity * eta;
+            predicted.y = 0f;
+
+            // Bias toward cutting INSIDE the circle: aim at the midpoint between
+            // the target's current position and the extrapolated point. This pulls
+            // the aim inward so the AI doesn't just orbit alongside a circling player.
+            Vector3 aimPoint = Vector3.Lerp(targetPos, predicted, 0.5f);
+
+            return aimPoint;
         }
 
         /// <summary>
@@ -820,6 +820,7 @@ namespace RabbleHouse
             // Dodge?
             if (Random.value < dodgeChance)
             {
+                SprintPressed = true;
                 isDodging = true;
                 dodgeEndTime = Time.time + Random.Range(0.3f, 0.6f);
                 return;
@@ -828,6 +829,7 @@ namespace RabbleHouse
             // Circle?
             if (Random.value < circleChance)
             {
+                SprintPressed = true;
                 isCircling = true;
                 circleDirection = Random.value > 0.5f ? 1f : -1f;
                 circleEndTime = Time.time + Random.Range(1f, 2.5f);
