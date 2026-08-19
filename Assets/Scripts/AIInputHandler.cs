@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using UnityEngine;
 
 namespace RabbleHouse
@@ -51,6 +52,8 @@ namespace RabbleHouse
         [SerializeField] private float safeDistance = 4f;          // preferred distance from armed target
         [SerializeField] private float minThrowHoldTime = 2f;      // randomized throw timing
         [SerializeField] private float maxThrowHoldTime = 5f;
+        [SerializeField] private float retreatGrabChance = 0.5f;   // chance to seek a nearby object while backing up
+        [SerializeField] private float retreatGrabRange = 8f;      // how far an object can be to consider grabbing during retreat
 
         // Internal personality state
         private float nextAttackTime;
@@ -131,9 +134,26 @@ namespace RabbleHouse
         private void MakeDecision()
         {
             targetPlayer = FindNearestPlayer();
-            nearestGrabbableStatic = FindNearestGrabbable();
+
+            // Only pick a new target object if we don't already have a valid one.
+            // (Re-rolling every tick made the AI wander between objects.)
+            if (nearestGrabbableStatic == null || nearestGrabbableStatic.IsHeld)
+                nearestGrabbableStatic = FindRandomGrabbable();
+
             bool isHolding = controller != null && controller.IsHoldingObject;
             float distToTarget = targetPlayer != null ? Vector3.Distance(coreRb.position, targetPlayer.position) : float.MaxValue;
+
+            // No alive targets found — idle/wander instead of attacking nothing
+            if (targetPlayer == null)
+            {
+                currentBehavior = AIBehavior.Idle;
+                MoveInput = Vector2.zero;
+                SprintPressed = false;
+                LightAttackPressed = false;
+                HeavyAttackPressed = false;
+                GrabPressed = false;
+                return;
+            }
 
             // Track object grab time and randomize throw timing (only when holding)
             if (isHolding && objectGrabTime < 0f)
@@ -153,7 +173,7 @@ namespace RabbleHouse
                     // Target is armed — decide between bait/charge/throw based on chance and distance
                     int roll = Random.Range(0, 100);
 
-                    if (distToTarget > attackRange)
+                    if (distToTarget > attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f))
                     {
                         // Far — decide between charge or retreat-to-grab
                         if (roll < chargeChance * 100)
@@ -193,7 +213,8 @@ namespace RabbleHouse
                 else
                 {
                     // Target is unarmed — standard armed AI behavior
-                    if (distToTarget < attackRange)
+                    float bonusRange = attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f);
+                    if (distToTarget < bonusRange)
                     {
                         if (timeHeld > randomThrowHoldTime)
                             currentBehavior = AIBehavior.Throw;
@@ -202,7 +223,7 @@ namespace RabbleHouse
                     }
                     else
                     {
-                        if (distToTarget > attackRange * 3f)
+                        if (distToTarget > attackRange * 3f + (controller.HeldObject?.AttackRangeBonus ?? 0f))
                             currentBehavior = AIBehavior.Chase; // Far — chase
                         else
                         {
@@ -275,7 +296,7 @@ namespace RabbleHouse
                     break;
 
                 case AIBehavior.Grab:
-                    GrabbableObject grabbable = FindNearestGrabbable();
+                    GrabbableObject grabbable = nearestGrabbableStatic;
                     if (grabbable != null)
                     {
                         float distToGrabbable = Vector3.Distance(coreRb.position, grabbable.transform.position);
@@ -301,7 +322,8 @@ namespace RabbleHouse
                 case AIBehavior.Charge:
                     SprintPressed = true;
                     MoveToward(targetPlayer.position);
-                    if (Vector3.Distance(transform.position, targetPlayer.position) <= attackRange)
+                    float chargeRange = attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f);
+                    if (Vector3.Distance(transform.position, targetPlayer.position) <= chargeRange)
                     {
                         HeavyAttackPressed = true;
                     }
@@ -320,7 +342,8 @@ namespace RabbleHouse
                         {
                             // Holding object — swing when close, throw when too long
                             float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
-                            if (distToTarget < attackRange)
+                            float effectiveRange = attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f);
+                            if (distToTarget < effectiveRange)
                             {
                                 MoveInput = Vector2.zero;
                                 if (Time.time >= nextAttackTime)
@@ -357,8 +380,37 @@ namespace RabbleHouse
                     Transform threat = FindNearestPlayer();
                     if (threat != null)
                     {
-                        Vector3 awayDir = (coreRb.position - threat.position).normalized;
-                        MoveInput = new Vector2(awayDir.x, awayDir.z).normalized;
+                        // Chance to seek a nearby object while backing up (avoiding target)
+                        if (Random.value < retreatGrabChance && !controller.IsHoldingObject)
+                        {
+                            GrabbableObject retreatTarget = FindRetreatGrabbable(threat);
+                            if (retreatTarget != null)
+                            {
+                                Vector3 objPos = retreatTarget.transform.position;
+                                Vector3 toObj = (objPos - coreRb.position).normalized;
+                                Vector3 awayDir = (coreRb.position - threat.position).normalized;
+
+                                // Blend: mostly toward the object, slightly away from threat
+                                Vector3 blended = (toObj * 0.7f + awayDir * 0.3f).normalized;
+                                Vector2 safeDir = GetSafeRetreatDirection(blended);
+                                MoveInput = safeDir != Vector2.zero ? safeDir : new Vector2(awayDir.x, awayDir.z).normalized;
+
+                                // If we're close enough to the object, grab it
+                                float distToObj = Vector3.Distance(coreRb.position, objPos);
+                                if (distToObj < grabRange && Time.time >= nextGrabTime)
+                                {
+                                    GrabPressed = true;
+                                    nextGrabTime = Time.time + grabCooldown;
+                                    objectGrabTime = Time.time;
+                                    currentBehavior = AIBehavior.Grab;
+                                }
+                                break;
+                            }
+                        }
+
+                        // Default: retreat straight away from threat
+                        Vector3 away = (coreRb.position - threat.position).normalized;
+                        MoveInput = GetSafeRetreatDirection(away);
                     }
                     else
                         currentBehavior = AIBehavior.Idle;
@@ -411,7 +463,7 @@ namespace RabbleHouse
                 float highestSpeed = forwardSpeed > rightSpeed ? forwardSpeed : rightSpeed;
                 if (highestSpeed > 0.1f)
                 {
-                    coreRb.AddForce(Vector3.up * highestSpeed * (controller.SprintPressed ? 0.1f : 0.23f), ForceMode.Impulse);
+                    coreRb.AddForce(Vector3.up * highestSpeed * (controller.SprintPressed ? 0.08f : 0.23f), ForceMode.Impulse);
                 }
             }
         }
@@ -452,34 +504,64 @@ namespace RabbleHouse
         }
 
         /// <summary>
-        /// Find nearest grabbable object in a wider radius around the AI
+        /// Find a random grabbable object within retreat range that's safe from the threat.
+        /// Returns null if none are suitable. Picking randomly rather than the nearest
+        /// makes multiple AIs less likely to converge on the same object.
+        /// </summary>
+        private GrabbableObject FindRetreatGrabbable(Transform threat)
+        {
+            if (coreRb == null) return null;
+
+            Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up * 1f, retreatGrabRange, LayerMask.GetMask("Grabbable"));
+
+            // Collect all valid objects (not held, not closer to threat than to AI)
+            List<GrabbableObject> valid = new List<GrabbableObject>();
+            foreach (var hit in hits)
+            {
+                var grabbable = hit.GetComponent<GrabbableObject>();
+                if (grabbable == null || grabbable.IsHeld) continue;
+
+                if (threat != null)
+                {
+                    float distToThreat = Vector3.Distance(hit.transform.position, threat.position);
+                    float distMeToThreat = Vector3.Distance(coreRb.position, threat.position);
+                    // Only keep objects that aren't blatantly closer to the threat than the AI
+                    if (distToThreat < distMeToThreat - 0.5f) continue;
+                }
+                valid.Add(grabbable);
+            }
+
+            if (valid.Count == 0) return null;
+
+            // Pick one at random — more diverse behavior across multiple AIs
+            return valid[Random.Range(0, valid.Count)];
+        }
+
+        /// <summary>
+        /// Find a random grabbable object in a wider radius around the AI
         /// Uses sphere overlap for 360-degree detection (not just in front)
         /// </summary>
-        private GrabbableObject FindNearestGrabbable()
+        private GrabbableObject FindRandomGrabbable()
         {
             if (coreRb == null) return null;
 
             // Use sphere around the AI for wider detection — not just in front
             Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up * 1f, grabSearchRadius, LayerMask.GetMask("Grabbable"));
 
-            GrabbableObject nearest = null;
-            float nearestDist = float.MaxValue;
+            List<GrabbableObject> valid = new List<GrabbableObject>();
 
             foreach (var hit in hits)
             {
                 var grabbable = hit.GetComponent<GrabbableObject>();
-                if (grabbable != null && !grabbable.IsHeld)
-                {
-                    float dist = Vector3.Distance(coreRb.position, hit.transform.position);
-                    if (dist < nearestDist)
-                    {
-                        nearestDist = dist;
-                        nearest = grabbable;
-                    }
-                }
+                if (grabbable == null || grabbable.IsHeld) continue;
+
+                valid.Add(grabbable);
             }
 
-            return nearest;
+            if (valid.Count == 0) return null;
+
+            // Pick one at random — more diverse behavior across multiple AIs
+            return valid[Random.Range(0, valid.Count)];
         }
 
         /// <summary>
@@ -666,7 +748,7 @@ namespace RabbleHouse
                     // Chance to look for a nearby object or new unarmed target
                     if (Random.value < 0.5f)
                     {
-                        GrabbableObject nearby = FindNearestGrabbable();
+                        GrabbableObject nearby = nearestGrabbableStatic;
                         if (nearby != null)
                         {
                             currentBehavior = AIBehavior.Grab;
@@ -727,7 +809,7 @@ namespace RabbleHouse
             // Retreat?
             if (Random.value < retreatChance)
             {
-                GrabbableObject nearbyObject = FindNearestGrabbable();
+                GrabbableObject nearbyObject = nearestGrabbableStatic;
                 if (nearbyObject != null)
                     currentBehavior = AIBehavior.Grab;
                 else

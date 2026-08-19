@@ -3,20 +3,28 @@ using UnityEngine;
 namespace RabbleHouse
 {
     /// <summary>
+    /// What kind of disabling effect an attack applies.
+    /// Stun    = ragdoll in place (no launch).
+    /// Knockdown = ragdoll AND send the target flying.
+    /// None    = pure damage, no disable.
+    /// </summary>
+    public enum HitType
+    {
+        None = 0,
+        Stun = 1,
+        Knockdown = 2
+    }
+
+    /// <summary>
     /// Health + damage recipient for any character (player or AI).
-    /// Damage is applied by PhysicCharacterController.CheckHit(); this component
-    /// decides whether the hit stuns/knocks down/dies and notifies the controller.
+    /// Damage is applied by PhysicCharacterController.CheckHit() / GrabbableObject;
+    /// this component decides whether the hit stuns / knocks down / dies and notifies
+    /// the controller. The attack specifies its HitType explicitly (no random coin-flip).
     /// </summary>
     public class PlayerHealth : MonoBehaviour
     {
         [Header("Health")]
         [SerializeField] private int maxHealth = 100;
-
-        [Header("Stun / Knockdown Chances (0-1)")]
-        [Tooltip("Chance a hit that clears the stun damage threshold causes a stun (vs knockdown).")]
-        [SerializeField] private float stunChance = 0.5f;
-        [Tooltip("Damage at or above this value can stun/knockdown the target.")]
-        [SerializeField] private int stunThreshold = 20;
 
         private int currentHealth;
         private bool isStunned = false;
@@ -47,11 +55,14 @@ namespace RabbleHouse
         }
 
         /// <summary>
-        /// Apply damage from a hit. forceDirection is used by knockdown to send the
-        /// target flying. stunChanceOverride lets the attacker bias the outcome
-        /// (e.g. a heavy punch or a swung object has a higher stun chance).
+        /// Apply damage from a hit.
+        /// hitType        — what disabling effect this attack causes (Stun / Knockdown / None).
+        /// effectChance   — likelihood (0-1) the disabling effect actually triggers.
+        ///                  If the roll fails, the target just takes damage (no disable).
+        ///                  Defaults to 1 (always applies).
+        /// forceDirection — used by Knockdown to launch the target.
         /// </summary>
-        public void TakeDamage(int damage, Vector3 forceDirection, float stunChanceOverride = -1f, int attackerIndex = -1)
+        public void TakeDamage(int damage, Vector3 forceDirection, HitType hitType, float effectChance = 1f, int attackerIndex = -1)
         {
             if (isDead) return;
 
@@ -59,14 +70,16 @@ namespace RabbleHouse
             OnHealthChanged?.Invoke(PlayerIndex, currentHealth);
             OnTakeDamage?.Invoke(PlayerIndex);
 
-            // Stun / knockdown only if damage is meaningful
-            if (damage >= stunThreshold && !isStunned && !isKnockedDown)
+            // Apply the attacker-specified effect (if any), gated by its chance.
+            if (hitType != HitType.None && !isStunned && !isKnockedDown)
             {
-                float chance = stunChanceOverride >= 0f ? stunChanceOverride : stunChance;
-                if (Random.value < chance)
-                    ApplyStun();
-                else
-                    ApplyKnockdown(forceDirection);
+                if (Random.value < effectChance)
+                {
+                    if (hitType == HitType.Stun)
+                        ApplyStun();
+                    else if (hitType == HitType.Knockdown)
+                        ApplyKnockdown(forceDirection);
+                }
             }
 
             if (currentHealth <= 0)
@@ -95,6 +108,7 @@ namespace RabbleHouse
 
         private void Die()
         {
+            Debug.Log("die");
             isDead = true;
             OnDeath?.Invoke(PlayerIndex);
             if (controller != null)

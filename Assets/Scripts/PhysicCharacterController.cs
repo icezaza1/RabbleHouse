@@ -24,7 +24,8 @@ namespace RabbleHouse
         }
 
         public CharacterState CurrentState => currentState;
-        public bool IsHoldingObject => heldObject != null ? true : false;
+        public bool IsHoldingObject => heldObject != null;
+        public GrabbableObject HeldObject => heldObject;
         public bool IsGrounded => isGrounded;
         public bool SprintPressed => sprintPressed;
         public int PlayerIndex { get; set; } = 0;
@@ -35,12 +36,12 @@ namespace RabbleHouse
         // --- COMPONENTS ---
         private Rigidbody coreRigidbody;
         private PlayerInput playerInput;
-                private PhysicInputHandler inputHandler;
-                private AIInputHandler aiInputHandler;
-                private ActiveRagdollMaster ragdollMaster;
-                private PlayerHealth playerHealth;
-                private ActiveRagdollBalancer balancer;
-                private ConfigurableJoint hipJoint;
+        private PhysicInputHandler inputHandler;
+        private AIInputHandler aiInputHandler;
+        private ActiveRagdollMaster ragdollMaster;
+        private PlayerHealth playerHealth;
+        private ActiveRagdollBalancer balancer;
+        private ConfigurableJoint hipJoint;
 
         // --- HAND REFERENCES (assigned in Inspector) ---
         // Each hand must have: Transform + Rigidbody + ConfigurableJoint + ActiveRagdollBone + Collider.
@@ -149,14 +150,16 @@ namespace RabbleHouse
         [SerializeField] private float punchRange = 1f;
         [SerializeField] private int punchDamage = 10;
         [SerializeField] private int heavyPunchDamage = 20;
-        [Tooltip("Chance a heavy punch stuns (vs knockdown). Mirrors a critical hit.")]
-        [SerializeField] private float heavyPunchStunChance = 0.4f;
+        [Tooltip("Type of effect a heavy punch applies (Stun, Knockdown, or None).")]
+        [SerializeField] private HitType heavyPunchHitType = HitType.Stun;
+        [Tooltip("Likelihood the heavy punch's effect actually triggers (0-1). 1 = always.")]
+        [SerializeField] private float heavyPunchEffectChance = 0.8f;
 
         [Header("Stun/Recovery")]
         [SerializeField] private float stunDuration = 2f;
         [SerializeField] private float knockdownDuration = 1.2f;
         [Tooltip("Impulse applied to the core body when knocked down / hit by a swung object.")]
-        [SerializeField] private float knockbackForce = 8f;
+        [SerializeField] private float knockbackForce = 35f;
 
         // --- LIFECYCLE ---
         private void Awake()
@@ -379,12 +382,14 @@ namespace RabbleHouse
 
             Quaternion targetRot = Quaternion.LookRotation(currentMoveDir);
 
-            // LargeObject: heavy object dragging behind makes hip rotation sluggish
+            // LargeObject: heavy object dragging behind makes hip rotation sluggish.
+            // Uses the object's hipRotationResistance (0 = instant turn, higher = slower).
             if (heldGrabbableType == GrabbableType.LargeObject && heldObject != null)
             {
-                // Blend the target rotation based on the object's mass (higher = slower hip turn)
-                float massFactor = Mathf.Clamp01(heldObject.Rigidbody.mass / 50f);
-                hipJoint.targetRotation = Quaternion.Slerp(hipJoint.targetRotation, Quaternion.Inverse(targetRot), massFactor * Time.fixedDeltaTime * balancerBlendSpeed);
+                // Resistance 0 → instant (factor = 1), resistance 20+ → very sluggish (factor ~0.03)
+                float resistance = heldObject.HipRotationResistance;
+                float slowFactor = Mathf.Clamp01(1f / (1f + resistance * 0.05f));
+                hipJoint.targetRotation = Quaternion.Slerp(hipJoint.targetRotation, Quaternion.Inverse(targetRot), slowFactor * Time.fixedDeltaTime * balancerBlendSpeed);
             }
             else
             {
@@ -717,6 +722,7 @@ namespace RabbleHouse
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
+
                 yield return null;
             }
 
@@ -735,10 +741,13 @@ namespace RabbleHouse
                 {
                     // Use held object's damage if available, otherwise default punch damage
                     int objDamage = heldObject != null ? heldObject.SwingDamage : punchDamage;
-                    float objStunChance = heldObject != null ? heldObject.SwingStunChance : -1f;
-                    CheckHit(objDamage, punchForce, objStunChance, true);
+                    float objEffectChance = heldObject != null ? heldObject.SwingStunChance : 0f;
+                    float objKnockback = heldObject != null ? heldObject.KnockbackForce : -1f;
+                    // Swung objects: knockdown type (launch), chance from object
+                    CheckHit(objDamage, punchForce, HitType.Knockdown, objEffectChance, true, objKnockback);
                     swingHitDone = true;
                 }
+
                 yield return null;
             }
             // Phase 2: Hold briefly
@@ -759,12 +768,10 @@ namespace RabbleHouse
                 yield return null;
             }
 
-            // Restore hip rotation to current facing
+            // Re-enable hip rotation. HandleRotation() (called every frame in Update for
+            // Moving/Grabbing states) will smoothly reorient the hip toward currentMoveDir
+            // at the held object's hipRotationResistance rate — no instant snap here.
             hipRotationSuppressed = false;
-            if (currentMoveDir != Vector3.zero)
-            {
-                hipJoint.targetRotation = Quaternion.Inverse(Quaternion.LookRotation(currentMoveDir));
-            }
         }
 
         private void StartLightPunch()
@@ -800,7 +807,8 @@ namespace RabbleHouse
         /// <summary>Light punch damage check — small damage, no stun.</summary>
         private void CheckLightPunchHit()
         {
-            CheckHit(punchDamage, punchForce, -1f, false);
+            // Light punch: pure damage, no disable effect
+            CheckHit(punchDamage, punchForce, HitType.None, 0f, false);
         }
 
         private void PerformPunch(bool isLeft)
@@ -882,22 +890,25 @@ namespace RabbleHouse
 
             if (heldObject != null)
             {
-                // Holding a SmallObject: HeavyAttack = throw (mid‑swing)
                 if (heldGrabbableType == GrabbableType.SmallObject)
                 {
-                    // Start the full wind‑up → swing → throw → return animation
+                    // SmallObject: throw (mid-swing)
                     isHeavyPunching = true;
                     StartCoroutine(SmallObjectThrowRoutine());
+                }
+                else
+                {
+                    // LargeObject (or any non-small): drop immediately
+                    ReleaseObject();
                 }
                 return;
             }
 
-            // Unarmed: HeavyAttack = heavy punch (unless light punch is in progress
-            // or we’re on the light‑punch cooldown)
-            if (lightPunchActive) return;            // block if light punch is in progress
-            if (punchCooldownTimer > 0f) return;      // respect light punch cooldown
+            // Unarmed: HeavyAttack = heavy punch
+            if (lightPunchActive) return;
+            if (punchCooldownTimer > 0f) return;
 
-            heavyPunchLeftArm = !heavyPunchLeftArm;   // alternate arms
+            heavyPunchLeftArm = !heavyPunchLeftArm;
             isHeavyPunching = true;
             StartCoroutine(HeavyPunchRoutine(heavyPunchLeftArm));
         }
@@ -987,7 +998,8 @@ namespace RabbleHouse
                 // Heavy hit lands at the very start of the hook phase
                 if (!heavyHitDone && t >= 0.5f)
                 {
-                    CheckHit(heavyPunchDamage, punchForce, heavyPunchStunChance, true);
+                    // Heavy punch applies its configured HitType (Stun by default) with its chance
+                    CheckHit(heavyPunchDamage, punchForce, heavyPunchHitType, heavyPunchEffectChance, true);
                     heavyHitDone = true;
                 }
                 yield return null;
@@ -1102,6 +1114,10 @@ namespace RabbleHouse
             ForceDropObject();
             ragdollMaster.EnableFullRagdoll();
             yield return new WaitForSeconds(duration);
+
+            // Don't revive if character died while stunned
+            if (playerHealth != null && playerHealth.IsDead) yield break;
+
             ragdollMaster.EnableActiveRagdoll();
             SetState(CharacterState.Idle);
             if (playerHealth != null) playerHealth.NotifyRecovered();
@@ -1126,6 +1142,9 @@ namespace RabbleHouse
                 yield return null;
             }
 
+            // Don't revive if character died while knocked down
+            if (playerHealth != null && playerHealth.IsDead) yield break;
+
             ragdollMaster.EnableActiveRagdoll();
             coreRigidbody.linearVelocity = Vector3.zero;
             coreRigidbody.angularVelocity = Vector3.zero;
@@ -1141,20 +1160,62 @@ namespace RabbleHouse
             ragdollMaster.EnableFullRagdoll();
         }
 
-        /// <summary>Apply an impulse to the core body (used for knockback / sent-flying).</summary>
-        public void ApplyKnockback(Vector3 direction)
+        /// <summary>
+        /// Apply an impulse to the core body (used for knockback / sent-flying).
+        /// Temporarily unlocks the hip joint's linear motion so the impulse can
+        /// actually move the body (joint normally constrains position in active ragdoll).
+        /// Pass a custom force (e.g. from a thrown object); defaults to this character's knockbackForce.
+        /// </summary>
+        public void ApplyKnockback(Vector3 direction, float overrideForce = -1f)
         {
             if (coreRigidbody == null) return;
+
+            float force = overrideForce >= 0f ? overrideForce : knockbackForce;
+
+            // Save original joint motion BEFORE unlocking
+            SaveHipJointLinear();
+
+            // Unlock hip joint linear motion so AddForce can move the body freely
+            if (hipJoint != null)
+            {
+                hipJoint.xMotion = ConfigurableJointMotion.Free;
+                hipJoint.yMotion = ConfigurableJointMotion.Free;
+                hipJoint.zMotion = ConfigurableJointMotion.Free;
+            }
+
             Vector3 dir = direction.normalized;
             dir.y = 0.3f; // slight upward pop
-            coreRigidbody.AddForce(dir.normalized * knockbackForce, ForceMode.Impulse);
+            coreRigidbody.AddForce(dir.normalized * force, ForceMode.Impulse);
+
+            // Re-lock after the knockdown duration (body will be floppy anyway)
+            StartCoroutine(RestoreHipJointLinear(knockdownDuration));
+        }
+
+        private ConfigurableJointMotion savedJointX, savedJointY, savedJointZ;
+        private void SaveHipJointLinear()
+        {
+            if (hipJoint == null) return;
+            savedJointX = hipJoint.xMotion;
+            savedJointY = hipJoint.yMotion;
+            savedJointZ = hipJoint.zMotion;
+        }
+
+        private IEnumerator RestoreHipJointLinear(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (hipJoint != null)
+            {
+                hipJoint.xMotion = savedJointX;
+                hipJoint.yMotion = savedJointY;
+                hipJoint.zMotion = savedJointZ;
+            }
         }
 
         /// <summary>
         /// Check for a damageable character within punchRange in front of us and apply damage.
         /// Uses an OverlapSphere at the core body position, filtering to a forward cone.
         /// </summary>
-        private void CheckHit(int damage, float force, float stunChanceOverride, bool sendAway)
+        private void CheckHit(int damage, float force, HitType hitType, float effectChance, bool sendAway, float overrideKnockbackForce = -1f)
         {
             if (coreRigidbody == null) return;
 
@@ -1163,7 +1224,8 @@ namespace RabbleHouse
 
             foreach (var hit in hits)
             {
-                var targetHealth = hit.GetComponent<PlayerHealth>();
+                // Colliders live on the ragdoll bones; health/controller live on the root
+                var targetHealth = hit.GetComponentInParent<PlayerHealth>();
                 if (targetHealth == null) continue;
                 if (targetHealth.gameObject == this.gameObject) continue; // don't hit self
 
@@ -1172,19 +1234,19 @@ namespace RabbleHouse
                 if (Vector3.Dot(toTarget, forward) < 0.2f) continue;
 
                 Vector3 knockDir = sendAway ? toTarget : Vector3.zero;
-                targetHealth.TakeDamage(damage, knockDir, stunChanceOverride, PlayerIndex);
+                targetHealth.TakeDamage(damage, knockDir, hitType, effectChance, PlayerIndex);
 
                 if (sendAway)
-                    ApplyKnockbackTo(targetHealth, knockDir);
+                    ApplyKnockbackTo(targetHealth, knockDir, overrideKnockbackForce);
                 break; // one hit per swing
             }
         }
 
-        private void ApplyKnockbackTo(PlayerHealth target, Vector3 direction)
+        private void ApplyKnockbackTo(PlayerHealth target, Vector3 direction, float overrideForce = -1f)
         {
-            var ctrl = target.GetComponent<PhysicCharacterController>();
+            var ctrl = target.GetComponentInParent<PhysicCharacterController>();
             if (ctrl != null)
-                ctrl.ApplyKnockback(direction);
+                ctrl.ApplyKnockback(direction, overrideForce);
         }
 
         // --- GIZMOS ---
@@ -1198,15 +1260,48 @@ namespace RabbleHouse
             }
 
             if (coreRigidbody == null) return;
-            Gizmos.color = Color.green;
             Matrix4x4 oldMatrix = Gizmos.matrix;
 
+            // Grab box gizmo (existing)
+            Gizmos.color = Color.green;
             Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
             Vector3 halfExtents = new Vector3(0.1f, 0.5f, grabRange * 0.5f);
-
             Gizmos.matrix = Matrix4x4.TRS(origin, coreRigidbody.rotation, Vector3.one);
-            Gizmos.DrawWireCube(Vector3.zero, halfExtents * 2f); // DrawCube needs full size
+            Gizmos.DrawWireCube(Vector3.zero, halfExtents * 2f);
             Gizmos.matrix = oldMatrix;
+
+            // --- Hit-cone gizmo ---
+            // Matches CheckHit: OverlapSphere at core body + 0.5 up, radius = punchRange,
+            // cone gate = dot(toTarget, forward) >= 0.2  (≈ 78.5° half-angle)
+            Vector3 hitCenter = coreRigidbody.position + Vector3.up * 0.5f;
+            Vector3 fwd = coreRigidbody.transform.forward;
+
+            // Draw the full overlap sphere in faint yellow
+            Gizmos.color = new Color(1f, 1f, 0f, 0.25f);
+            Gizmos.DrawWireSphere(hitCenter, punchRange);
+
+            // Draw the hit-cone boundary lines (two lines at the cone edge)
+            // cos(θ) = 0.2  →  θ = acos(0.2) ≈ 78.5°
+            float coneAngle = Mathf.Acos(0.85f) * Mathf.Rad2Deg;
+            float coneLen = punchRange;
+
+            Gizmos.color = Color.yellow;
+            Vector3 leftEdge  = Quaternion.AngleAxis(-coneAngle, Vector3.up) * fwd * coneLen;
+            Vector3 rightEdge = Quaternion.AngleAxis( coneAngle, Vector3.up) * fwd * coneLen;
+
+            Gizmos.DrawLine(hitCenter, hitCenter + leftEdge);
+            Gizmos.DrawLine(hitCenter, hitCenter + rightEdge);
+
+            // Arc across the cone to make it easier to read
+            int segments = 12;
+            Vector3 prev = hitCenter + leftEdge;
+            for (int i = 1; i <= segments; i++)
+            {
+                float a = Mathf.Lerp(-coneAngle, coneAngle, (float)i / segments);
+                Vector3 next = Quaternion.AngleAxis(a, Vector3.up) * fwd * coneLen;
+                Gizmos.DrawLine(prev, hitCenter + next);
+                prev = hitCenter + next;
+            }
         }
     }
 }

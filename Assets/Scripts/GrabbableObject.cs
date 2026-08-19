@@ -23,23 +23,31 @@ namespace RabbleHouse
         public GrabbableType grabbableType = GrabbableType.SmallObject;
 
         [Header("Mass / Physics")]
+        [Tooltip("Used to calculate how heavy the object is when being held.")]
+        [SerializeField] private float heldMass = 1f;
         [Tooltip("Used to calculate how much the object resists hip rotation (LargeObject only).")]
         [SerializeField] private float hipRotationResistance = 10f;
 
         [Header("Damage (swung while held)")]
         [SerializeField] private int swingDamage = 15;
-        [Tooltip("0-1 chance this swung object stuns vs knocks the target away.")]
+        [Tooltip("0-1 chance a swung object knocks the target down (launches them).")]
         [SerializeField] private float swingStunChance = 0.3f;
+        [Tooltip("Extra attack/punch range this object provides when held (meters). Larger objects reach farther.")]
+        [SerializeField] private float attackRangeBonus = 0f;
 
         [Header("Damage (thrown / airborne)")]
         [SerializeField] private int throwDamage = 20;
-        [Tooltip("0-1 chance a thrown object stuns. Very high for thrown weapons.")]
+        [Tooltip("0-1 chance a thrown object knocks the target down (launches them).")]
         [SerializeField] private float throwStunChance = 0.7f;
         [Tooltip("Minimum velocity needed for a thrown object to deal damage on impact.")]
         [SerializeField] private float throwMinSpeed = 3f;
+        [Tooltip("Impulse applied to launch the target when this object hits (swing or throw). -1 = use target's default knockbackForce.")]
+        [SerializeField] private float knockbackForce = -1f;
 
         private Rigidbody rb;
+        private float originMass;
         private bool isHeld = false;
+        private bool isThrown = false; // only deal damage after explicit throw
         private PhysicCharacterController thrower; // set by PhysicCharacterController before throw
 
         public Rigidbody Rigidbody => rb;
@@ -49,6 +57,8 @@ namespace RabbleHouse
         /// <summary>Damage dealt while held and swung.</summary>
         public int SwingDamage => swingDamage;
         public float SwingStunChance => swingStunChance;
+        public float KnockbackForce => knockbackForce;
+        public float AttackRangeBonus => attackRangeBonus;
 
         /// <summary>Register who threw this object (for self-damage prevention).</summary>
         public void SetThrower(PhysicCharacterController owner) => thrower = owner;
@@ -58,11 +68,14 @@ namespace RabbleHouse
             rb = GetComponent<Rigidbody>();
             if (rb == null)
                 rb = gameObject.AddComponent<Rigidbody>();
+
+            originMass = rb.mass;
         }
 
         /// <summary>Called by PhysicCharacterController when grabbed.</summary>
         public void GrabByPlayer(Object holder)
         {
+            rb.mass = heldMass;
             isHeld = true;
             thrower = holder as PhysicCharacterController;
         }
@@ -70,6 +83,7 @@ namespace RabbleHouse
         /// <summary>Called by PhysicCharacterController when released.</summary>
         public void ReleaseByPlayer()
         {
+            rb.mass = originMass;
             isHeld = false;
         }
 
@@ -83,7 +97,9 @@ namespace RabbleHouse
         /// <summary>Called when thrown — the object now does damage on impact.</summary>
         public void ThrowByDirection(Vector3 velocity)
         {
+            rb.mass = originMass;
             isHeld = false;
+            isThrown = true;
             if (rb != null)
             {
                 rb.linearVelocity = velocity;
@@ -91,28 +107,24 @@ namespace RabbleHouse
         }
 
         /// <summary>
-        /// Detect impact against a damageable character while airborne.
-        /// Only deals damage if speed >= throwMinSpeed.
+        /// Detect impact against a damageable character after an explicit throw.
+        /// Only deals damage if the object was thrown (isThrown) AND speed >= throwMinSpeed.
+        /// A character merely bumping into a resting object will not trigger this.
         /// </summary>
         private void OnCollisionEnter(Collision collision)
         {
-            // Only deal damage when the object is airborne (not held)
-            if (isHeld || rb == null) return;
+            // Only deal damage when the object was thrown, not when held or just bumped
+            if (isHeld || !isThrown || rb == null) return;
 
             float speed = rb.linearVelocity.magnitude;
             if (speed < throwMinSpeed) return;
 
-            var targetHealth = collision.gameObject.GetComponent<PlayerHealth>();
+            // Colliders live on the ragdoll bones; health/controller live on the root
+            var targetHealth = collision.gameObject.GetComponentInParent<PlayerHealth>();
             if (targetHealth == null) return;
 
             // Don't damage the thrower
             if (thrower != null && targetHealth.gameObject == thrower.gameObject) return;
-
-            // Don't damage self — if the object was grabbed by a target, skip
-            // (prevents double-damage if the object is stuck on a held character)
-            if (targetHealth.GetComponent<PhysicCharacterController>() != null &&
-                targetHealth.GetComponent<PhysicCharacterController>().IsHoldingObject)
-                return;
 
             Vector3 hitDir = collision.contacts[0].point - transform.position;
             if (hitDir == Vector3.zero) hitDir = rb.linearVelocity.normalized;
@@ -120,14 +132,17 @@ namespace RabbleHouse
             hitDir.y = 0.3f; // slight upward pop
 
             // Thrown objects: high stun chance, high damage, DO send away
-            targetHealth.TakeDamage(throwDamage, hitDir, throwStunChance);
+            targetHealth.TakeDamage(throwDamage, hitDir, HitType.Knockdown, throwStunChance);
 
             // Knock the target away from the impact
-            var targetController = targetHealth.GetComponent<PhysicCharacterController>();
+            var targetController = targetHealth.GetComponentInParent<PhysicCharacterController>();
             if (targetController != null)
             {
-                targetController.ApplyKnockback(hitDir);
+                targetController.ApplyKnockback(hitDir, knockbackForce);
             }
+
+            // Consume the throw — object must be re-thrown to deal damage again
+            isThrown = false;
         }
     }
 }
