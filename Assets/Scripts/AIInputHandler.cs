@@ -29,15 +29,12 @@ namespace RabbleHouse
         [SerializeField] private float grabCooldown = 2f;
         [SerializeField] private float attackCooldown = 1.5f;
 
-        [Header("AI Weight")]
-        [Tooltip("How likely to attack vs grab (0=always grab, 1=always attack)")]
-        [SerializeField] private float aggression = 0.5f;
-
         [Header("Intercept")]
         [SerializeField] private float leadTime = 0.8f; // fixed seconds to predict ahead — keeps intercept aggressive even at close range
         [SerializeField] private float velocitySmoothing = 0.1f; // smoothing factor for target velocity history
 
-        [Header("Personality / Variance")]
+
+        [Header("Unarmed vs Unarmed Behaviors")]
         [SerializeField] private float dodgeChance = 0.2f;
         [SerializeField] private float circleChance = 0.15f;
         [SerializeField] private float retreatChance = 0.1f;
@@ -51,10 +48,13 @@ namespace RabbleHouse
         [SerializeField] private float chargeAgainstArmedChance = 0.15f;       // sprint in with heavy punch
         [SerializeField] private float baitDistance = 3f;          // distance to approach when baiting
         [SerializeField] private float safeDistance = 4f;          // preferred distance from armed target
-        [SerializeField] private float minThrowHoldTime = 2f;      // randomized throw timing
-        [SerializeField] private float maxThrowHoldTime = 5f;
         [SerializeField] private float retreatGrabChance = 0.5f;   // chance to seek a nearby object while backing up
         [SerializeField] private float retreatGrabRange = 8f;      // how far an object can be to consider grabbing during retreat
+
+        [Header("Armed vs Armed Behaviors")]
+        [SerializeField] private float armedBaitChance = 0.2f;
+        [SerializeField] private float minThrowHoldTime = 2f;      // randomized throw timing
+        [SerializeField] private float maxThrowHoldTime = 5f;
 
         // Internal personality state
         private float nextAttackTime;
@@ -340,9 +340,13 @@ namespace RabbleHouse
                     {
                         if (controller == null || !controller.IsHoldingObject)
                         {
-                            // Unarmed — fight with personality
+                            bool isHolding = controller != null && controller.IsHoldingObject;
                             float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
-                            HandleUnarmedCombat(targetPlayer, distToTarget);
+
+                            if (isHolding)
+                                HandleArmedCombat(targetPlayer, distToTarget); // Armed combat
+                            else
+                                HandleUnarmedCombat(targetPlayer, distToTarget); // Unarmed combat
                         }
                         else
                         {
@@ -392,13 +396,13 @@ namespace RabbleHouse
                             GrabbableObject retreatTarget = FindRetreatGrabbable(threat);
                             if (retreatTarget != null)
                             {
+                                SprintPressed = true;
                                 Vector3 objPos = retreatTarget.transform.position;
                                 Vector3 toObj = (objPos - coreRb.position).normalized;
                                 Vector3 awayDir = (coreRb.position - threat.position).normalized;
 
                                 // Blend: mostly toward the object, slightly away from threat
-                                SprintPressed = true;
-                                Vector3 blended = (toObj * 0.7f + awayDir * 0.3f).normalized;
+                                Vector3 blended = ((toObj * 0.7f) + (awayDir * 0.3f)).normalized;
                                 Vector2 safeDir = GetSafeRetreatDirection(blended);
                                 MoveInput = safeDir != Vector2.zero ? safeDir : new Vector2(awayDir.x, awayDir.z).normalized;
 
@@ -664,7 +668,6 @@ namespace RabbleHouse
             if (controller == null || target == null) return;
 
             bool targetIsArmed = IsTargetArmed(target);
-
             // ===================================================================
             //  ARMED TARGET — ONLY these three behaviors are allowed.
             // ===================================================================
@@ -689,15 +692,15 @@ namespace RabbleHouse
                 }
                 if (isBaiting && Time.time >= baitEndTime)
                 {
-                    // Phase 2: step away briefly after reaching bait distance
+                    // Phase 2: step away after reaching bait distance
                     isBaiting = false;
+                    SprintPressed = true;
                     Vector3 awayDir = (coreRb.position - target.position).normalized;
                     awayDir.y = 0;
                     // Wall-aware retreat: if backing into a wall, slide along it
                     MoveInput = GetSafeRetreatDirection(awayDir);
-                    SprintPressed = false;
                     // High chance to immediately follow up with a charge
-                    if (Random.value < 0.7f)
+                    if (Random.value < 0.9f)
                     {
                         isCharging = true;
                         chargeEndTime = Time.time + chargeDuration;
@@ -706,17 +709,17 @@ namespace RabbleHouse
                 }
 
                 // CHARGE: sprint in and heavy punch when in range
-            if (isCharging && Time.time < chargeEndTime && controller.HeavyPunchReady)
-            {
-            SprintPressed = true;
-            MoveToward(target.position);
-            if (distToTarget < attackRange && Time.time >= nextAttackTime)
-            {
-            HeavyAttackPressed = true;
-            nextAttackTime = Time.time + attackCooldown;
-            }
-            return;
-            }
+                if (isCharging && Time.time < chargeEndTime && controller.HeavyPunchReady)
+                {
+                    SprintPressed = true;
+                    MoveToward(target.position);
+                    if (distToTarget < attackRange && Time.time >= nextAttackTime)
+                    {
+                        HeavyAttackPressed = true;
+                        nextAttackTime = Time.time + attackCooldown;
+                    }
+                    return;
+                }
                 isCharging = false;
 
                 // BACK-UP: keep safeDistance, occasionally seek a grab/other target
@@ -739,11 +742,7 @@ namespace RabbleHouse
                 isBackingUp = false;
 
                 // --- No active sub-state: pick one based on chances ----------
-                float roll = Random.value;
-                float cumulative = 0f;
-
-                cumulative += baitChance;
-                if (roll < cumulative)
+                if (Random.value < baitChance)
                 {
                     isBaiting = true;
                     // Phase A ends either when close enough (baitDistance) or after this max time
@@ -751,8 +750,7 @@ namespace RabbleHouse
                     return;
                 }
 
-                cumulative += backingUpChance;
-                if (roll < cumulative)
+                if (Random.value < backingUpChance)
                 {
                     isBackingUp = true;
                     backUpEndTime = Time.time + Random.Range(0.8f, 1.8f);
@@ -769,8 +767,7 @@ namespace RabbleHouse
                     return;
                 }
 
-                cumulative += chargeAgainstArmedChance;
-                if (roll < cumulative && controller.HeavyPunchReady)
+                if (Random.value < chargeAgainstArmedChance && controller.HeavyPunchReady)
                 {
                     isCharging = true;
                     chargeEndTime = Time.time + chargeDuration;
@@ -790,6 +787,7 @@ namespace RabbleHouse
             // Currently dodging
             if (isDodging && Time.time < dodgeEndTime)
             {
+                SprintPressed = true;
                 Vector3 awayFromTarget = (coreRb.position - target.position).normalized;
                 awayFromTarget.y = 0;
                 MoveInput = new Vector2(awayFromTarget.x, awayFromTarget.z).normalized;
@@ -800,6 +798,7 @@ namespace RabbleHouse
             // Currently circling
             if (isCircling && Time.time < circleEndTime)
             {
+                SprintPressed = true;
                 Vector3 toTarget = (target.position - coreRb.position).normalized;
                 Vector3 perp = Vector3.Cross(toTarget, Vector3.up) * circleDirection;
                 MoveInput = new Vector2(perp.x, perp.z).normalized;
@@ -882,6 +881,64 @@ namespace RabbleHouse
                 {
                     HeavyAttackPressed = true;
                     nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Combat logic executed when the AI is armed.
+        /// ARMED TARGET  -> only Bait with a chance of following up with an attack.
+        /// UNARMED TARGET -> TBA.
+        /// </summary>
+        private void HandleArmedCombat(Transform target, float distToTarget)
+        {
+            if (controller == null || target == null) return;
+
+            bool targetIsArmed = IsTargetArmed(target);
+            // ===================================================================
+            //  ARMED & ARMED TARGET — How should armed AI acts against armed target
+            // ===================================================================
+            if (targetIsArmed)
+            {
+                // BAIT: sprint in until within baitDistance, then step away
+                if (isBaiting && Time.time < baitEndTime)
+                {
+                    // Phase 1: close distance to baitDistance
+                    MoveToward(target.position);
+                    // Transition to Phase B once we are close enough to bait
+                    if (distToTarget <= baitDistance)
+                    {
+                        baitEndTime = Time.time; // force Phase B next frame
+                    }
+                    return;
+                }
+                if (isBaiting && Time.time >= baitEndTime)
+                {
+                    // Phase 2: step away briefly after reaching bait distance
+                    isBaiting = false;
+                    Vector3 awayDir = (coreRb.position - target.position).normalized;
+                    awayDir.y = 0;
+                    // Wall-aware retreat: if backing into a wall, slide along it
+                    MoveInput = GetSafeRetreatDirection(awayDir);
+                    // High chance to immediately follow up with an attack
+                    if (Random.value < 0.9f)
+                    {
+                        MoveToward(target.position);
+                        if (distToTarget < attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f) && Time.time >= nextAttackTime)
+                        {
+                            LightAttackPressed = true; // Swing
+                            nextAttackTime = Time.time + attackCooldown;
+                        }
+                    }
+                    return;
+                }
+
+                if (Random.value < armedBaitChance)
+                {
+                    isBaiting = true;
+                    // Phase A ends either when close enough (baitDistance) or after this max time
+                    baitEndTime = Time.time + 1.5f;
+                    return;
                 }
             }
         }

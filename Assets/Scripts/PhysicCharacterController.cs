@@ -138,7 +138,6 @@ namespace RabbleHouse
         [SerializeField] private Transform grabAnchorPoint;
         [Header("Movement")]
         [SerializeField] private float moveSpeed = 5f;
-        [SerializeField] private float jumpForce = 6f;
         [SerializeField] private LayerMask groundLayer = 1 << 0;
         [SerializeField] private float groundCheckDistance = 0.2f;
         [SerializeField] private float hipHeight = 0.95f;
