@@ -33,7 +33,6 @@ namespace RabbleHouse
         [SerializeField] private float leadTime = 0.8f; // fixed seconds to predict ahead — keeps intercept aggressive even at close range
         [SerializeField] private float velocitySmoothing = 0.1f; // smoothing factor for target velocity history
 
-
         [Header("Unarmed vs Unarmed Behaviors")]
         [SerializeField] private float dodgeChance = 0.2f;
         [SerializeField] private float circleChance = 0.15f;
@@ -170,75 +169,26 @@ namespace RabbleHouse
 
             if (isHolding)
             {
-                // Holding an object — make armed-target decisions
+                // Preserve grab intent when target becomes armed — keep trying to grab
+                // the desired object for a brief window (2s) instead of immediately
+                // switching to armed vs armed behavior.
+                if (nearestGrabbableStatic != null && Time.time - objectGrabTime < 2f)
+                {
+                    currentBehavior = AIBehavior.Grab;
+                    return;
+                }
+
+                // Target is armed — decide between bait/charge/throw based on chance and distance
                 bool targetIsArmed = targetPlayer != null && IsTargetArmed(targetPlayer);
                 float timeHeld = Time.time - objectGrabTime;
 
                 if (targetIsArmed)
                 {
-                    // Target is armed — decide between bait/charge/throw based on chance and distance
-                    int roll = Random.Range(0, 100);
-
-                    if (distToTarget > attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f))
-                    {
-                        // Far — decide between charge or retreat-to-grab
-                        if (roll < chargeAgainstArmedChance * 100 && controller.HeavyPunchReady)
-                        {
-                            currentBehavior = AIBehavior.Charge; // Sprint in with heavy punch
-                        }
-                        else
-                        {
-                            // Throw the held object at the armed target
-                            if ((Time.time - objectGrabTime) > randomThrowHoldTime)
-                            {
-                                currentBehavior = AIBehavior.Throw;
-                            }
-                            else
-                            {
-                                currentBehavior = AIBehavior.Chase; // Close with swing, then throw
-                            }
-                        }
-                    }
-                    else
-                    {
-                        // Close range against armed target — back off or throw
-                        if (roll < backingUpChance * 100)
-                        {
-                            currentBehavior = AIBehavior.Retreat;
-                        }
-                        else if ((Time.time - objectGrabTime) > randomThrowHoldTime)
-                        {
-                            currentBehavior = AIBehavior.Throw; // Throw when close enough
-                        }
-                        else
-                        {
-                            currentBehavior = AIBehavior.Attack; // Swing at close range
-                        }
-                    }
+                    
                 }
                 else
                 {
-                    // Target is unarmed — standard armed AI behavior
-                    float bonusRange = attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f);
-                    if (distToTarget < bonusRange)
-                    {
-                        if (timeHeld > randomThrowHoldTime)
-                            currentBehavior = AIBehavior.Throw;
-                        else
-                            currentBehavior = AIBehavior.Attack; // Swing at close range
-                    }
-                    else
-                    {
-                        if (distToTarget > attackRange * 3f + (controller.HeldObject?.AttackRangeBonus ?? 0f))
-                            currentBehavior = AIBehavior.Chase; // Far — chase
-                        else
-                        {
-                            if (timeHeld > randomThrowHoldTime)
-                                currentBehavior = AIBehavior.Throw;
-                            else
-                                currentBehavior = AIBehavior.Chase; // Use swing to close distance
-                        }
-                    }
+                    
                 }
             }
             else
@@ -338,46 +288,44 @@ namespace RabbleHouse
                 case AIBehavior.Attack:
                     if (targetPlayer != null)
                     {
-                        if (controller == null || !controller.IsHoldingObject)
+                        float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
+                        // AI is unarmed — use unarmed combat personality
+                        HandleUnarmedCombat(targetPlayer, distToTarget);
+                        //if (controller.IsHoldingObject)
+                        //{
+                        //    // AI is armed — use armed combat (bait vs armed target, etc.)
+                        //    HandleArmedCombat(targetPlayer, distToTarget);
+                        //}
+                        //else
+                        //{
+                        //    // AI is unarmed — use unarmed combat personality
+                        //    HandleUnarmedCombat(targetPlayer, distToTarget);
+                        //}
+                        float effectiveRange = attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f);
+                        if (distToTarget < effectiveRange)
                         {
-                            bool isHolding = controller != null && controller.IsHoldingObject;
-                            float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
-
-                            if (isHolding)
-                                HandleArmedCombat(targetPlayer, distToTarget); // Armed combat
-                            else
-                                HandleUnarmedCombat(targetPlayer, distToTarget); // Unarmed combat
+                            MoveInput = Vector2.zero;
+                            if (Time.time >= nextAttackTime)
+                            {
+                                LightAttackPressed = true; // Swing
+                                nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
+                            }
+                        }
+                        else if ((Time.time - objectGrabTime) > randomThrowHoldTime)
+                        {
+                            // Close but held too long, or far — throw it
+                            MoveInput = Vector2.zero;
+                            if (Time.time >= nextAttackTime)
+                            {
+                                HeavyAttackPressed = true; // Throw
+                                nextAttackTime = Time.time + attackCooldown;
+                                objectGrabTime = -1f;
+                            }
                         }
                         else
                         {
-                            // Holding object — swing when close, throw when too long
-                            float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
-                            float effectiveRange = attackRange + (controller.HeldObject?.AttackRangeBonus ?? 0f);
-                            if (distToTarget < effectiveRange)
-                            {
-                                MoveInput = Vector2.zero;
-                                if (Time.time >= nextAttackTime)
-                                {
-                                    LightAttackPressed = true; // Swing
-                                    nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
-                                }
-                            }
-                            else if ((Time.time - objectGrabTime) > randomThrowHoldTime)
-                            {
-                                // Close but held too long, or far — throw it
-                                MoveInput = Vector2.zero;
-                                if (Time.time >= nextAttackTime)
-                                {
-                                    HeavyAttackPressed = true; // Throw
-                                    nextAttackTime = Time.time + attackCooldown;
-                                    objectGrabTime = -1f;
-                                }
-                            }
-                            else
-                            {
-                                // Target is far — chase to get in range
-                                MoveToward(InterceptPosition(targetPlayer));
-                            }
+                            // Target is far — chase to get in range
+                            MoveToward(InterceptPosition(targetPlayer));
                         }
                     }
                     else
@@ -467,7 +415,6 @@ namespace RabbleHouse
             MoveInput = new Vector2(dir.x, dir.z).normalized;
         }
 
-
         /// <summary>
         /// Find nearest player within chase range
         /// </summary>
@@ -507,32 +454,51 @@ namespace RabbleHouse
         /// Returns null if none are suitable. Picking randomly rather than the nearest
         /// makes multiple AIs less likely to converge on the same object.
         /// </summary>
+        /// <summary>
+        /// Find a random grabbable object within retreat range that's safe from the threat.
+        /// Returns null if none are suitable. Picking randomly rather than the nearest
+        /// makes multiple AIs less likely to converge on the same object.
+        /// </summary>
         private GrabbableObject FindRetreatGrabbable(Transform threat)
         {
             if (coreRb == null) return null;
 
             Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up * 1f, retreatGrabRange, LayerMask.GetMask("Grabbable"));
 
-            // Collect all valid objects (not held, not closer to threat than to AI)
             List<GrabbableObject> valid = new List<GrabbableObject>();
             foreach (var hit in hits)
             {
                 var grabbable = hit.GetComponent<GrabbableObject>();
-                if (grabbable == null || grabbable.IsHeld) continue;
+                if (grabbable == null) continue;
 
+                // Threat-proximity filter: discard objects that are much closer to the
+                // threat than to us (the threat would grab them first).
                 if (threat != null)
                 {
                     float distToThreat = Vector3.Distance(hit.transform.position, threat.position);
                     float distMeToThreat = Vector3.Distance(coreRb.position, threat.position);
-                    // Only keep objects that aren't blatantly closer to the threat than the AI
                     if (distToThreat < distMeToThreat - 0.5f) continue;
                 }
-                valid.Add(grabbable);
+
+                // Held objects: only grab if close AND the holder is armed/threatening
+                if (grabbable.IsHeld)
+                {
+                    float distToGrabbable = Vector3.Distance(coreRb.position, grabbable.transform.position);
+                    float distThreatToGrabbable = threat != null ? Vector3.Distance(threat.position, grabbable.transform.position) : 0f;
+                    float distMeToThreat = threat != null ? Vector3.Distance(coreRb.position, threat.position) : 0f;
+                    // Only grab a held object if we are closer than the threat
+                    if (distToGrabbable < 2.5f && distThreatToGrabbable > distToGrabbable - 0.5f)
+                        valid.Add(grabbable);
+                }
+                else
+                {
+                    // Unheld objects are always valid at this point
+                    valid.Add(grabbable);
+                }
             }
 
             if (valid.Count == 0) return null;
 
-            // Pick one at random — more diverse behavior across multiple AIs
             return valid[Random.Range(0, valid.Count)];
         }
 
@@ -694,7 +660,7 @@ namespace RabbleHouse
                 {
                     // Phase 2: step away after reaching bait distance
                     isBaiting = false;
-                    SprintPressed = true;
+                    SprintPressed = false;
                     Vector3 awayDir = (coreRb.position - target.position).normalized;
                     awayDir.y = 0;
                     // Wall-aware retreat: if backing into a wall, slide along it
