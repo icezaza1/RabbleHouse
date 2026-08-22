@@ -465,7 +465,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &141532854
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1307,7 +1307,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: baitChance
-      value: 0.15
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: chaseRange
@@ -1395,11 +1395,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: retreatGrabChance
-      value: 1
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: chargeAgainstArmedChance
-      value: 0.1
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 509191974249044825, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_CullingMode
@@ -2171,7 +2171,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2101293289
 Transform:
   m_ObjectHideFlags: 0

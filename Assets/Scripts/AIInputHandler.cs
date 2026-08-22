@@ -280,7 +280,6 @@ namespace RabbleHouse
             }
         }
 
-
         private void ExecuteBehavior()
         {
             switch (currentBehavior)
@@ -397,32 +396,36 @@ namespace RabbleHouse
                 case AIBehavior.Retreat:
                     SprintPressed = true;
                     Transform threat = FindNearestPlayer();
+                    GrabbableObject retreatTarget = FindRetreatGrabbable(threat);
                     if (threat != null)
                     {
-                        // Chance to seek a nearby object while backing up (avoiding target)
+                        bool targetIsArmed = IsTargetArmed(threat);
+
+                        // Existing behavior: chance to seek a nearby object while backing up (avoiding target)
                         if (Random.value < retreatGrabChance && !controller.IsHoldingObject)
                         {
-                            GrabbableObject retreatTarget = FindRetreatGrabbable(threat);
                             if (retreatTarget != null)
                             {
-                                Vector3 objPos = retreatTarget.transform.position;
-                                Vector3 toObj = (objPos - coreRb.position).normalized;
-                                Vector3 awayDir = (coreRb.position - threat.position).normalized;
+                                currentBehavior = AIBehavior.Grab;
+                                //Vector3 objPos = retreatTarget.transform.position;
+                                //Vector3 toObj = (objPos - coreRb.position).normalized;
+                                //Vector3 awayDir = (coreRb.position - threat.position).normalized;
 
-                                // Blend: mostly toward the object, slightly away from threat
-                                Vector3 blended = ((toObj * 0.7f) + (awayDir * 0.3f)).normalized;
-                                Vector2 safeDir = GetSafeRetreatDirection(blended);
-                                MoveInput = safeDir != Vector2.zero ? safeDir : new Vector2(awayDir.x, awayDir.z).normalized;
+                                //// Blend: mostly toward the object, slightly away from threat
+                                //Vector3 blended = ((toObj * 0.7f) + (awayDir * 0.3f)).normalized;
+                                //Vector2 safeDir = GetSafeRetreatDirection(blended);
+                                //MoveInput = safeDir != Vector2.zero ? safeDir : new Vector2(awayDir.x, awayDir.z).normalized;
+                                //Debug.Log("i got it");
 
-                                // If we're close enough to the object, grab it
-                                float distToObj = Vector3.Distance(coreRb.position, objPos);
-                                if (distToObj < grabRange && Time.time >= nextGrabTime)
-                                {
-                                    GrabPressed = true;
-                                    nextGrabTime = Time.time + grabCooldown;
-                                    objectGrabTime = Time.time;
-                                    currentBehavior = AIBehavior.Grab;
-                                }
+                                //// If we're close enough to the object, grab it
+                                //float distToObj = Vector3.Distance(coreRb.position, objPos);
+                                //if (distToObj < grabRange && Time.time >= nextGrabTime)
+                                //{
+                                //    GrabPressed = true;
+                                //    nextGrabTime = Time.time + grabCooldown;
+                                //    objectGrabTime = Time.time;
+                                //    currentBehavior = AIBehavior.Grab;
+                                //}
                                 break;
                             }
                         }
@@ -724,50 +727,36 @@ namespace RabbleHouse
                     awayDir.y = 0;
                     // Wall-aware retreat: if backing into a wall, slide along it
                     MoveInput = GetSafeRetreatDirection(awayDir);
-                    // High chance to immediately follow up with a charge
-                    if (Random.value < 0.9f)
-                    {
-                        isCharging = true;
-                        chargeEndTime = Time.time + chargeDuration;
-                    }
+                    // Following up with a charge
+                    isCharging = true;
+                    chargeEndTime = Time.time + chargeDuration;
                     return;
                 }
 
                 // CHARGE: sprint in and heavy punch when in range
-            if (isCharging && Time.time < chargeEndTime && controller.HeavyPunchReady)
-            {
-            SprintPressed = true;
-            MoveToward(target.position);
-            if (distToTarget < attackRange && Time.time >= nextAttackTime)
-            {
-            HeavyAttackPressed = true;
-            nextAttackTime = Time.time + attackCooldown;
-            }
-            return;
-            }
-                isCharging = false;
-
-                // 3) BACK-UP: keep safeDistance, occasionally seek a grab/other target
-                if (isBackingUp && Time.time < backUpEndTime)
+                if (isCharging && Time.time < chargeEndTime && controller.HeavyPunchReady)
                 {
-                    if (distToTarget < safeDistance)
+                    SprintPressed = true;
+                    MoveToward(target.position);
+                    if (distToTarget < attackRange && Time.time >= nextAttackTime)
                     {
-                        Vector3 awayDir = (coreRb.position - target.position).normalized;
-                        awayDir.y = 0;
-                        // Wall-aware retreat: slide along the wall instead of pushing into it
-                        MoveInput = GetSafeRetreatDirection(awayDir);
+                        HeavyAttackPressed = true;
+                        nextAttackTime = Time.time + attackCooldown;
                     }
-                    else
-                    {
-                        MoveInput = Vector2.zero;
-                    }
-                    SprintPressed = false;
                     return;
                 }
-                isBackingUp = false;
+                isCharging = false;
+
+                //// 3) BACK-UP: keep safeDistance, occasionally seek a grab/other target
+                //if (isBackingUp && Time.time < backUpEndTime)
+                //{
+                //    currentBehavior = AIBehavior.Retreat;
+                //    return;
+                //}
+                //isBackingUp = false;
 
                 // --- No active sub-state: pick one based on chances ----------
-                if (Random.value < baitChance)
+                if (Random.value < baitChance && !HeavyAttackPressed)
                 {
                     isBaiting = true;
                     // Phase A ends either when close enough (baitDistance) or after this max time
@@ -775,20 +764,11 @@ namespace RabbleHouse
                     return;
                 }
 
-                if (Random.value < backingUpChance)
+                if (Random.value < backingUpChance && !HeavyAttackPressed)
                 {
-                    isBackingUp = true;
+                    //isBackingUp = true;
                     backUpEndTime = Time.time + Random.Range(0.8f, 1.8f);
-                    // Chance to look for a nearby object or new unarmed target
-                    if (Random.value < 0.5f)
-                    {
-                        GrabbableObject nearby = nearestGrabbableStatic;
-                        if (nearby != null)
-                        {
-                            currentBehavior = AIBehavior.Grab;
-                            return;
-                        }
-                    }
+                    currentBehavior = AIBehavior.Retreat;
                     return;
                 }
 
