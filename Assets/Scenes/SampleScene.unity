@@ -404,7 +404,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 111625743}
   serializedVersion: 5
-  m_Mass: 20
+  m_Mass: 1
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -436,10 +436,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 1
-  heldMass: 0.5
+  heldMass: 0.1
   hipRotationResistance: 100
   swingDamage: 15
-  swingStunChance: 1
+  swingStunChance: 0.5
   attackRangeBonus: 0.5
   throwDamage: 25
   throwStunChance: 0.9
@@ -1294,16 +1294,8 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
-      propertyPath: leadTime
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: grabRange
       value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
-      propertyPath: moveSpeed
-      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: aggression
@@ -1311,7 +1303,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: baitChance
-      value: 0.2
+      value: 0.15
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: chaseRange
@@ -1323,7 +1315,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: dodgeChance
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: feintChance
@@ -1347,7 +1339,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: retreatChance
-      value: 0.3
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: throwHoldTime
@@ -1367,7 +1359,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: backingUpChance
-      value: 0.5
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: decisionInterval
@@ -1471,7 +1463,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: punchDamage
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: knockbackForce
@@ -1484,10 +1476,6 @@ PrefabInstance:
     - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: heavyPunchHitType
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
-      propertyPath: heavyPunchCooldown
-      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: heavyPunchStunChance
@@ -2388,7 +2376,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: punchDamage
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: knockbackForce
@@ -2401,10 +2389,6 @@ PrefabInstance:
     - target: {fileID: 3476896830541794910, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: heavyPunchHitType
       value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3476896830541794910, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
-      propertyPath: heavyPunchCooldown
-      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: heavyPunchStunChance

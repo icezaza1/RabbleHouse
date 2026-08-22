@@ -27,8 +27,8 @@ namespace RabbleHouse
         public bool IsHoldingObject => heldObject != null;
         public GrabbableObject HeldObject => heldObject;
         public bool IsGrounded => isGrounded;
-                public bool HeavyPunchReady => heavyPunchCooldownTimer <= 0f && !isHeavyPunching;
-                public bool SprintPressed => sprintPressed;
+        public bool HeavyPunchReady => heavyPunchCooldownTimer <= 0f && !isHeavyPunching;
+        public bool SprintPressed => sprintPressed;
         public int PlayerIndex { get; set; } = 0;
         public Rigidbody CoreRigidbody => coreRigidbody;
         public float StunDuration => stunDuration;
@@ -702,6 +702,7 @@ namespace RabbleHouse
         {
             if (isHeavyPunching) return;
             if (heldObject == null || swingCooldownTimer > 0f) return;
+            swingCooldownTimer = heavyPunchCooldown;
 
             isHeavyPunching = true;
             StartCoroutine(HeldObjectSwingRoutine());
@@ -1037,7 +1038,7 @@ namespace RabbleHouse
             {
                 hipJoint.targetRotation = Quaternion.Inverse(Quaternion.LookRotation(currentMoveDir));
             }
-            
+
             isHeavyPunching = false;
             heavyPunchCooldownTimer = heavyPunchCooldown;
         }
@@ -1271,13 +1272,13 @@ namespace RabbleHouse
             if (coreRigidbody == null) return;
             Matrix4x4 oldMatrix = Gizmos.matrix;
 
-            //// Grab box gizmo (existing)
-            //Gizmos.color = Color.green;
-            //Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
-            //Vector3 halfExtents = new Vector3(0.1f, 0.5f, grabRange * 0.5f);
-            //Gizmos.matrix = Matrix4x4.TRS(origin, coreRigidbody.rotation, Vector3.one);
-            //Gizmos.DrawWireCube(Vector3.zero, halfExtents * 2f);
-            //Gizmos.matrix = oldMatrix;
+            // Grab box gizmo (existing)
+            Gizmos.color = Color.green;
+            Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
+            Vector3 halfExtents = new Vector3(0.1f, 0.5f, grabRange * 0.5f);
+            Gizmos.matrix = Matrix4x4.TRS(origin, coreRigidbody.rotation, Vector3.one);
+            Gizmos.DrawWireCube(Vector3.zero, halfExtents * 2f);
+            Gizmos.matrix = oldMatrix;
 
             // --- Hit-cone gizmo ---
             // Matches CheckHit: OverlapSphere at core body + 0.5 up, radius = punchRange,
@@ -1287,12 +1288,12 @@ namespace RabbleHouse
 
             // Draw the full overlap sphere in faint yellow
             Gizmos.color = new Color(1f, 1f, 0f, 0.25f);
-            Gizmos.DrawWireSphere(hitCenter, punchRange + heldObject?.AttackRangeBonus ?? 0f);
+            Gizmos.DrawWireSphere(hitCenter, punchRange);
 
             // Draw the hit-cone boundary lines (two lines at the cone edge)
             // cos(θ) = 0.2  →  θ = acos(0.2) ≈ 78.5°
             float coneAngle = Mathf.Acos(0.85f) * Mathf.Rad2Deg;
-            float coneLen = punchRange + (heldObject?.AttackRangeBonus ?? 0f);
+            float coneLen = punchRange;
 
             Gizmos.color = Color.yellow;
             Vector3 leftEdge  = Quaternion.AngleAxis(-coneAngle, Vector3.up) * fwd * coneLen;
