@@ -31,19 +31,21 @@ namespace RabbleHouse
 
         [Header("Intercept")]
         [SerializeField] private float moveSpeed = 5f; // predicted speed for intercept calculation
+        [SerializeField] private float leadTime = 0.8f; // fixed seconds to predict ahead — keeps intercept aggressive even at close range
+        [SerializeField] private float velocitySmoothing = 0.1f; // smoothing factor for target velocity history
 
         [Header("Unarmed vs Unarmed Behaviors")]
         [SerializeField] private float dodgeChance = 0.2f;
         [SerializeField] private float circleChance = 0.15f;
         [SerializeField] private float retreatChance = 0.1f;
-        [SerializeField] private float feintChance = 0.1f;
+        [SerializeField] private float chargeChance = 0.1f;
         [SerializeField] private float minAttackInterval = 0.8f;
         [SerializeField] private float maxAttackInterval = 2.5f;
 
         [Header("Unarmed vs Armed Behaviors")]
         [SerializeField] private float baitChance = 0.2f;          // sprint in, sprint out when target swings
         [SerializeField] private float backingUpChance = 0.25f;    // maintain distance from armed target
-        [SerializeField] private float chargeChance = 0.15f;       // sprint in with heavy punch
+        [SerializeField] private float chargeAgainstArmedChance = 0.15f;       // sprint in with heavy punch
         [SerializeField] private float baitDistance = 3f;          // distance to approach when baiting
         [SerializeField] private float safeDistance = 4f;          // preferred distance from armed target
         [SerializeField] private float retreatGrabChance = 0.5f;   // chance to seek a nearby object while backing up
@@ -171,7 +173,7 @@ namespace RabbleHouse
                 // Preserve grab intent when target becomes armed — keep trying to grab
                 // the desired object for a brief window (2s) instead of immediately
                 // switching to armed vs armed behavior.
-                if (nearestGrabbableStatic != null && Time.time - objectGrabTime < 2f)
+                if (!controller.IsHoldingObject && nearestGrabbableStatic != null && Time.time - objectGrabTime < 2f)
                 {
                     currentBehavior = AIBehavior.Grab;
                     return;
@@ -229,7 +231,7 @@ namespace RabbleHouse
                 if (distToTarget > bonusRange)
                 {
                     // Far — decide between charge or throw-when-ready / chase to close
-                    if (roll < chargeChance * 100)
+                    if (roll < chargeAgainstArmedChance * 100)
                     {
                         return AIBehavior.Charge; // Sprint in with heavy punch
                     }
@@ -382,7 +384,7 @@ namespace RabbleHouse
                             else
                             {
                                 // Target is far — chase to get in range
-                                MoveToward(targetPlayer.position);
+                                MoveToward(InterceptPosition(targetPlayer));
                             }
                         }
                     }
@@ -393,6 +395,7 @@ namespace RabbleHouse
                     break;
 
                 case AIBehavior.Retreat:
+                    SprintPressed = true;
                     Transform threat = FindNearestPlayer();
                     if (threat != null)
                     {
@@ -402,7 +405,6 @@ namespace RabbleHouse
                             GrabbableObject retreatTarget = FindRetreatGrabbable(threat);
                             if (retreatTarget != null)
                             {
-                                SprintPressed = true;
                                 Vector3 objPos = retreatTarget.transform.position;
                                 Vector3 toObj = (objPos - coreRb.position).normalized;
                                 Vector3 awayDir = (coreRb.position - threat.position).normalized;
@@ -628,18 +630,22 @@ namespace RabbleHouse
             float distance = toTarget.magnitude;
             if (distance < 0.001f) return targetPos;
 
-            // ETA using the AI's actual sprint speed (matches HandleMovement)
-            float aiSpeed = (controller != null && controller.SprintPressed) ? moveSpeed * 1.5f : moveSpeed;
-            float eta = Mathf.Clamp(distance / aiSpeed, 0.1f, 5f);
+            // Smooth target velocity to avoid jittery updates from Hips root
+            float now = Time.time;
+            smoothedVelocity = Vector3.Lerp(smoothedVelocity, targetRb.linearVelocity, velocitySmoothing);
+            lastTargetPos = targetPos;
+            lastTargetTime = now;
 
-            // Pure velocity extrapolation
-            Vector3 predicted = targetPos + targetRb.linearVelocity * eta;
-            predicted.y = 0f;
+            // Fixed lead time (seconds) instead of distance-based ETA for more predictable behavior
+            float eta = leadTime;
+            eta = Mathf.Clamp(eta, 0.1f, 5f);
 
-            // Bias toward cutting INSIDE the circle: aim at the midpoint between
-            // the target's current position and the extrapolated point. This pulls
-            // the aim inward so the AI doesn't just orbit alongside a circling player.
-            Vector3 aimPoint = Vector3.Lerp(targetPos, predicted, 0.5f);
+            // Predict where target will be (more ahead)
+            Vector3 predicted = targetPos + smoothedVelocity * eta;
+
+            // Bias further toward cutting inside the circle (reduce Lerp weight from 0.5 to 0.3)
+            // Lower Lerp value = aim point is closer to predicted (further ahead), making the intercept more aggressive.
+            Vector3 aimPoint = Vector3.Lerp(targetPos, predicted, 0.3f);
 
             return aimPoint;
         }
@@ -786,7 +792,7 @@ namespace RabbleHouse
                     return;
                 }
 
-                if (Random.value < chargeChance)
+                if (Random.value < chargeAgainstArmedChance)
                 {
                     isCharging = true;
                     chargeEndTime = Time.time + chargeDuration;
@@ -831,6 +837,20 @@ namespace RabbleHouse
             }
             isCircling = false;
 
+            // Currently charging against unarmed
+            if (isCharging && Time.time < chargeEndTime && controller.HeavyPunchReady)
+            {
+                SprintPressed = true;
+                MoveToward(InterceptPosition(target));
+                if (distToTarget < attackRange && Time.time >= nextAttackTime)
+                {
+                    HeavyAttackPressed = true;
+                    nextAttackTime = Time.time + attackCooldown;
+                }
+                return;
+            }
+            isCharging = false;
+
             // In combat range — decide action
             MoveInput = Vector2.zero;
             SprintPressed = false;
@@ -865,7 +885,16 @@ namespace RabbleHouse
                 return;
             }
 
-            // Attack (light combo / heavy / feint)
+            // Charge?
+            if (Random.value < chargeChance)
+            {
+                SprintPressed = true;
+                isCharging = true;
+                chargeEndTime = Time.time + chargeDuration;
+                return;
+            }
+
+            // Attack (light combo / heavy)
             if (Time.time >= nextAttackTime)
             {
                 if (Random.value < 0.6f)
@@ -875,17 +904,8 @@ namespace RabbleHouse
                 }
                 else
                 {
-                    if (Random.value < feintChance)
-                    {
-                        HeavyAttackPressed = true;
-                        isDodging = true;
-                        dodgeEndTime = Time.time + 0.2f;
-                    }
-                    else
-                    {
-                        HeavyAttackPressed = true;
-                        nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
-                    }
+                    HeavyAttackPressed = true;
+                    nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
                 }
             }
         }

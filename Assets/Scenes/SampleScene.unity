@@ -1294,6 +1294,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: leadTime
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: grabRange
       value: 3
       objectReference: {fileID: 0}
