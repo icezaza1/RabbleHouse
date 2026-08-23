@@ -4111,7 +4111,6 @@ GameObject:
   - component: {fileID: 7836999498126563034}
   - component: {fileID: 3476896830541794910}
   - component: {fileID: 3319117169611220798}
-  - component: {fileID: 7507806382802167566}
   - component: {fileID: 4098088897499954584}
   - component: {fileID: 8387280469919156935}
   m_Layer: 0
@@ -4203,7 +4202,6 @@ MonoBehaviour:
   targetAnimator: {fileID: 509191974249044825}
   grabAnchorPoint: {fileID: 1921075582220009141}
   moveSpeed: 1.5
-  jumpForce: 6
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
@@ -4216,21 +4214,13 @@ MonoBehaviour:
   punchForce: 15
   punchRange: 1
   punchDamage: 10
+  heavyPunchDamage: 20
+  heavyPunchHitType: 1
+  heavyPunchEffectChance: 0.8
   stunDuration: 2
   knockdownDuration: 1.2
+  knockbackForce: 35
 --- !u!114 &3319117169611220798
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6838619036233646390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df18a9390072c5c44b5c28a212aa30a5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PhysicInputHandler
---- !u!114 &7507806382802167566
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

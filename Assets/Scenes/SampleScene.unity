@@ -227,7 +227,7 @@ Transform:
   m_GameObject: {fileID: 55232590}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.69, y: 0, z: -0.38}
+  m_LocalPosition: {x: 0.7, y: 0, z: -0.38}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -277,7 +277,8 @@ MonoBehaviour:
   hipRotationResistance: 10
   swingDamage: 10
   swingStunChance: 0.5
-  attackRangeBonus: 0
+  attackRangeBonus: 0.3
+  aiRangeBonus: 0.5
   throwDamage: 20
   throwStunChance: 0.8
   throwMinSpeed: 3
@@ -441,6 +442,7 @@ MonoBehaviour:
   swingDamage: 15
   swingStunChance: 0.5
   attackRangeBonus: 0.5
+  aiRangeBonus: 0
   throwDamage: 25
   throwStunChance: 0.9
   throwMinSpeed: 4
@@ -465,7 +467,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &141532854
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -603,7 +605,8 @@ MonoBehaviour:
   hipRotationResistance: 10
   swingDamage: 10
   swingStunChance: 0.5
-  attackRangeBonus: 0
+  attackRangeBonus: 0.5
+  aiRangeBonus: 0
   throwDamage: 20
   throwStunChance: 0.8
   throwMinSpeed: 3
@@ -695,8 +698,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.36243805, y: 0, z: 0, w: 0.9320079}
-  m_LocalPosition: {x: 0.09249879, y: 6.1, z: -7.1571593}
+  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: 3.4488058, y: 4.912, z: -7.3452797}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1307,7 +1310,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: baitChance
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: chaseRange
@@ -1327,7 +1330,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: baitDistance
-      value: 1
+      value: 1.5
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: chargeChance
@@ -1579,6 +1582,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &855468131 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4825994939278303746, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+  m_PrefabInstance: {fileID: 5451191174054772633}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1076304133
 GameObject:
   m_ObjectHideFlags: 0
@@ -1738,6 +1746,7 @@ MonoBehaviour:
   swingDamage: 15
   swingStunChance: 0.3
   attackRangeBonus: 0
+  aiRangeBonus: 0
   throwDamage: 20
   throwStunChance: 0.7
   throwMinSpeed: 3
@@ -1870,7 +1879,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1358971877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2039,6 +2048,101 @@ Transform:
   m_Children: []
   m_Father: {fileID: 468103929}
   m_LocalEulerAnglesHint: {x: 0, y: -90, z: 0}
+--- !u!1 &1514797290
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1514797293}
+  - component: {fileID: 1514797292}
+  - component: {fileID: 1514797291}
+  m_Layer: 0
+  m_Name: CinemachineCamera
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1514797291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514797290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b617507da6d07e749b7efdb34e1173e1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineFollow
+  TrackerSettings:
+    BindingMode: 4
+    PositionDamping: {x: 1, y: 1, z: 1}
+    AngularDampingMode: 0
+    RotationDamping: {x: 1, y: 1, z: 1}
+    QuaternionDamping: 1
+  FollowOffset: {x: 0, y: 4.5, z: -4.5}
+--- !u!114 &1514797292
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514797290}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
+  Priority:
+    Enabled: 0
+    m_Value: 0
+  OutputChannel: 1
+  StandbyUpdate: 2
+  m_StreamingVersion: 20241001
+  m_LegacyPriority: 0
+  Target:
+    TrackingTarget: {fileID: 855468131}
+    LookAtTarget: {fileID: 0}
+    CustomLookAtTarget: 0
+  Lens:
+    FieldOfView: 60.000004
+    OrthographicSize: 5
+    NearClipPlane: 0.3
+    FarClipPlane: 1000
+    Dutch: 0
+    ModeOverride: 0
+    PhysicalProperties:
+      GateFit: 2
+      SensorSize: {x: 21.946, y: 16.002}
+      LensShift: {x: 0, y: 0}
+      FocusDistance: 10
+      Iso: 200
+      ShutterSpeed: 0.005
+      Aperture: 16
+      BladeCount: 5
+      Curvature: {x: 2, y: 11}
+      BarrelClipping: 0.25
+      Anamorphism: 0
+  BlendHint: 0
+--- !u!4 &1514797293
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1514797290}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: 3.4488058, y: 4.912, z: -7.3452797}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 45, y: 0, z: 0}
 --- !u!1 &1770679711
 GameObject:
   m_ObjectHideFlags: 0
@@ -2171,7 +2275,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2101293289
 Transform:
   m_ObjectHideFlags: 0
@@ -2205,6 +2309,7 @@ MonoBehaviour:
   swingDamage: 10
   swingStunChance: 0.5
   attackRangeBonus: 0
+  aiRangeBonus: 0
   throwDamage: 20
   throwStunChance: 0.8
   throwMinSpeed: 3
@@ -2403,6 +2508,10 @@ PrefabInstance:
       value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 4098088897499954584, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: maxHealth
+      value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 4098088897499954584, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: stunChance
       value: 0
       objectReference: {fileID: 0}
@@ -2442,3 +2551,4 @@ SceneRoots:
   - {fileID: 5451191174054772633}
   - {fileID: 622923056}
   - {fileID: 1358971878}
+  - {fileID: 1514797293}

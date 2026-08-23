@@ -34,6 +34,8 @@ namespace RabbleHouse
         [SerializeField] private float swingStunChance = 0.3f;
         [Tooltip("Extra attack/punch range this object provides when held (meters). Larger objects reach farther.")]
         [SerializeField] private float attackRangeBonus = 0f;
+        [Tooltip("Extra attack range detection this object provides when held (meters) for AI.")]
+        [SerializeField] private float aiRangeBonus = 0f;
 
         [Header("Damage (thrown / airborne)")]
         [SerializeField] private int throwDamage = 20;
@@ -59,6 +61,7 @@ namespace RabbleHouse
         public float SwingStunChance => swingStunChance;
         public float KnockbackForce => knockbackForce;
         public float AttackRangeBonus => attackRangeBonus;
+        public float AIRangeBonus => aiRangeBonus;
 
         /// <summary>Register who threw this object (for self-damage prevention).</summary>
         public void SetThrower(PhysicCharacterController owner) => thrower = owner;
