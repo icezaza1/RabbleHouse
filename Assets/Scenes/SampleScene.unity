@@ -273,6 +273,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 0
+  durablility: 5
   heldMass: 0.1
   hipRotationResistance: 10
   swingDamage: 10
@@ -437,6 +438,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 1
+  durablility: 5
   heldMass: 0.1
   hipRotationResistance: 100
   swingDamage: 15
@@ -601,6 +603,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 0
+  durablility: 5
   heldMass: 0.1
   hipRotationResistance: 10
   swingDamage: 10
@@ -698,8 +701,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 3.4488058, y: 4.912, z: -7.3452797}
+  m_LocalRotation: {x: 0.36243805, y: 0, z: 0, w: 0.9320079}
+  m_LocalPosition: {x: 0.09249879, y: 6.1, z: -7.1571593}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1362,7 +1365,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: armedBaitChance
-      value: 1
+      value: 0.5
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: backingUpChance
@@ -1482,7 +1485,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: heavyPunchHitType
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: heavyPunchStunChance
@@ -1741,6 +1744,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 1
+  durablility: 5
   heldMass: 1
   hipRotationResistance: 10
   swingDamage: 15
@@ -1879,7 +1883,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1358971877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2065,7 +2069,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1514797291
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2275,7 +2279,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2101293289
 Transform:
   m_ObjectHideFlags: 0
@@ -2304,6 +2308,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 0
+  durablility: 5
   heldMass: 0.1
   hipRotationResistance: 10
   swingDamage: 10
@@ -2434,6 +2439,10 @@ PrefabInstance:
     - target: {fileID: 2786148479631403647, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_Name
       value: Placeholder_Character1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2786148479631403647, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3179066425933449663, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_LocalPosition.x

@@ -750,7 +750,13 @@ namespace RabbleHouse
                     float objEffectChance = heldObject != null ? heldObject.SwingStunChance : 0f;
                     float objKnockback = heldObject != null ? heldObject.KnockbackForce : -1f;
                     // Swung objects: knockdown type (launch), chance from object
-                    CheckHit(objDamage, punchForce, HitType.Knockdown, objEffectChance, true, objKnockback);
+                    bool hit = CheckHit(objDamage, punchForce, HitType.Knockdown, objEffectChance, true, objKnockback);
+                    if (hit && heldObject != null)
+                    {
+                        heldObject.ApplyDurabilityDamage(1);
+                        if (heldObject.Durability <= 0)
+                            ReleaseObject();
+                    }
                     swingHitDone = true;
                 }
 
@@ -1225,9 +1231,9 @@ namespace RabbleHouse
         /// Check for a damageable character within punchRange in front of us and apply damage.
         /// Uses an OverlapSphere at the core body position, filtering to a forward cone.
         /// </summary>
-        private void CheckHit(int damage, float force, HitType hitType, float effectChance, bool sendAway, float overrideKnockbackForce = -1f)
+        private bool CheckHit(int damage, float force, HitType hitType, float effectChance, bool sendAway, float overrideKnockbackForce = -1f)
         {
-            if (coreRigidbody == null) return;
+            if (coreRigidbody == null) return false;
 
             Collider[] hits = Physics.OverlapSphere(coreRigidbody.position + Vector3.up * 0.5f, punchRange + (heldObject?.AttackRangeBonus ?? 0f));
             Vector3 forward = coreRigidbody.transform.forward;
@@ -1248,8 +1254,9 @@ namespace RabbleHouse
 
                 if (sendAway)
                     ApplyKnockbackTo(targetHealth, knockDir, overrideKnockbackForce);
-                break; // one hit per swing
+                return true;
             }
+            return false;
         }
 
         private void ApplyKnockbackTo(PlayerHealth target, Vector3 direction, float overrideForce = -1f)

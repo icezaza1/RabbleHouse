@@ -22,7 +22,8 @@ namespace RabbleHouse
     {
         public GrabbableType grabbableType = GrabbableType.SmallObject;
 
-        [Header("Mass / Physics")]
+        [Header("Generals")]
+        [SerializeField] private int durablility = 5;
         [Tooltip("Used to calculate how heavy the object is when being held.")]
         [SerializeField] private float heldMass = 1f;
         [Tooltip("Used to calculate how much the object resists hip rotation (LargeObject only).")]
@@ -56,6 +57,7 @@ namespace RabbleHouse
         public bool IsHeld => isHeld;
         public float HipRotationResistance => hipRotationResistance;
 
+        public int Durability => durablility;
         /// <summary>Damage dealt while held and swung.</summary>
         public int SwingDamage => swingDamage;
         public float SwingStunChance => swingStunChance;
@@ -136,6 +138,7 @@ namespace RabbleHouse
 
             // Thrown objects: high stun chance, high damage, DO send away
             targetHealth.TakeDamage(throwDamage, hitDir, HitType.Knockdown, throwStunChance);
+            ApplyDurabilityDamage(1);
 
             // Knock the target away from the impact
             var targetController = targetHealth.GetComponentInParent<PhysicCharacterController>();
@@ -146,6 +149,22 @@ namespace RabbleHouse
 
             // Consume the throw — object must be re-thrown to deal damage again
             isThrown = false;
+        }
+
+        /// <summary>
+        /// Reduce durability by 1 when the object hits a character.
+        /// Returns the new durability (0 = destroyed).
+        /// </summary>
+        public int ApplyDurabilityDamage(int amount = 1)
+        {
+            durablility -= amount;
+            if (durablility < 0) durablility = 0;
+            if (durablility <= 0)
+            {
+                // Optional: play a break effect / sound here
+                Destroy(gameObject);
+            }
+            return durablility;
         }
     }
 }

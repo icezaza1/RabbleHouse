@@ -66,7 +66,8 @@ namespace RabbleHouse
         private float dodgeEndTime;
         private float circleEndTime;
         private float objectGrabTime = -1f;
-        private bool isBaiting = false;
+        private bool isBaitingPhase1 = false;
+        private bool isBaitingPhase2 = false;
         private float baitEndTime;
         [SerializeField] private float chargeDuration = 1.5f; // max time to charge before giving up
         private float randomThrowHoldTime;
@@ -79,7 +80,7 @@ namespace RabbleHouse
         private Vector3 smoothedVelocity = Vector3.zero;
 
         // --- AI STATE ---
-        private enum AIBehavior { Idle, Chase, Grab, Attack, Retreat, Throw, Charge }
+        private enum AIBehavior { Idle, Chase, Grab, Attack, Retreat, Throw }
         private AIBehavior currentBehavior = AIBehavior.Idle;
         private float nextDecisionTime;
         private float nextGrabTime;
@@ -185,7 +186,7 @@ namespace RabbleHouse
                     currentBehavior = AIBehavior.Throw;
                 else if (targetPlayer != null && distToTarget <= 1.5f + bonusRange)
                     currentBehavior = AIBehavior.Attack;
-                else if (targetPlayer != null)
+                else if (targetPlayer != null && (!isBaitingPhase1 || !isBaitingPhase2))
                     currentBehavior = AIBehavior.Chase;
                 else
                     currentBehavior = AIBehavior.Idle;
@@ -208,7 +209,7 @@ namespace RabbleHouse
                     currentBehavior = AIBehavior.Grab;
                 else if (targetPlayer != null && distToTarget <= 1.5f)
                     currentBehavior = AIBehavior.Attack; // Only fight unarmed if really close
-                else if (targetPlayer != null)
+                else if (targetPlayer != null && (!isBaitingPhase1 || !isBaitingPhase2))
                     currentBehavior = AIBehavior.Chase;
                 else
                     currentBehavior = AIBehavior.Idle;
@@ -235,22 +236,28 @@ namespace RabbleHouse
                         float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
                         bool targetIsArmed = IsTargetArmed(targetPlayer);
 
-                        // Unarmed AI vs armed target — back away, don't chase
-                        if (!controller.IsHoldingObject && targetIsArmed && distToTarget < safeDistance)
-                        {
-                            Vector3 awayFromTarget = (coreRb.position - targetPlayer.position).normalized;
-                            awayFromTarget.y = 0;
-                            MoveInput = new Vector2(awayFromTarget.x, awayFromTarget.z).normalized;
-                        }
-                        else
-                        {
-                            if (distToTarget > 0.5f)
-                                SprintPressed = true;
-                            MoveToward(InterceptPosition(targetPlayer));
-                        }
+                        if (distToTarget > 0.5f)
+                            SprintPressed = true;
+
+                        HandleChasing(targetPlayer, distToTarget);
+                        //// Unarmed AI vs armed target — back away, don't chase
+                        //if (!controller.IsHoldingObject && targetIsArmed && distToTarget < safeDistance)
+                        //{
+                        //    Vector3 awayFromTarget = (coreRb.position - targetPlayer.position).normalized;
+                        //    awayFromTarget.y = 0;
+                        //    MoveInput = new Vector2(awayFromTarget.x, awayFromTarget.z).normalized;
+                        //}
+                        //else
+                        //{
+                        //    // If target is close, stop trying to intercept
+                        //    if (distToTarget > 0.5f)
+                        //        SprintPressed = true;
+
+                        //    HandleChasing(targetPlayer, distToTarget);
+                        //}
                     }
                     else
-                        MoveInput = Vector2.zero;
+                        currentBehavior = AIBehavior.Idle;
                     break;
 
                 case AIBehavior.Grab:
@@ -260,7 +267,7 @@ namespace RabbleHouse
                         float distToGrabbable = Vector3.Distance(coreRb.position, grabbable.transform.position);
                         if (distToGrabbable > 1f)
                             SprintPressed = true;
-                        MoveToward(grabbable.transform.position);
+                        HandleChasing(grabbable.transform, distToGrabbable);
                         if (Time.time >= nextGrabTime && distToGrabbable < grabRange)
                         {
                             GrabPressed = true;
@@ -276,30 +283,18 @@ namespace RabbleHouse
                         currentBehavior = AIBehavior.Chase;
                     }
                     break;
-
-                case AIBehavior.Charge:
-                    SprintPressed = true;
-                    MoveToward(targetPlayer.position);
-                    float chargeRange = attackRange + (controller.HeldObject?.AIRangeBonus ?? 0f);
-                    if (Vector3.Distance(transform.position, targetPlayer.position) <= chargeRange)
-                    {
-                        HeavyAttackPressed = true;
-                    }
-                    break;
-
                 case AIBehavior.Attack:
                     if (targetPlayer != null)
                     {
+                        float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
                         if (!controller.IsHoldingObject)
                         {
                             // Unarmed combat behaviors
-                            float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
                             HandleUnarmedCombat(targetPlayer, distToTarget);
                         }
                         else
                         {
                             // Holding object — swing when close, throw when too long
-                            float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
                             HandleArmedCombat(targetPlayer, distToTarget);
                         }
                     }
@@ -355,6 +350,13 @@ namespace RabbleHouse
         // -----------------------------------------------------------------------
         //  MOVEMENT HELPERS
         // -----------------------------------------------------------------------
+        private void HandleChasing(Transform target, float distToTarget)
+        {
+            if (distToTarget < 1f)
+                MoveToward(target.position);
+            else
+                MoveToward(InterceptPosition(target));
+        }
         private void MoveToward(Vector3 targetPos)
         {
             if (coreRb == null) return;
@@ -603,21 +605,24 @@ namespace RabbleHouse
                 //  behaviour instead of re-rolling every frame.)
 
                 // 1) BAIT: sprint in until within baitDistance, then step away
-                if (isBaiting && Time.time < baitEndTime)
+                if (isBaitingPhase1 && Time.time < baitEndTime)
                 {
+                    Debug.Log("going");
                     // Phase A: close distance to baitDistance — sprint toward target
                     SprintPressed = true;
-                    MoveToward(InterceptPosition(target));
+                    HandleChasing(target, distToTarget);
                     // Transition to Phase B once we are close enough to bait
                     if (distToTarget <= baitDistance)
                     {
+                        isBaitingPhase1 = false;
+                        isBaitingPhase2 = true;
                         baitEndTime = Time.time; // force Phase B next frame
                     }
                     return;
                 }
-                if (isBaiting && Time.time >= baitEndTime)
+                if (isBaitingPhase2 && Time.time >= baitEndTime)
                 {
-                    isBaiting = false;
+                    Debug.Log("backing");
                     // Phase 2: step away briefly after reaching bait distance
                     //SprintPressed = false;
                     Vector3 awayDir = (coreRb.position - target.position).normalized;
@@ -627,6 +632,7 @@ namespace RabbleHouse
                     // Following up with a charge if step back far enough
                     if (distToTarget > baitDistance * 1.5f)
                     {
+                        isBaitingPhase2 = false;
                         isCharging = true;
                         chargeEndTime = Time.time + chargeDuration;
                     }
@@ -638,7 +644,7 @@ namespace RabbleHouse
                 {
                     float bonusRange = attackRange * 2f;
                     SprintPressed = true;
-                    MoveToward(InterceptPosition(target));
+                    HandleChasing(target, distToTarget);
                     if (distToTarget < bonusRange && controller.HeavyPunchReady && Time.time >= nextAttackTime)
                     {
                         HeavyAttackPressed = true;
@@ -651,6 +657,7 @@ namespace RabbleHouse
                         scheduledRetreatTime = -1f;
                         isCharging = false;
                         currentBehavior = AIBehavior.Retreat;
+                        chargeEndTime = Time.time; // force end charge
                     }
                     return;
                 }
@@ -658,9 +665,9 @@ namespace RabbleHouse
                 // --- No active sub-state: pick one based on chances ----------
                 if (Random.value < baitChance)
                 {
-                    isBaiting = true;
+                    isBaitingPhase1 = true;
                     // Phase A ends either when close enough (baitDistance) or after this max time
-                    baitEndTime = Time.time + 1.5f;
+                    baitEndTime = Time.time + 2f;
                     return;
                 }
 
@@ -720,15 +727,22 @@ namespace RabbleHouse
                 if (isCharging && Time.time < chargeEndTime)
                 {
                     SprintPressed = true;
-                    MoveToward(InterceptPosition(target));
+                    HandleChasing(target, distToTarget);
                     if (distToTarget < attackRange && controller.HeavyPunchReady && Time.time >= nextAttackTime)
                     {
                         HeavyAttackPressed = true;
                         nextAttackTime = Time.time + attackCooldown;
+                        scheduledRetreatTime = Time.time + retreatAfterChargeDelay; // schedule retreat AFTER punch
+                    }
+                    if (scheduledRetreatTime > 0f && Time.time >= scheduledRetreatTime)
+                    {
+                        //Retreat after a set timer after heavy punch
+                        scheduledRetreatTime = -1f;
+                        isCharging = false;
+                        currentBehavior = AIBehavior.Retreat;
                     }
                     return;
                 }
-                isCharging = false;
 
                 // In combat range — decide action
                 MoveInput = Vector2.zero;
@@ -800,27 +814,29 @@ namespace RabbleHouse
             if (controller == null || target == null) return;
 
             bool targetIsArmed = IsTargetArmed(target);
+            bool shouldWaitForSwingCD = false;
             float bonusRange = attackRange + (controller.HeldObject?.AIRangeBonus ?? 0f);
             // ===================================================================
             //  ARMED TARGET — ONLY these three behaviors are allowed.
             // ===================================================================
             if (targetIsArmed)
             {
-                if (isBaiting && Time.time < baitEndTime)
+                if (isBaitingPhase1 && Time.time < baitEndTime)
                 {
                     // Phase A: close distance to baitDistance — sprint toward target
-                    MoveToward(InterceptPosition(target));
+                    HandleChasing(target, distToTarget);
                     // Transition to Phase B once we are close enough to bait
                     if (distToTarget <= baitDistance * 1.5f)
                     {
+                        isBaitingPhase1 = false;
+                        isBaitingPhase2 = true;
                         baitEndTime = Time.time; // force Phase B next frame
                     }
                     return;
                 }
-                if (isBaiting && Time.time >= baitEndTime)
+                if (isBaitingPhase2 && Time.time >= baitEndTime)
                 {
                     // Phase 2: step away briefly after reaching bait distance
-                    isBaiting = false;
                     Vector3 awayDir = (coreRb.position - target.position).normalized;
                     awayDir.y = 0;
                     // Wall-aware retreat: if backing into a wall, slide along it
@@ -828,6 +844,7 @@ namespace RabbleHouse
                     // Following up with a charge if step back far enough
                     if (distToTarget > baitDistance * 1.8f)
                     {
+                        isBaitingPhase2 = false;
                         isCharging = true;
                         chargeEndTime = Time.time + chargeDuration;
                     }
@@ -837,11 +854,13 @@ namespace RabbleHouse
                 // CHARGE: close in with object swing
                 if (isCharging && Time.time < chargeEndTime)
                 {
-                    MoveToward(InterceptPosition(target));
+                    shouldWaitForSwingCD = false;
+                    HandleChasing(target, distToTarget);
                     if (distToTarget < attackRange && controller.HeavyPunchReady && Time.time >= nextAttackTime)
                     {
                         LightAttackPressed = true;
                         nextAttackTime = Time.time + attackCooldown;
+                        scheduledRetreatTime = Time.time + retreatAfterChargeDelay; // schedule retreat AFTER punch
                         // Swing — stop charging, retreat after hit lands
                         if (scheduledRetreatTime > 0f && Time.time >= scheduledRetreatTime)
                         {
@@ -849,17 +868,25 @@ namespace RabbleHouse
                             scheduledRetreatTime = -1f;
                             isCharging = false;
                             currentBehavior = AIBehavior.Retreat;
+                            shouldWaitForSwingCD = true;
                         }
                     }
                     return;
                 }
 
                 // --- No active sub-state: pick one based on chances ----------
-                if (Random.value < armedBaitChance)
+                if (Random.value < armedBaitChance && controller.HeavyPunchReady)
                 {
-                    isBaiting = true;
+                    isBaitingPhase1 = true;
                     // Phase A ends either when close enough (baitDistance) or after this max time
                     baitEndTime = Time.time + 2f;
+                    return;
+                }
+
+                // Step back if swing isn't ready
+                if (!controller.HeavyPunchReady && shouldWaitForSwingCD)
+                {
+                    currentBehavior = AIBehavior.Retreat;
                     return;
                 }
             }
@@ -870,29 +897,44 @@ namespace RabbleHouse
             // Target is unarmed — standard armed AI behavior
             if (distToTarget < bonusRange)
             {
-                MoveInput = Vector2.zero;
                 if (Time.time >= nextAttackTime)
                 {
                     LightAttackPressed = true; // Swing
+                    shouldWaitForSwingCD = false;
                     nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
+                    scheduledRetreatTime = Time.time + retreatAfterChargeDelay; // schedule retreat AFTER swing
+                    if (scheduledRetreatTime > 0f && Time.time >= scheduledRetreatTime)
+                    {
+                        //Retreat after a set timer after heavy punch
+                        scheduledRetreatTime = -1f;
+                        isCharging = false;
+                        currentBehavior = AIBehavior.Retreat;
+                        shouldWaitForSwingCD = true;
+                    }
+                    return;
                 }
             }
             else if ((Time.time - objectGrabTime) > randomThrowHoldTime)
             {
                 // Close but held too long, or far — throw it
-                MoveInput = Vector2.zero;
                 if (Time.time >= nextAttackTime)
                 {
                     HeavyAttackPressed = true; // Throw
+                    shouldWaitForSwingCD = false;
                     nextAttackTime = Time.time + attackCooldown;
                     objectGrabTime = -1f;
+                    return;
                 }
             }
+
+            // Step back if swing isn't ready
+            if (!controller.HeavyPunchReady && shouldWaitForSwingCD)
+            {
+                currentBehavior = AIBehavior.Retreat;
+                return;
+            }
             // If target is close, stop trying to intercept
-            if (distToTarget > 0.5f)
-                MoveToward(InterceptPosition(target));
-            else
-                MoveToward(target.position);
+            HandleChasing(target, distToTarget);
         }
     }
 }
