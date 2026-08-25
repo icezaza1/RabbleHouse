@@ -28,6 +28,7 @@ namespace RabbleHouse
         public GrabbableObject HeldObject => heldObject;
         public bool IsGrounded => isGrounded;
         public bool HeavyPunchReady => heavyPunchCooldownTimer <= 0f && !isHeavyPunching;
+        public bool SwingReady => swingCooldownTimer <= 0f;
         public bool SprintPressed => sprintPressed;
         public int PlayerIndex { get; set; } = 0;
         public Rigidbody CoreRigidbody => coreRigidbody;

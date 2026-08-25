@@ -607,7 +607,6 @@ namespace RabbleHouse
                 // 1) BAIT: sprint in until within baitDistance, then step away
                 if (isBaitingPhase1 && Time.time < baitEndTime)
                 {
-                    Debug.Log("going");
                     // Phase A: close distance to baitDistance — sprint toward target
                     SprintPressed = true;
                     HandleChasing(target, distToTarget);
@@ -622,7 +621,6 @@ namespace RabbleHouse
                 }
                 if (isBaitingPhase2 && Time.time >= baitEndTime)
                 {
-                    Debug.Log("backing");
                     // Phase 2: step away briefly after reaching bait distance
                     //SprintPressed = false;
                     Vector3 awayDir = (coreRb.position - target.position).normalized;
@@ -814,7 +812,6 @@ namespace RabbleHouse
             if (controller == null || target == null) return;
 
             bool targetIsArmed = IsTargetArmed(target);
-            bool shouldWaitForSwingCD = false;
             float bonusRange = attackRange + (controller.HeldObject?.AIRangeBonus ?? 0f);
             // ===================================================================
             //  ARMED TARGET — ONLY these three behaviors are allowed.
@@ -854,22 +851,25 @@ namespace RabbleHouse
                 // CHARGE: close in with object swing
                 if (isCharging && Time.time < chargeEndTime)
                 {
-                    shouldWaitForSwingCD = false;
                     HandleChasing(target, distToTarget);
+
+                    // Check swing readiness
                     if (distToTarget < attackRange && controller.HeavyPunchReady && Time.time >= nextAttackTime)
                     {
-                        LightAttackPressed = true;
-                        nextAttackTime = Time.time + attackCooldown;
-                        scheduledRetreatTime = Time.time + retreatAfterChargeDelay; // schedule retreat AFTER punch
-                        // Swing — stop charging, retreat after hit lands
-                        if (scheduledRetreatTime > 0f && Time.time >= scheduledRetreatTime)
+                        if (controller.SwingReady)
                         {
-                            //Retreat after a set timer after heavy punch
-                            scheduledRetreatTime = -1f;
-                            isCharging = false;
-                            currentBehavior = AIBehavior.Retreat;
-                            shouldWaitForSwingCD = true;
+                            LightAttackPressed = true;
+                            nextAttackTime = Time.time + attackCooldown;
+                            scheduledRetreatTime = Time.time + retreatAfterChargeDelay; // schedule retreat AFTER punch
                         }
+                    }
+                    // Swing — stop charging, retreat after hit lands
+                    if (scheduledRetreatTime > 0f && Time.time >= scheduledRetreatTime)
+                    {
+                        //Retreat after a set timer after heavy punch
+                        scheduledRetreatTime = -1f;
+                        isCharging = false;
+                        currentBehavior = AIBehavior.Retreat;
                     }
                     return;
                 }
@@ -884,7 +884,7 @@ namespace RabbleHouse
                 }
 
                 // Step back if swing isn't ready
-                if (!controller.HeavyPunchReady && shouldWaitForSwingCD)
+                if (!controller.SwingReady)
                 {
                     currentBehavior = AIBehavior.Retreat;
                     return;
@@ -897,22 +897,20 @@ namespace RabbleHouse
             // Target is unarmed — standard armed AI behavior
             if (distToTarget < bonusRange)
             {
-                if (Time.time >= nextAttackTime)
+                if (controller.SwingReady)
                 {
                     LightAttackPressed = true; // Swing
-                    shouldWaitForSwingCD = false;
                     nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);
                     scheduledRetreatTime = Time.time + retreatAfterChargeDelay; // schedule retreat AFTER swing
-                    if (scheduledRetreatTime > 0f && Time.time >= scheduledRetreatTime)
-                    {
-                        //Retreat after a set timer after heavy punch
-                        scheduledRetreatTime = -1f;
-                        isCharging = false;
-                        currentBehavior = AIBehavior.Retreat;
-                        shouldWaitForSwingCD = true;
-                    }
-                    return;
                 }
+                if (scheduledRetreatTime > 0f && Time.time >= scheduledRetreatTime)
+                {
+                    //Retreat after a set timer after heavy punch
+                    scheduledRetreatTime = -1f;
+                    isCharging = false;
+                    currentBehavior = AIBehavior.Retreat;
+                }
+                return;
             }
             else if ((Time.time - objectGrabTime) > randomThrowHoldTime)
             {
@@ -920,7 +918,6 @@ namespace RabbleHouse
                 if (Time.time >= nextAttackTime)
                 {
                     HeavyAttackPressed = true; // Throw
-                    shouldWaitForSwingCD = false;
                     nextAttackTime = Time.time + attackCooldown;
                     objectGrabTime = -1f;
                     return;
@@ -928,7 +925,7 @@ namespace RabbleHouse
             }
 
             // Step back if swing isn't ready
-            if (!controller.HeavyPunchReady && shouldWaitForSwingCD)
+            if (!controller.HeavyPunchReady)
             {
                 currentBehavior = AIBehavior.Retreat;
                 return;
