@@ -23,6 +23,7 @@ namespace RabbleHouse
         public GrabbableType grabbableType = GrabbableType.SmallObject;
 
         [Header("Generals")]
+        public Transform gripPoint;
         [SerializeField] private int durablility = 5;
         [Tooltip("Used to calculate how heavy the object is when being held.")]
         [SerializeField] private float heldMass = 1f;
@@ -165,6 +166,21 @@ namespace RabbleHouse
                 Destroy(gameObject);
             }
             return durablility;
+        }
+
+        /// <summary>
+        /// Fire the projectile from this tool.
+        /// Reduces durability by 1 and deals swingDamage to the target.
+        /// </summary>
+        public void Fire()
+        {
+            // Reduce durability per shot
+            ApplyDurabilityDamage(1);
+
+            // TODO: spawn projectile prefab at the holder's hand position + forward
+            // The projectile should use 'swingDamage' as its damage amount
+            // Example: Instantiate(projectilePrefab, firePoint.position, firePoint.rotation)
+            //          projectile.damage = swingDamage;
         }
     }
 }

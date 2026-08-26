@@ -19,8 +19,6 @@ namespace RabbleHouse
             Ragdoll,
             Dead,
             Grabbing,
-            Throwing,
-            Punching
         }
 
         public CharacterState CurrentState => currentState;
@@ -225,9 +223,13 @@ namespace RabbleHouse
             // While holding an object, override both hand joints' targetRotation
             // so the arms raise.  LateUpdate runs after FixedUpdate, so our
             // value wins over ActiveRagdollBone's per-frame write.
-            if (heldObject != null)
+            if (heldObject != null && heldGrabbableType != GrabbableType.Tool)
             {
-                RaiseBothArms();
+                RaiseArms(true);
+            }
+            else if (heldObject != null)
+            {
+                RaiseArms(false);
             }
 
             // Handle light attack (punch or swing depending on held object)
@@ -265,9 +267,6 @@ namespace RabbleHouse
                     targetAnimator.SetBool("IsWalking", moveInput.magnitude > 0.01f);
                     HandleMovement();
                     HandleRotation();
-                    break;
-                case CharacterState.Punching:
-                    // This will be overridden by HandleLightPunch if a light punch is in progress
                     break;
             }
 
@@ -350,8 +349,8 @@ namespace RabbleHouse
             if (!isGrounded) return;
 
             // Sprint Handle
-            isSprinting = heldObject == null && (sprintPressed ? true : false);
-            targetAnimator.SetFloat("AnimationSpeed", sprintPressed ? 1 : 2);
+            isSprinting = (heldObject == null || heldGrabbableType == GrabbableType.Tool) && (sprintPressed ? true : false);
+            targetAnimator.SetFloat("AnimationSpeed", isSprinting ? 1 : 2);
 
             Vector3 forward = Camera.main ? Camera.main.transform.forward : Vector3.forward;
             Vector3 right = Camera.main ? Camera.main.transform.right : Vector3.right;
@@ -500,7 +499,7 @@ namespace RabbleHouse
 
                 return configJoint;
             }
-            else
+            else if (heldGrabbableType == GrabbableType.LargeObject)
             {
                 // LargeObject: ConfigurableJoint with spring-damper
                 ConfigurableJoint grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
@@ -533,6 +532,30 @@ namespace RabbleHouse
 
                 return grabJoint;
             }
+            else if (heldGrabbableType == GrabbableType.Tool)
+            {
+                // Calculate rotation offset so the Grip Point matches the Hand orientation
+                Quaternion rotationOffset = handBody.rotation * Quaternion.Inverse(heldObject.gripPoint.localRotation);
+                heldObject.transform.rotation = rotationOffset;
+
+                // Calculate position offset so the Grip Point sits directly on the Hand center
+                Vector3 positionOffset = handBody.position - (rotationOffset * heldObject.gripPoint.localPosition);
+                heldObject.transform.position = positionOffset;
+
+                // Tool: ConfigurableJoint with spring-damper
+                FixedJoint grabJoint = handBody.gameObject.AddComponent<FixedJoint>();
+                grabJoint.connectedBody = heldObject.Rigidbody;
+                grabJoint.connectedAnchor = Vector3.zero;
+                grabJoint.anchor = Vector3.zero;
+                grabJoint.breakForce = 1500f;
+                grabJoint.breakTorque = 1500f;
+                Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
+                if (balancer != null)
+                    balancer.weight *= 0.5f;
+
+                return grabJoint;
+            }
+            else return null;
         }
 
         private void ReleaseObject()
@@ -574,29 +597,33 @@ namespace RabbleHouse
         }
 
         // --- ARM MUSCLE HELPERS ---
-        public void RaiseBothArms()
+        public void RaiseArms(bool bothArm)
         {
             // Disable ActiveRagdollBone scripts so they don't fight our target rotation
-            LUpperBoneScript.enabled = false;
-            LLowerBoneScript.enabled = false;
             RUpperBoneScript.enabled = false;
             RLowerBoneScript.enabled = false;
 
             // Boost X and YZ joint drives for both arms
-            SetXYZJointStrength(leftUpperArm, 12000f, 120f);
-            SetXYZJointStrength(leftLowerArm, 12000f, 120f);
             SetXYZJointStrength(rightUpperArm, 12000f, 120f);
             SetXYZJointStrength(rightLowerArm, 12000f, 120f);
 
             // Zero out any existing angular velocity
-            leftUpperArm.targetAngularVelocity = Vector3.zero;
             rightUpperArm.targetAngularVelocity = Vector3.zero;
 
             // Set target rotations for the raised arms
-            leftUpperArm.targetRotation = Quaternion.Euler(0, -90, 60);
-            leftLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
             rightUpperArm.targetRotation = Quaternion.Euler(0, 90, -60);
             rightLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
+
+            if (bothArm)
+            {
+                LUpperBoneScript.enabled = false;
+                LLowerBoneScript.enabled = false;
+                SetXYZJointStrength(leftUpperArm, 12000f, 120f);
+                SetXYZJointStrength(leftLowerArm, 12000f, 120f);
+                leftUpperArm.targetAngularVelocity = Vector3.zero;
+                leftUpperArm.targetRotation = Quaternion.Euler(0, -90, 60);
+                leftLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
+            }
         }
 
         public void ResetBothArms()
@@ -673,7 +700,15 @@ namespace RabbleHouse
         {
             if (isHeavyPunching) return;
 
-            if (heldObject != null)
+            if (heldObject != null && heldGrabbableType == GrabbableType.Tool)
+            {
+                if (lightAttackPressed && SwingReady)
+                {
+                    heldObject.Fire();
+                }
+                return;
+            }
+            if (heldObject != null && (heldGrabbableType == GrabbableType.SmallObject || heldGrabbableType == GrabbableType.LargeObject))
             {
                 // Holding an object: LightAttack = swing (when button is pressed)
                 if (lightAttackPressed && swingCooldownTimer <= 0f)
