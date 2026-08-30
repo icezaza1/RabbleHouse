@@ -66,6 +66,7 @@ namespace RabbleHouse
         private Joint leftHandJoint;
         private Rigidbody rightHandRb;
         private Joint rightHandJoint;
+        private ToolBehaviour activeTool;
 
         // --- INPUT ---
         private Vector2 moveInput;
@@ -225,11 +226,11 @@ namespace RabbleHouse
             // value wins over ActiveRagdollBone's per-frame write.
             if (heldObject != null && heldGrabbableType != GrabbableType.Tool)
             {
-                RaiseArms(true);
+                RaiseArmsForHeld();
             }
-            else if (heldObject != null)
+            else if (heldObject != null && !isHeavyPunching)
             {
-                RaiseArms(false);
+                RaiseArmsForHeld();
             }
 
             // Handle light attack (punch or swing depending on held object)
@@ -440,6 +441,11 @@ namespace RabbleHouse
                     // One-handed grab — only right hand holds
                     rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
                     leftHandJoint = null;
+
+                    // Cache tool behavior
+                    activeTool = closest.GetComponent<ToolBehaviour>();
+                    if (activeTool != null)
+                        activeTool.OnToolGrabbed(this);
                 }
                 else
                 {
@@ -566,6 +572,13 @@ namespace RabbleHouse
             if (leftHandJoint != null) Destroy(leftHandJoint);
             if (rightHandJoint != null) Destroy(rightHandJoint);
 
+            // Clean up tool
+            if (activeTool != null)
+            {
+                activeTool.OnToolReleased();
+                activeTool = null;
+            }
+
             heldObject.ReleaseByPlayer();
             heldObject = null;
             heldGrabbableType = GrabbableType.SmallObject;
@@ -597,33 +610,71 @@ namespace RabbleHouse
         }
 
         // --- ARM MUSCLE HELPERS ---
-        public void RaiseArms(bool bothArm)
+        private void RaiseArmsForHeld()
+        {
+            var tool = heldObject != null ? heldObject.GetComponent<ToolBehaviour>() : null;
+            if (tool != null)
+            {
+                // Per-tool hold pose
+                var profile = tool.ArmProfile;
+                var oneHandedTool = tool.OneHanded;
+                RUpperBoneScript.enabled = false;
+                RLowerBoneScript.enabled = false;
+
+                SetXYZJointStrength(rightUpperArm, 12000f, 240f);
+                SetXYZJointStrength(rightLowerArm, 12000f, 240f);
+
+                // Set target rotations
+                rightUpperArm.targetRotation = Quaternion.Euler(profile.rightUpperHold);
+                rightLowerArm.targetRotation = Quaternion.Euler(profile.rightLowerHold);
+                // Zero out any existing angular velocity
+                rightUpperArm.targetAngularVelocity = Vector3.zero;
+                
+
+                if (!oneHandedTool)
+                {
+                    LUpperBoneScript.enabled = false;
+                    LLowerBoneScript.enabled = false;
+
+                    SetXYZJointStrength(leftUpperArm, 12000f, 240f);
+                    SetXYZJointStrength(leftLowerArm, 12000f, 240f);
+
+                    // Set target rotations
+                    leftUpperArm.targetRotation = Quaternion.Euler(profile.leftUpperHold);
+                    leftLowerArm.targetRotation = Quaternion.Euler(profile.leftLowerHold);
+                    // Zero out any existing angular velocity
+                    leftUpperArm.targetAngularVelocity = Vector3.zero;
+                }
+            }
+            else
+            {
+                // Existing hardcoded Small/Large pose
+                RaiseBothArms();
+            }
+        }
+        public void RaiseBothArms()
         {
             // Disable ActiveRagdollBone scripts so they don't fight our target rotation
             RUpperBoneScript.enabled = false;
             RLowerBoneScript.enabled = false;
+            LUpperBoneScript.enabled = false;
+            LLowerBoneScript.enabled = false;
 
             // Boost X and YZ joint drives for both arms
             SetXYZJointStrength(rightUpperArm, 12000f, 120f);
             SetXYZJointStrength(rightLowerArm, 12000f, 120f);
+            SetXYZJointStrength(leftUpperArm, 12000f, 120f);
+            SetXYZJointStrength(leftLowerArm, 12000f, 120f);
 
             // Zero out any existing angular velocity
             rightUpperArm.targetAngularVelocity = Vector3.zero;
+            leftUpperArm.targetAngularVelocity = Vector3.zero;
 
             // Set target rotations for the raised arms
             rightUpperArm.targetRotation = Quaternion.Euler(0, 90, -60);
             rightLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
-
-            if (bothArm)
-            {
-                LUpperBoneScript.enabled = false;
-                LLowerBoneScript.enabled = false;
-                SetXYZJointStrength(leftUpperArm, 12000f, 120f);
-                SetXYZJointStrength(leftLowerArm, 12000f, 120f);
-                leftUpperArm.targetAngularVelocity = Vector3.zero;
-                leftUpperArm.targetRotation = Quaternion.Euler(0, -90, 60);
-                leftLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
-            }
+            leftUpperArm.targetRotation = Quaternion.Euler(0, -90, 60);
+            leftLowerArm.targetRotation = Quaternion.Euler(330, 0, 0);
         }
 
         public void ResetBothArms()
@@ -700,17 +751,17 @@ namespace RabbleHouse
         {
             if (isHeavyPunching) return;
 
-            if (heldObject != null && heldGrabbableType == GrabbableType.Tool)
+            if (heldObject != null)
             {
-                if (lightAttackPressed && SwingReady)
+                // Tool: delegate to ToolBehaviour
+                if (activeTool != null)
                 {
-                    heldObject.Fire();
+                    if (lightAttackPressed)
+                        activeTool.OnToolLightAttack();
+                    return;
                 }
-                return;
-            }
-            if (heldObject != null && (heldGrabbableType == GrabbableType.SmallObject || heldGrabbableType == GrabbableType.LargeObject))
-            {
-                // Holding an object: LightAttack = swing (when button is pressed)
+
+                // Existing: Small/Large object swing
                 if (lightAttackPressed && swingCooldownTimer <= 0f)
                 {
                     HandleHeldObjectSwing();
@@ -746,11 +797,21 @@ namespace RabbleHouse
 
         private IEnumerator HeldObjectSwingRoutine()
         {
+            var activeTool = heldObject?.GetComponent<ToolBehaviour>();
+            var toolProfile = activeTool?.ArmProfile;
+
+            // Source throw timing from tool profile if available, else use controller defaults
+            float throwWindup = toolProfile != null ? toolProfile.throwWindupTime : heavyTravelTime;
+            float throwSwing = toolProfile != null ? toolProfile.throwSwingTime : heavyTravelTime / 2;
+            float throwHold = toolProfile != null ? toolProfile.throwHoldTime : heavyHoldTime;
+            float throwReturn = toolProfile != null ? toolProfile.throwReturnTime : heavyTravelTime;
+            float swingAngle = toolProfile != null ? toolProfile.throwSwingAngle : smallObjectSwingAngle;
+
             // Use hip rotation for swing — like heavy punch but simpler
             hipRotationSuppressed = true;
 
             Quaternion hipStart = hipJoint.targetRotation;
-            float swingYaw = smallObjectSwingAngle; // positive = rightward swing
+            float swingYaw = swingAngle; // positive = rightward swing
             Quaternion windupRot = Quaternion.Euler(0, -swingYaw, 0);
             Quaternion swingRot = Quaternion.Euler(0, swingYaw, 0);
             Quaternion hipWindupRot = hipStart * windupRot;
@@ -940,7 +1001,19 @@ namespace RabbleHouse
 
             if (heldObject != null)
             {
-                if (heldGrabbableType == GrabbableType.SmallObject)
+                // Tool: delegate to ToolBehaviour first
+                if (activeTool != null)
+                {
+                    if (heavyAttackPressed)
+                    {
+                        bool consumed = activeTool.OnToolHeavyAttack();
+                        if (consumed) return;
+                        // If not consumed, fall through to throw
+                    }
+                }
+
+                // Small Object and Large Object
+                if (heldGrabbableType != GrabbableType.LargeObject)
                 {
                     // SmallObject: throw (mid-swing)
                     isHeavyPunching = true;
@@ -1087,11 +1160,41 @@ namespace RabbleHouse
 
         private IEnumerator SmallObjectThrowRoutine()
         {
+            // Resolve the active tool's profile (null if holding SmallObject/LargeObject)
+            var activeTool = heldObject?.GetComponent<ToolBehaviour>();
+            var toolProfile = activeTool?.ArmProfile;
+
+            // Source throw timing from tool profile if available, else use controller defaults
+            float throwWindup = toolProfile != null ? toolProfile.throwWindupTime : heavyTravelTime;
+            float throwSwing = toolProfile != null ? toolProfile.throwSwingTime : heavyTravelTime / 2;
+            float throwHold = toolProfile != null ? toolProfile.throwHoldTime : heavyHoldTime;
+            float throwReturn = toolProfile != null ? toolProfile.throwReturnTime : heavyTravelTime;
+            float swingAngle = toolProfile != null ? toolProfile.throwSwingAngle : smallObjectSwingAngle;
+
+            // Source arm poses from tool profile if available, else use default raised-arms
+            Quaternion rightUpperStart = toolProfile != null
+                ? rightUpperArm.targetRotation   // current pose (already raised from RaiseArms)
+                : rightUpperArm.targetRotation;
+            Quaternion rightLowerStart = rightUpperArm.targetRotation;
+
+            Quaternion rightUpperWindup = toolProfile != null
+                ? Quaternion.Euler(toolProfile.throwWindUpRightUpper) //toolProfile.throwWindUpRightUpper
+                : Quaternion.Euler(0, 90, -60);
+            Quaternion rightLowerWindup = toolProfile != null
+                ? Quaternion.Euler(toolProfile.throwWindUpRightLower) //toolProfile.throwWindUpRightLower
+                : Quaternion.Euler(330, 0, 0);
+            Quaternion rightUpperThrow = toolProfile != null
+                ? Quaternion.Euler(toolProfile.throwRightUpper) //toolProfile.throwRightUpper
+                : Quaternion.Euler(0, 90, -90); // fallback swing-down pose
+            Quaternion rightLowerThrow = toolProfile != null
+                ? Quaternion.Euler(toolProfile.throwRightLower) //toolProfile.throwRightLower
+                : Quaternion.Euler(270, 0, 0);
+
             // Wind-up → Swing → THROW (mid-swing) → Return
             hipRotationSuppressed = true;
 
             Quaternion hipStart = hipJoint.targetRotation;
-            float swingYaw = smallObjectSwingAngle;
+            float swingYaw = swingAngle;
             Quaternion windupRot = Quaternion.Euler(0, -swingYaw, 0);
             Quaternion swingRot = Quaternion.Euler(0, swingYaw, 0);
             Quaternion hipWindupRot = hipStart * windupRot;
@@ -1099,24 +1202,28 @@ namespace RabbleHouse
             
             // Rotate hip to windup angle
             float elapsed = 0f;
-            float total = heavyTravelTime;
+            float total = throwWindup;
             while (elapsed < total)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
+                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
+                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
                 yield return null;
             }
 
             // Phase 2: Swing forward — at ~50% of this phase, THROW the object
             elapsed = 0f;
-            total = heavyTravelTime / 2;
+            total = throwSwing;
             bool objectThrown = false;
             while (elapsed < total)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
+                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperThrow, t);
+                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerWindup, rightLowerThrow, t);
 
                 // Throw mid-swing (at 70% of the swing phase)
                 if (!objectThrown && t >= 0.70f)
@@ -1129,7 +1236,7 @@ namespace RabbleHouse
 
             // Phase 3: Hold briefly
             elapsed = 0f;
-            while (elapsed < heavyHoldTime)
+            while (elapsed < throwHold)
             {
                 elapsed += Time.deltaTime;
                 yield return null;
@@ -1137,11 +1244,14 @@ namespace RabbleHouse
 
             // Phase 4: Return to facing direction
             elapsed = 0f;
+            total = throwReturn;
             while (elapsed < total)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
+                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperThrow, rightUpperStart, t);
+                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerThrow, rightLowerStart, t);
                 yield return null;
             }
 

@@ -167,20 +167,5 @@ namespace RabbleHouse
             }
             return durablility;
         }
-
-        /// <summary>
-        /// Fire the projectile from this tool.
-        /// Reduces durability by 1 and deals swingDamage to the target.
-        /// </summary>
-        public void Fire()
-        {
-            // Reduce durability per shot
-            ApplyDurabilityDamage(1);
-
-            // TODO: spawn projectile prefab at the holder's hand position + forward
-            // The projectile should use 'swingDamage' as its damage amount
-            // Example: Instantiate(projectilePrefab, firePoint.position, firePoint.rotation)
-            //          projectile.damage = swingDamage;
-        }
     }
 }

@@ -272,7 +272,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9c0aab8840b3b14e80a4cc9e0b0765a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
-  grabbableType: 2
+  grabbableType: 0
   gripPoint: {fileID: 55232594}
   durablility: 5
   heldMass: 0.1
@@ -538,8 +538,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.36243805, y: 0, z: 0, w: 0.9320079}
-  m_LocalPosition: {x: 0.09249879, y: 6.1, z: -7.1571593}
+  m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
+  m_LocalPosition: {x: 1.9400015, y: 4.912, z: -7.641794}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -899,7 +899,6 @@ Transform:
   - {fileID: 1483021953}
   - {fileID: 111625747}
   - {fileID: 2101293289}
-  - {fileID: 543450652835568147}
   - {fileID: 55232594}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -927,13 +926,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 488017371}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.49774975, y: -0.42077714, z: -0.7472828, w: 0.12946177}
-  m_LocalPosition: {x: 0.057, y: -0.068, z: -0.17}
+  m_LocalRotation: {x: 0.5, y: -0.5, z: -0.5, w: 0.5}
+  m_LocalPosition: {x: 0.039, y: -0.085, z: -0.19}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 543450652835568147}
-  m_LocalEulerAnglesHint: {x: 210, y: 100, z: 45}
+  m_LocalEulerAnglesHint: {x: 180, y: 90, z: 90}
 --- !u!1 &568989002
 GameObject:
   m_ObjectHideFlags: 0
@@ -1284,7 +1283,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2786148479631403647, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3179066425933449663, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1457,6 +1456,37 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4825994939278303746, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
   m_PrefabInstance: {fileID: 5451191174054772633}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1037355455
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1037355456}
+  m_Layer: 6
+  m_Name: FirePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1037355456
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1037355455}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.032, z: 0.2537}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 543450652835568147}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1180864534
 GameObject:
   m_ObjectHideFlags: 0
@@ -1585,7 +1615,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1358971877
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1771,7 +1801,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1514797291
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1843,7 +1873,7 @@ Transform:
   m_GameObject: {fileID: 1514797290}
   serializedVersion: 2
   m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 3.4488058, y: 4.912, z: -7.3452797}
+  m_LocalPosition: {x: 1.9400015, y: 4.912, z: -7.641794}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2219,7 +2249,7 @@ Transform:
   m_GameObject: {fileID: 919132148844691625}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.565, y: 0.38200003, z: -0.502}
+  m_LocalPosition: {x: 1.435, y: 0.632, z: -1.502}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children:
@@ -2229,7 +2259,8 @@ Transform:
   - {fileID: 3745622627600482678}
   - {fileID: 4083501150694990933}
   - {fileID: 488017372}
-  m_Father: {fileID: 468103929}
+  - {fileID: 1037355456}
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832149484909137820
 GameObject:
@@ -2261,6 +2292,7 @@ GameObject:
   - component: {fileID: 919132148844691627}
   - component: {fileID: 919132148844691626}
   - component: {fileID: 919132148844691628}
+  - component: {fileID: 919132148844691629}
   m_Layer: 6
   m_Name: Narf
   m_TagString: Objects
@@ -2330,17 +2362,57 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 2
   gripPoint: {fileID: 488017372}
-  durablility: 200
+  durablility: 10
   heldMass: 0.1
-  hipRotationResistance: 10
-  swingDamage: 15
+  hipRotationResistance: 0
+  swingDamage: 3
   swingStunChance: 0.3
   attackRangeBonus: 0
-  aiRangeBonus: 0
-  throwDamage: 20
-  throwStunChance: 0.7
+  aiRangeBonus: 2
+  throwDamage: 8
+  throwStunChance: 0.3
   throwMinSpeed: 3
   knockbackForce: -1
+--- !u!114 &919132148844691629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132148844691625}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1492cb37bcf528b488872b77eaced2e0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NarfGun
+  armProfile:
+    throwWindupTime: 0.3
+    throwSwingTime: 0.5
+    throwHoldTime: 0.1
+    throwReturnTime: 0.3
+    throwSwingAngle: 45
+    rightUpperHold: {x: 300, y: 90, z: 270}
+    rightLowerHold: {x: 0, y: 340, z: 270}
+    leftUpperHold: {x: 0, y: 0, z: 0}
+    leftLowerHold: {x: 0, y: 0, z: 0}
+    rightUpperWindUp: {x: 0, y: 0, z: 0}
+    rightLowerWindUp: {x: 0, y: 0, z: 0}
+    leftUpperWindUp: {x: 0, y: 0, z: 0}
+    leftLowerWindUp: {x: 0, y: 0, z: 0}
+    rightUpperSwing: {x: 0, y: 0, z: 0}
+    rightLowerSwing: {x: 0, y: 0, z: 0}
+    leftUpperSwing: {x: 0, y: 0, z: 0}
+    leftLowerSwing: {x: 0, y: 0, z: 0}
+    throwWindUpRightUpper: {x: 30, y: 130, z: 0}
+    throwWindUpRightLower: {x: 0, y: 0, z: 0}
+    throwRightUpper: {x: 0, y: 130, z: 270}
+    throwRightLower: {x: 0, y: 0, z: 0}
+  oneHanded: 1
+  projectilePrefab: {fileID: 1023245977510872113, guid: 20d72e3d92cfd7f4da26efe059aa8479, type: 3}
+  firePoint: {fileID: 1037355456}
+  projectileSpeed: 12
+  projectileDamage: 5
+  fireRate: 1
 --- !u!4 &2004295576465190389
 Transform:
   m_ObjectHideFlags: 0
@@ -2510,6 +2582,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 405430089160525521, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 509191974249044825, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_CullingMode
       value: 0
@@ -2629,6 +2705,10 @@ PrefabInstance:
     - target: {fileID: 5957017999226881985, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6207805327366531931, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_Enabled
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2868,6 +2948,7 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 468103929}
+  - {fileID: 543450652835568147}
   - {fileID: 5451191174054772633}
   - {fileID: 622923056}
   - {fileID: 1358971878}
