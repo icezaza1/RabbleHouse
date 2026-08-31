@@ -440,7 +440,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 1
   gripPoint: {fileID: 111625747}
-  durablility: 5
+  durablility: 10
   heldMass: 0.3
   hipRotationResistance: 100
   swingDamage: 15
@@ -896,6 +896,7 @@ Transform:
   - {fileID: 612365764}
   - {fileID: 568989006}
   - {fileID: 1180864535}
+  - {fileID: 2094768389}
   - {fileID: 1483021953}
   - {fileID: 111625747}
   - {fileID: 2101293289}
@@ -1039,8 +1040,8 @@ Transform:
   m_GameObject: {fileID: 568989002}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.70710677, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -7, y: 1.25, z: 1}
-  m_LocalScale: {x: 10, y: 3, z: 0.2}
+  m_LocalPosition: {x: -7.5, y: 1.25, z: 1}
+  m_LocalScale: {x: 10, y: 3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 468103929}
@@ -1151,8 +1152,8 @@ Transform:
   m_GameObject: {fileID: 612365760}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -2, y: 1.25, z: 6}
-  m_LocalScale: {x: 10, y: 3, z: 0.2}
+  m_LocalPosition: {x: -2, y: 1.25, z: 6.5}
+  m_LocalScale: {x: 10, y: 3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 468103929}
@@ -1227,7 +1228,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: chargeDuration
-      value: 5
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: armedBaitChance
@@ -1273,8 +1274,36 @@ PrefabInstance:
       propertyPath: chargeAgainstArmedChance
       value: 0.2
       objectReference: {fileID: 0}
+    - target: {fileID: 475030317525550462, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 509191974249044825, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 546560999568120440, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 546560999568120440, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 546560999568120440, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 1686983925718275348, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1922470555084955319, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2515198960447569780, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2786148479631403647, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
@@ -1284,6 +1313,38 @@ PrefabInstance:
     - target: {fileID: 2786148479631403647, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008624953978867622, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008624953978867622, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008624953978867622, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008624953978867622, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3059862453750328766, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 3059862453750328766, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3059862453750328766, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3162956957501450317, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3179066425933449663, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1361,6 +1422,10 @@ PrefabInstance:
       propertyPath: heavyPunchEffectChance
       value: 0.2
       objectReference: {fileID: 0}
+    - target: {fileID: 3727613876615725426, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3904061197853968946, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1377,6 +1442,38 @@ PrefabInstance:
       propertyPath: stunThreshold
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4234179417228752402, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4234179417228752402, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 4234179417228752402, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 4234179417228752402, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 4660373605324316225, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4660373605324316225, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 4660373605324316225, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 4660373605324316225, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
     - target: {fileID: 5148854000843844001, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1385,17 +1482,117 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5414986622943747383, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5484802425343428776, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821761012507697848, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821761012507697848, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 5957017999226881985, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5989418840039648521, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5989418840039648521, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 5989418840039648521, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 5989418840039648521, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 6131472033633950682, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7507806382802167566, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7601661028426212345, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7618155218900899647, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8185288923226969814, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8185288923226969814, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8185288923226969814, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8185288923226969814, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361988746402207143, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8449055337043273227, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8449055337043273227, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8449055337043273227, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8577834192525608551, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8577834192525608551, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8577834192525608551, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8947669302260216767, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8947669302260216767, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8947669302260216767, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8947669302260216767, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1778,8 +1975,8 @@ Transform:
   m_GameObject: {fileID: 1483021949}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0.70710677, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 3, y: 1.25, z: 1}
-  m_LocalScale: {x: 10, y: 3, z: 0.2}
+  m_LocalPosition: {x: 3.5, y: 1.25, z: 1}
+  m_LocalScale: {x: 10, y: 3, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 468103929}
@@ -2024,6 +2221,118 @@ MonoBehaviour:
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 23800000, guid: 860cbc42b79319c4a89d1f354405db42, type: 2}
   m_BuildHeightMesh: 0
+--- !u!1 &2094768388
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2094768389}
+  - component: {fileID: 2094768392}
+  - component: {fileID: 2094768391}
+  - component: {fileID: 2094768390}
+  m_Layer: 8
+  m_Name: Wall4 (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2094768389
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2094768388}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: -1.9999964, y: 2.7499995, z: 1.0000038}
+  m_LocalScale: {x: 10, y: 10, z: 0.2}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 468103929}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+--- !u!65 &2094768390
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2094768388}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &2094768391
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2094768388}
+  m_Enabled: 0
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &2094768392
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2094768388}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &2101293288
 GameObject:
   m_ObjectHideFlags: 0
@@ -2362,7 +2671,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 2
   gripPoint: {fileID: 488017372}
-  durablility: 10
+  durablility: 100
   heldMass: 0.1
   hipRotationResistance: 0
   swingDamage: 3
@@ -2586,8 +2895,36 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 475030317525550462, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 509191974249044825, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 546560999568120440, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 546560999568120440, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 546560999568120440, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 1686983925718275348, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1922470555084955319, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2515198960447569780, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2786148479631403647, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
@@ -2597,6 +2934,38 @@ PrefabInstance:
     - target: {fileID: 2786148479631403647, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008624953978867622, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008624953978867622, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008624953978867622, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3008624953978867622, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3059862453750328766, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 3059862453750328766, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3059862453750328766, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 3162956957501450317, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3179066425933449663, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2670,6 +3039,10 @@ PrefabInstance:
       propertyPath: heavyPunchEffectChance
       value: 0.2
       objectReference: {fileID: 0}
+    - target: {fileID: 3727613876615725426, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 3904061197853968946, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -2690,6 +3063,38 @@ PrefabInstance:
       propertyPath: stunThreshold
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4234179417228752402, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4234179417228752402, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 4234179417228752402, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 4234179417228752402, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 4660373605324316225, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4660373605324316225, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 4660373605324316225, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 4660373605324316225, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
     - target: {fileID: 5148854000843844001, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -2698,17 +3103,117 @@ PrefabInstance:
       propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5414986622943747383, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5484802425343428776, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821761012507697848, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 5821761012507697848, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
       objectReference: {fileID: 0}
     - target: {fileID: 5957017999226881985, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5989418840039648521, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5989418840039648521, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 5989418840039648521, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 5989418840039648521, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 6131472033633950682, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6207805327366531931, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_Enabled
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7601661028426212345, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7618155218900899647, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8185288923226969814, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8185288923226969814, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8185288923226969814, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8185288923226969814, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8361988746402207143, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_CollisionDetection
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8449055337043273227, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8449055337043273227, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8449055337043273227, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8577834192525608551, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8577834192525608551, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8577834192525608551, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8947669302260216767, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8947669302260216767, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_ProjectionAngle
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 8947669302260216767, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularXDrive.maximumForce
+      value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 8947669302260216767, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_AngularYZDrive.maximumForce
+      value: 500
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

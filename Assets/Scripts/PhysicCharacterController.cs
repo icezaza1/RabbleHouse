@@ -599,6 +599,13 @@ namespace RabbleHouse
             if (leftHandJoint != null) Destroy(leftHandJoint);
             if (rightHandJoint != null) Destroy(rightHandJoint);
 
+            // Clean up tool
+            if (activeTool != null)
+            {
+                activeTool.OnToolReleased();
+                activeTool = null;
+            }
+
             heldObject.ReleaseByPlayer();
             heldObject = null;
             heldGrabbableType = GrabbableType.SmallObject;
@@ -1048,6 +1055,13 @@ namespace RabbleHouse
             if (leftHandJoint != null) Destroy(leftHandJoint);
             if (rightHandJoint != null) Destroy(rightHandJoint);
             leftHandJoint = rightHandJoint = null;
+
+            // Clean up tool
+            if (activeTool != null)
+            {
+                activeTool.OnToolReleased();
+                activeTool = null;
+            }
 
             // Throw in character's forward direction
             Vector3 throwDir = coreRigidbody.transform.forward;
