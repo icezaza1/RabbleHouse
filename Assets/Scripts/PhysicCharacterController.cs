@@ -363,7 +363,9 @@ namespace RabbleHouse
             Vector3 targetVel = moveDir * (isSprinting ? moveSpeed * 1.5f : moveSpeed);
             targetVel.y = coreRigidbody.linearVelocity.y;
 
+            // Move Character
             coreRigidbody.linearVelocity = Vector3.Lerp(coreRigidbody.linearVelocity, targetVel, Time.fixedDeltaTime * 10f);
+            // Set move direction for character rotation
             currentMoveDir = moveDir;
 
             // Lift Body Upward
@@ -391,7 +393,8 @@ namespace RabbleHouse
                 // Resistance 0 → instant (factor = 1), resistance 20+ → very sluggish (factor ~0.03)
                 float resistance = heldObject.HipRotationResistance;
                 float slowFactor = Mathf.Clamp01(1f / (1f + resistance * 0.05f));
-                hipJoint.targetRotation = Quaternion.Slerp(hipJoint.targetRotation, Quaternion.Inverse(targetRot), slowFactor * Time.fixedDeltaTime * balancerBlendSpeed);
+                hipJoint.targetRotation = Quaternion.Slerp(hipJoint.targetRotation, Quaternion.Inverse(targetRot),
+                    slowFactor * Time.fixedDeltaTime * balancerBlendSpeed);
             }
             else
             {
@@ -620,6 +623,7 @@ namespace RabbleHouse
         private void RaiseArmsForHeld()
         {
             var tool = heldObject != null ? heldObject.GetComponent<ToolBehaviour>() : null;
+            // Tool type
             if (tool != null)
             {
                 // Per-tool hold pose
@@ -1453,32 +1457,32 @@ namespace RabbleHouse
             Vector3 hitCenter = coreRigidbody.position + Vector3.up * 0.5f;
             Vector3 fwd = coreRigidbody.transform.forward;
 
-            // Draw the full overlap sphere in faint yellow
-            Gizmos.color = new Color(1f, 1f, 0f, 0.25f);
-            Gizmos.DrawWireSphere(hitCenter, punchRange);
+            //// Draw the full overlap sphere in faint yellow
+            //Gizmos.color = new Color(1f, 1f, 0f, 0.25f);
+            //Gizmos.DrawWireSphere(hitCenter, punchRange);
 
-            // Draw the hit-cone boundary lines (two lines at the cone edge)
-            // cos(θ) = 0.2  →  θ = acos(0.2) ≈ 78.5°
-            float coneAngle = Mathf.Acos(0.85f) * Mathf.Rad2Deg;
-            float coneLen = punchRange;
+            //// Draw the hit-cone boundary lines (two lines at the cone edge)
+            //// cos(θ) = 0.2  →  θ = acos(0.2) ≈ 78.5°
+            //float coneAngle = Mathf.Acos(0.85f) * Mathf.Rad2Deg;
+            //float coneLen = punchRange;
 
-            Gizmos.color = Color.yellow;
-            Vector3 leftEdge  = Quaternion.AngleAxis(-coneAngle, Vector3.up) * fwd * coneLen;
-            Vector3 rightEdge = Quaternion.AngleAxis( coneAngle, Vector3.up) * fwd * coneLen;
+            //Gizmos.color = Color.yellow;
+            //Vector3 leftEdge  = Quaternion.AngleAxis(-coneAngle, Vector3.up) * fwd * coneLen;
+            //Vector3 rightEdge = Quaternion.AngleAxis( coneAngle, Vector3.up) * fwd * coneLen;
 
-            Gizmos.DrawLine(hitCenter, hitCenter + leftEdge);
-            Gizmos.DrawLine(hitCenter, hitCenter + rightEdge);
+            //Gizmos.DrawLine(hitCenter, hitCenter + leftEdge);
+            //Gizmos.DrawLine(hitCenter, hitCenter + rightEdge);
 
-            // Arc across the cone to make it easier to read
-            int segments = 12;
-            Vector3 prev = hitCenter + leftEdge;
-            for (int i = 1; i <= segments; i++)
-            {
-                float a = Mathf.Lerp(-coneAngle, coneAngle, (float)i / segments);
-                Vector3 next = Quaternion.AngleAxis(a, Vector3.up) * fwd * coneLen;
-                Gizmos.DrawLine(prev, hitCenter + next);
-                prev = hitCenter + next;
-            }
+            //// Arc across the cone to make it easier to read
+            //int segments = 12;
+            //Vector3 prev = hitCenter + leftEdge;
+            //for (int i = 1; i <= segments; i++)
+            //{
+            //    float a = Mathf.Lerp(-coneAngle, coneAngle, (float)i / segments);
+            //    Vector3 next = Quaternion.AngleAxis(a, Vector3.up) * fwd * coneLen;
+            //    Gizmos.DrawLine(prev, hitCenter + next);
+            //    prev = hitCenter + next;
+            //}
         }
     }
 }

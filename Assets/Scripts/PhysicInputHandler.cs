@@ -14,7 +14,6 @@ namespace RabbleHouse
 
         // Public input values
         public Vector2 MoveInput => playerInput?.actions["Move"].ReadValue<Vector2>() ?? Vector2.zero;
-        public Vector2 LookInput => playerInput?.actions["Look"].ReadValue<Vector2>() ?? Vector2.zero;
         public bool GrabPressed => playerInput?.actions["Grab"].WasPressedThisFrame() ?? false;
         public bool LightAttackPressed => playerInput?.actions["LightAttack"].WasPressedThisFrame() ?? false;
         public bool HeavyAttackPressed => playerInput?.actions["HeavyAttack"].WasPressedThisFrame() ?? false;

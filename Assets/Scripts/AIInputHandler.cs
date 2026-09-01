@@ -240,21 +240,6 @@ namespace RabbleHouse
                             SprintPressed = true;
 
                         HandleChasing(targetPlayer, distToTarget);
-                        //// Unarmed AI vs armed target — back away, don't chase
-                        //if (!controller.IsHoldingObject && targetIsArmed && distToTarget < safeDistance)
-                        //{
-                        //    Vector3 awayFromTarget = (coreRb.position - targetPlayer.position).normalized;
-                        //    awayFromTarget.y = 0;
-                        //    MoveInput = new Vector2(awayFromTarget.x, awayFromTarget.z).normalized;
-                        //}
-                        //else
-                        //{
-                        //    // If target is close, stop trying to intercept
-                        //    if (distToTarget > 0.5f)
-                        //        SprintPressed = true;
-
-                        //    HandleChasing(targetPlayer, distToTarget);
-                        //}
                     }
                     else
                         currentBehavior = AIBehavior.Idle;

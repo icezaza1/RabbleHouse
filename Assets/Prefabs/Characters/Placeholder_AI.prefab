@@ -4110,7 +4110,6 @@ GameObject:
   - component: {fileID: 3904061197853968946}
   - component: {fileID: 7836999498126563034}
   - component: {fileID: 3476896830541794910}
-  - component: {fileID: 7507806382802167566}
   - component: {fileID: 4098088897499954584}
   - component: {fileID: 31015255712622051}
   m_Layer: 0
@@ -4129,7 +4128,7 @@ Transform:
   m_GameObject: {fileID: 6838619036233646390}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: 0.0000004768371, z: -0, w: 1}
-  m_LocalPosition: {x: 1.5088043, y: 0, z: -2.307796}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4202,7 +4201,6 @@ MonoBehaviour:
   targetAnimator: {fileID: 509191974249044825}
   grabAnchorPoint: {fileID: 1921075582220009141}
   moveSpeed: 1.5
-  jumpForce: 6
   groundLayer:
     serializedVersion: 2
     m_Bits: 8
@@ -4215,20 +4213,12 @@ MonoBehaviour:
   punchForce: 15
   punchRange: 1
   punchDamage: 10
+  heavyPunchDamage: 20
+  heavyPunchHitType: 1
+  heavyPunchEffectChance: 0.8
   stunDuration: 2
   knockdownDuration: 1.2
---- !u!114 &7507806382802167566
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6838619036233646390}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df18a9390072c5c44b5c28a212aa30a5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PhysicInputHandler
+  knockbackForce: 35
 --- !u!114 &4098088897499954584
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4256,11 +4246,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.AIInputHandler
   chaseRange: 15
   grabRange: 2.5
+  grabSearchRadius: 5
   attackRange: 2
   decisionInterval: 0.3
   grabCooldown: 2
   attackCooldown: 1.5
-  aggression: 0.5
+  moveSpeed: 5
+  leadTime: 0.8
+  velocitySmoothing: 0.1
+  dodgeChance: 0.2
+  circleChance: 0.15
+  retreatChance: 0.1
+  chargeChance: 0.1
+  minAttackInterval: 0.8
+  maxAttackInterval: 2.5
+  baitChance: 0.2
+  backingUpChance: 0.25
+  chargeAgainstArmedChance: 0.15
+  baitDistance: 3
+  safeDistance: 4
+  retreatGrabChance: 0.5
+  retreatGrabRange: 8
+  armedBaitChance: 0.2
+  minThrowHoldTime: 2
+  maxThrowHoldTime: 5
+  chargeDuration: 1.5
 --- !u!1 &7135732667501137575
 GameObject:
   m_ObjectHideFlags: 0

@@ -139,7 +139,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &55232591
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -305,7 +305,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &111625744
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -1192,7 +1192,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: dodgeChance
-      value: 0.3
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: feintChance
@@ -1204,7 +1204,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: chargeChance
-      value: 0.1
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: circleChance
@@ -1216,7 +1216,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: retreatChance
-      value: 0.4
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 31015255712622051, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: throwHoldTime
@@ -1412,7 +1412,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: heavyPunchHitType
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3476896830541794910, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: heavyPunchStunChance
@@ -1424,14 +1424,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3727613876615725426, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_CollisionDetection
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3904061197853968946, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3904061197853968946, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
-      propertyPath: m_LocalPosition.z
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4098088897499954584, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
@@ -1488,7 +1480,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5484802425343428776, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_Enabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5821761012507697848, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_AngularXDrive.maximumForce
@@ -1524,7 +1516,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7507806382802167566, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_Enabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7601661028426212345, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_CollisionDetection
@@ -2353,7 +2345,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2101293289
 Transform:
   m_ObjectHideFlags: 0
@@ -2677,7 +2669,7 @@ MonoBehaviour:
   swingDamage: 3
   swingStunChance: 0.3
   attackRangeBonus: 0
-  aiRangeBonus: 2
+  aiRangeBonus: 3
   throwDamage: 8
   throwStunChance: 0.3
   throwMinSpeed: 3
@@ -3214,6 +3206,10 @@ PrefabInstance:
     - target: {fileID: 8947669302260216767, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_AngularYZDrive.maximumForce
       value: 500
+      objectReference: {fileID: 0}
+    - target: {fileID: 9070414054286274424, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
