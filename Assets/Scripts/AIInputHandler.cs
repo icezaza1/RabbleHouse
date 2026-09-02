@@ -928,13 +928,12 @@ namespace RabbleHouse
                 // --- RANGED TOOL: maintain distance, face target, fire ---
                 float optimalRange = attackRange + aiRange * 0.7f;   // comfortable firing zone
                 float minimumRange = attackRange + 1f;                // too close — back up
+                bool canFire = false;
 
                 if (distToTarget < minimumRange)
                 {
-                    // Too close — back away to safe distance
-                    Vector3 away = (coreRb.position - target.position).normalized;
-                    away.y = 0;
-                    MoveInput = GetSafeRetreatDirection(away);
+                    currentBehavior = AIBehavior.Retreat;
+                    canFire = false;
                 }
                 else if (distToTarget > optimalRange)
                 {
@@ -943,6 +942,7 @@ namespace RabbleHouse
                 }
                 else
                 {
+                    canFire = true;
                     // In optimal range — face target and fire
                     MoveInput = Vector2.zero;
                     // Face the target (rotate hips toward target)
@@ -954,7 +954,7 @@ namespace RabbleHouse
                         // Use MoveInput to nudge toward target for hip rotation
                         MoveInput = new Vector2(toTarget.x, toTarget.z).normalized * 0.1f;
                     }
-                    if (Time.time >= nextAttackTime && controller.SwingReady)
+                    if (Time.time >= nextAttackTime && controller.SwingReady && canFire)
                     {
                         LightAttackPressed = true;
                         nextAttackTime = Time.time + Random.Range(minAttackInterval, maxAttackInterval);

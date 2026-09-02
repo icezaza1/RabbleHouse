@@ -47,13 +47,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f07c456e6c5e9c34cb91605548179302, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Projectile
-  damage: 5
+  damage: 0
   owner: {fileID: 0}
   hitType: 0
   effectChance: 0
   deleteOnHit: 1
   lifeTime: 3
-  knockback: 100
+  knockback: 50
 --- !u!54 &1675070606920920215
 Rigidbody:
   m_ObjectHideFlags: 0
