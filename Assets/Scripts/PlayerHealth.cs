@@ -54,6 +54,12 @@ namespace RabbleHouse
             currentHealth = maxHealth;
         }
 
+        public void SetMaxHealth(int newMaxHealth)
+        {
+            // Clamp current health to new max
+            currentHealth = Mathf.Min(currentHealth, newMaxHealth);
+        }
+
         /// <summary>
         /// Apply damage from a hit.
         /// hitType        — what disabling effect this attack causes (Stun / Knockdown / None).
