@@ -7,7 +7,7 @@ public static class LobbyData
     public static string[] StageNames = { "Living Room", "Kitchen" };
     // Add more as you create stages
 
-    // AI difficulty (0=Easy, 1=Normal, 2=Hard)
+    // AI difficulty (0=Easy, 1=Normal, 2=Hard, 3=Expert)
     public static int SelectedDifficulty = 1; // default Normal
 
     // Match settings

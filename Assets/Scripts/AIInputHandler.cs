@@ -124,12 +124,12 @@ namespace RabbleHouse
                 case 2: // Hard
                     decisionInterval = 0.5f;
                     attackCooldown = 0.8f;
-                    health.SetMaxHealth(450);
+                    health.SetMaxHealth(300);
                     break;
                 case 3: // Expert
                     decisionInterval = 0.3f;
                     attackCooldown = 0.5f;
-                    health.SetMaxHealth(600);
+                    health.SetMaxHealth(400);
                     break;
             }
         }

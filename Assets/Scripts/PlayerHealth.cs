@@ -24,7 +24,7 @@ namespace RabbleHouse
     public class PlayerHealth : MonoBehaviour
     {
         [Header("Health")]
-        [SerializeField] private int maxHealth = 100;
+        [SerializeField] private int maxHealth = 200;
 
         private int currentHealth;
         private bool isStunned = false;
@@ -57,7 +57,8 @@ namespace RabbleHouse
         public void SetMaxHealth(int newMaxHealth)
         {
             // Clamp current health to new max
-            currentHealth = Mathf.Min(currentHealth, newMaxHealth);
+            maxHealth = newMaxHealth;
+            currentHealth = maxHealth;
         }
 
         /// <summary>
