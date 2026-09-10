@@ -20,12 +20,6 @@ public class HealthbarUI : MonoBehaviour
         FindTarget();
     }
 
-    private void OnEnable()
-    {
-        // Re-find target when enabled (scene reload, etc.)
-        FindTarget();
-    }
-
     private void FindTarget()
     {
         // Unsubscribe from old target
