@@ -2451,9 +2451,21 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1162102015679621952, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
+      propertyPath: m_Mass
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 3658693170004436094, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: speed
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3658693170004436094, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
+      propertyPath: damage
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 3658693170004436094, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
+      propertyPath: stunChance
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3658693170004436094, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: maxRandomAngle
@@ -2461,7 +2473,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3658693170004436094, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: minRandomAngle
-      value: 90
+      value: 120
       objectReference: {fileID: 0}
     - target: {fileID: 3658693170004436094, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: collisionTimeout
@@ -2470,6 +2482,10 @@ PrefabInstance:
     - target: {fileID: 3658693170004436094, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: directionSmoothing
       value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 3658693170004436094, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
+      propertyPath: collisionCheckDistance
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 6808236375617465979, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2747,6 +2763,10 @@ PrefabInstance:
     - target: {fileID: 4194565996998692165, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9024793139346268428, guid: b60748ebfab856c4fb532b27c5d6a3b2, type: 3}
+      propertyPath: m_TagString
+      value: Player
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

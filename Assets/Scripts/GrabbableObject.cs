@@ -132,7 +132,7 @@ namespace RabbleHouse
             // Don't damage the thrower
             if (thrower != null && targetHealth.gameObject == thrower.gameObject) return;
 
-            Vector3 hitDir = collision.contacts[0].point - transform.position;
+            Vector3 hitDir = collision.GetContact(0).point - transform.position;
             if (hitDir == Vector3.zero) hitDir = rb.linearVelocity.normalized;
             hitDir = hitDir.normalized;
             hitDir.y = 0.3f; // slight upward pop
