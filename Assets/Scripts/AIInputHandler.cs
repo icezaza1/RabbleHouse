@@ -30,7 +30,6 @@ namespace RabbleHouse
         [SerializeField] private float attackCooldown = 1.5f;
 
         [Header("Intercept")]
-        [SerializeField] private float moveSpeed = 5f; // predicted speed for intercept calculation
         [SerializeField] private float leadTime = 0.8f; // fixed seconds to predict ahead — keeps intercept aggressive even at close range
         [SerializeField] private float velocitySmoothing = 0.1f; // smoothing factor for target velocity history
 

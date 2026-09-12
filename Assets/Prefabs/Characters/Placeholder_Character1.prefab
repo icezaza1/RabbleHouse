@@ -422,6 +422,7 @@ GameObject:
   - component: {fileID: 6199601081924488367}
   - component: {fileID: 8330543633606721684}
   - component: {fileID: 3338246471050034667}
+  - component: {fileID: 8181874634761880649}
   - component: {fileID: 1506122272186708434}
   m_Layer: 0
   m_Name: Physic_Character
@@ -555,6 +556,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PlayerHealth
   maxHealth: 100
+--- !u!114 &8181874634761880649
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1370068243157858611}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29c80084d3e03b442be3dee19213edfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDeathHandler
 --- !u!114 &1506122272186708434
 MonoBehaviour:
   m_ObjectHideFlags: 0

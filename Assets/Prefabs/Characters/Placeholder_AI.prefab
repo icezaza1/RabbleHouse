@@ -4802,6 +4802,7 @@ GameObject:
   - component: {fileID: 1161575589166485691}
   - component: {fileID: 3997579678248024621}
   - component: {fileID: 7946247371952453081}
+  - component: {fileID: 9145547739580345877}
   m_Layer: 0
   m_Name: Physic_Character
   m_TagString: Player
@@ -4961,6 +4962,18 @@ MonoBehaviour:
   minThrowHoldTime: 6
   maxThrowHoldTime: 15
   chargeDuration: 3
+--- !u!114 &9145547739580345877
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7912003787199406170}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29c80084d3e03b442be3dee19213edfc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerDeathHandler
 --- !u!1 &8273006019383335176
 GameObject:
   m_ObjectHideFlags: 0

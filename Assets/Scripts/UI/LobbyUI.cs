@@ -82,6 +82,6 @@ public class LobbyUI : MonoBehaviour
         Debug.Log($"[Lobby] Starting game: Stage={stageNames[currentStageIndex]}, Difficulty={difficultyNames[currentDifficultyIndex]}");
 
         // Load the game scene
-        SceneManager.LoadScene(gameSceneName);
+        SceneTransitionManager.Instance.LoadScene(gameSceneName);
     }
 }

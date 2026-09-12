@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class RoombaController : MonoBehaviour
 {
-    [Header("Movement Settings")]
+    [Header("Movement Settings (IN DELTA TIMES)")]
     [SerializeField] private float speed = 5f;
 
     [Header("Combat Settings")]
@@ -14,7 +14,6 @@ public class RoombaController : MonoBehaviour
     [Header("Randomization")]
     [SerializeField] private float minRandomAngle = 30f;  // Minimum turn angle
     [SerializeField] private float maxRandomAngle = 150f;  // Maximum turn angle
-    [SerializeField] private float directionSmoothing = 5f;  // Smooth direction changes
 
     private Rigidbody rb;
     private Vector3 moveDirection;
@@ -38,9 +37,16 @@ public class RoombaController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        // Maintain movement velocity
-        Vector3 targetVelocity = moveDirection * speed;
-        rb.linearVelocity = Vector3.Lerp(rb.linearVelocity, targetVelocity, Time.fixedDeltaTime * directionSmoothing);
+        // Keep movement direction horizontal
+        moveDirection.y = 0f;
+        moveDirection.Normalize();
+
+        Vector3 velocity = (moveDirection * speed) * Time.deltaTime;
+
+        // Preserve vertical velocity so gravity still works
+        velocity.y = rb.linearVelocity.y;
+
+        rb.linearVelocity = velocity;
 
         // Auto-rotation to face movement direction
         RotateToFaceDirection();
@@ -82,8 +88,6 @@ public class RoombaController : MonoBehaviour
             {
                 targetController.ApplyKnockback(hitDir, 100f);
             }
-
-            return;
         }
 
         // Other collision behavior
@@ -123,9 +127,14 @@ public class RoombaController : MonoBehaviour
 
     private void RotateToFaceDirection()
     {
-        if (moveDirection != Vector3.zero)
+        Vector3 flatDirection = moveDirection;
+        flatDirection.y = 0f;
+
+        if (flatDirection.sqrMagnitude > 0.001f)
         {
-            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            flatDirection.Normalize();
+
+            Quaternion targetRotation = Quaternion.LookRotation(flatDirection, Vector3.up);
             rb.MoveRotation(Quaternion.Slerp(transform.rotation, targetRotation, Time.fixedDeltaTime * 10f));
         }
     }

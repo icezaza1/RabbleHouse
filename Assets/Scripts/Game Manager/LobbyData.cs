@@ -12,4 +12,7 @@ public static class LobbyData
 
     // Match settings
     public static int PlayerCount = 3; // fixed at 3
+
+    // Character
+    public static CharacterData SelectedCharacter;
 }
