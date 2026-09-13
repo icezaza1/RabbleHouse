@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace RabbleHouse
@@ -52,7 +53,11 @@ namespace RabbleHouse
         private float originMass;
         private bool isHeld = false;
         private bool isThrown = false; // only deal damage after explicit throw
-        private PhysicCharacterController thrower; // set by PhysicCharacterController before throw
+        private PhysicCharacterController holder; // set by PhysicCharacterController before throw
+
+        // Swing collision detection
+        private bool isSwinging = false;
+        private HashSet<PlayerHealth> hitTargets = new HashSet<PlayerHealth>();
 
         public Rigidbody Rigidbody => rb;
         public bool IsHeld => isHeld;
@@ -67,7 +72,7 @@ namespace RabbleHouse
         public float AIRangeBonus => aiRangeBonus;
 
         /// <summary>Register who threw this object (for self-damage prevention).</summary>
-        public void SetThrower(PhysicCharacterController owner) => thrower = owner;
+        public void SetThrower(PhysicCharacterController owner) => holder = owner;
 
         private void Awake()
         {
@@ -78,12 +83,37 @@ namespace RabbleHouse
             originMass = rb.mass;
         }
 
+        private void Update()
+        {
+            
+        }
+
+        /// <summary>
+        /// Disable swing collision detection (called by PhysicCharacterController at swing end)
+        /// </summary>
+        public void StopSwingDetection()
+        {
+            isSwinging = false;
+            hitTargets.Clear(); // Clear for next swing
+
+            Debug.Log($"[GrabbableObject] Swing detection stopped for {gameObject.name}");
+        }
+
+        /// <summary>
+        /// Enable swing collision detection (called by PhysicCharacterController at swing start)
+        /// </summary>
+        public void StartSwingDetection()
+        {
+            isSwinging = true;
+            hitTargets.Clear(); // Reset hit targets for this swing
+        }
+
         /// <summary>Called by PhysicCharacterController when grabbed.</summary>
-        public void GrabByPlayer(Object holder)
+        public void GrabByPlayer(Object _holder)
         {
             rb.mass = heldMass;
             isHeld = true;
-            thrower = holder as PhysicCharacterController;
+            holder = _holder as PhysicCharacterController;
         }
 
         /// <summary>Called by PhysicCharacterController when released.</summary>
@@ -91,13 +121,6 @@ namespace RabbleHouse
         {
             rb.mass = originMass;
             isHeld = false;
-        }
-
-        /// <summary>Called when punched or knocked.</summary>
-        public void ApplyForce(Vector3 force)
-        {
-            if (rb != null)
-                rb.AddForce(force, ForceMode.Impulse);
         }
 
         /// <summary>Called when thrown — the object now does damage on impact.</summary>
@@ -120,36 +143,69 @@ namespace RabbleHouse
         private void OnCollisionEnter(Collision collision)
         {
             // Only deal damage when the object was thrown, not when held or just bumped
-            if (isHeld || !isThrown || rb == null) return;
-
-            float speed = rb.linearVelocity.magnitude;
-            if (speed < throwMinSpeed) return;
-
-            // Colliders live on the ragdoll bones; health/controller live on the root
-            var targetHealth = collision.gameObject.GetComponentInParent<PlayerHealth>();
-            if (targetHealth == null) return;
-
-            // Don't damage the thrower
-            if (thrower != null && targetHealth.gameObject == thrower.gameObject) return;
-
-            Vector3 hitDir = collision.GetContact(0).point - transform.position;
-            if (hitDir == Vector3.zero) hitDir = rb.linearVelocity.normalized;
-            hitDir = hitDir.normalized;
-            hitDir.y = 0.3f; // slight upward pop
-
-            // Thrown objects: high stun chance, high damage, DO send away
-            targetHealth.TakeDamage(throwDamage, hitDir, HitType.Knockdown, throwStunChance);
-            ApplyDurabilityDamage(1);
-
-            // Knock the target away from the impact
-            var targetController = targetHealth.GetComponentInParent<PhysicCharacterController>();
-            if (targetController != null)
+            //if (!isSwinging || !isHeld) return;
+            //if (isHeld || !isThrown || rb == null) return;
+            if (isSwinging && isHeld)
             {
-                targetController.ApplyKnockback(hitDir, knockbackForce);
-            }
+                PlayerHealth targetHealth = collision.gameObject.GetComponentInParent<PlayerHealth>();
+                if (targetHealth == null) return;
 
-            // Consume the throw — object must be re-thrown to deal damage again
-            isThrown = false;
+                // Don't hit the holder
+                if (holder != null && targetHealth.gameObject == holder.gameObject)
+                    return;
+
+                // Don't register same target twice
+                if (hitTargets.Contains(targetHealth))
+                    return;
+
+                hitTargets.Add(targetHealth);
+
+                // Apply damage
+                Vector3 hitPoint = collision.contacts[0].point;
+                Vector3 knockDir = (hitPoint - transform.position).normalized;
+
+                targetHealth.TakeDamage(swingDamage, knockDir, HitType.Knockdown, swingStunChance, holder?.PlayerIndex ?? -1);
+                ApplyDurabilityDamage(1);
+
+                // Knock the target away from the impact
+                var targetController = targetHealth.GetComponentInParent<PhysicCharacterController>();
+                if (targetController != null)
+                {
+                    targetController.ApplyKnockback(knockDir, knockbackForce);
+                }
+            }
+            else if (!isHeld && isThrown)
+            {
+                float speed = rb.linearVelocity.magnitude;
+                if (speed < throwMinSpeed) return;
+
+                // Colliders live on the ragdoll bones; health/controller live on the root
+                var targetHealth = collision.gameObject.GetComponentInParent<PlayerHealth>();
+                if (targetHealth == null) return;
+
+                // Don't damage the thrower
+                if (holder != null && targetHealth.gameObject == holder.gameObject) return;
+
+                Vector3 hitDir = collision.GetContact(0).point - transform.position;
+                if (hitDir == Vector3.zero) hitDir = rb.linearVelocity.normalized;
+                hitDir = hitDir.normalized;
+                hitDir.y = 0.3f; // slight upward pop
+
+                // Thrown objects: high stun chance, high damage, DO send away
+                targetHealth.TakeDamage(throwDamage, hitDir, HitType.Knockdown, throwStunChance);
+                ApplyDurabilityDamage(1);
+
+                // Knock the target away from the impact
+                var targetController = targetHealth.GetComponentInParent<PhysicCharacterController>();
+                if (targetController != null)
+                {
+                    targetController.ApplyKnockback(hitDir, knockbackForce);
+                }
+
+                // Consume the throw — object must be re-thrown to deal damage again
+                isThrown = false;
+            }
+            
         }
 
         /// <summary>

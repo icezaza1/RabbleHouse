@@ -567,7 +567,7 @@ namespace RabbleHouse
             else return null;
         }
 
-        private void ReleaseObject()
+        public void ReleaseObject()
         {
             if (heldObject == null) return;
 
@@ -853,17 +853,9 @@ namespace RabbleHouse
                 // Swing impact lands at ~50% of the swing arc
                 if (!swingHitDone && t >= 0.5f)
                 {
-                    // Use held object's damage if available, otherwise default punch damage
-                    int objDamage = heldObject != null ? heldObject.SwingDamage : punchDamage;
-                    float objEffectChance = heldObject != null ? heldObject.SwingStunChance : 0f;
-                    float objKnockback = heldObject != null ? heldObject.KnockbackForce : -1f;
-                    // Swung objects: knockdown type (launch), chance from object
-                    bool hit = CheckHit(objDamage, punchForce, HitType.Knockdown, objEffectChance, true, objKnockback);
-                    if (hit && heldObject != null)
+                    if (heldObject != null)
                     {
-                        heldObject.ApplyDurabilityDamage(1);
-                        if (heldObject.Durability <= 0)
-                            ReleaseObject();
+                        heldObject.StartSwingDetection();
                     }
                     swingHitDone = true;
                 }
@@ -886,6 +878,12 @@ namespace RabbleHouse
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
                 yield return null;
+            }
+
+            // Stop object-based collision detection
+            if (heldObject != null)
+            {
+                heldObject.StopSwingDetection();
             }
 
             // Re-enable hip rotation. HandleRotation() (called every frame in Update for
