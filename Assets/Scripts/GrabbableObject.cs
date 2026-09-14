@@ -220,6 +220,8 @@ namespace RabbleHouse
             {
                 // Optional: play a break effect / sound here
                 Destroy(gameObject);
+                if (holder != null)
+                    holder.ReleaseObject();
             }
             return durablility;
         }

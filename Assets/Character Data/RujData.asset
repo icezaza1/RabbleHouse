@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Ruj
   portrait: {fileID: 0}
-  previewModel: {fileID: 5449823108759603677, guid: 967d01299d389d34e8b9e1f61a5eeeba, type: 3}
+  previewModel: {fileID: 3939760007202786858, guid: 40542461075e9c44b9d2fc4eae3c09c5, type: 3}

@@ -914,6 +914,8 @@ namespace RabbleHouse
                     if (heldObject != null)
                     {
                         heldObject.StartSwingDetection();
+                        if (heldObject.Durability <= 0)
+                            ReleaseObject();
                     }
                     swingHitDone = true;
                 }
@@ -958,7 +960,6 @@ namespace RabbleHouse
             hipRotationSuppressed = false;
             swingCooldownTimer = heavyPunchCooldown;
             isHeavyPunching = false;
-            if (heldObject.Durability <= 0 || heldObject == null) ResetBothArms();
         }
 
         private void StartLightPunch()

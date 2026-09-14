@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Rath
   portrait: {fileID: 0}
-  previewModel: {fileID: 5449823108759603677, guid: cb38520563a77884e8adf03090d8effd, type: 3}
+  previewModel: {fileID: 6823013845621944633, guid: 69f3981be831158409b395b58bbdb019, type: 3}

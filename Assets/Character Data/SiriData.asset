@@ -14,4 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Siri
   portrait: {fileID: 0}
-  previewModel: {fileID: 5449823108759603677, guid: ce763e3aa2afd574480d6962732a4657, type: 3}
+  previewModel: {fileID: 4753806830598110046, guid: 610855f6c456c00408c71dadda9209c8, type: 3}
