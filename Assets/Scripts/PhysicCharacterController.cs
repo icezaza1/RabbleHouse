@@ -768,8 +768,10 @@ namespace RabbleHouse
                 if (activeTool != null)
                 {
                     if (lightAttackPressed)
-                        activeTool.OnToolLightAttack();
-                    return;
+                    {
+                        bool consumed = activeTool.OnToolLightAttack();
+                        if (consumed) return;
+                    }
                 }
 
                 // Existing: Small/Large object swing
@@ -799,6 +801,7 @@ namespace RabbleHouse
         private void HandleHeldObjectSwing()
         {
             if (isHeavyPunching) return;
+
             if (heldObject == null || swingCooldownTimer > 0f) return;
             swingCooldownTimer = heavyPunchCooldown;
 
@@ -811,11 +814,13 @@ namespace RabbleHouse
             var activeTool = heldObject?.GetComponent<ToolBehaviour>();
             var toolProfile = activeTool?.ArmProfile;
 
-            // Source throw timing from tool profile if available, else use controller defaults
-            float throwWindup = toolProfile != null ? toolProfile.throwWindupTime : heavyTravelTime;
-            float throwSwing = toolProfile != null ? toolProfile.throwSwingTime : heavyTravelTime / 2;
-            float throwHold = toolProfile != null ? toolProfile.throwHoldTime : heavyHoldTime;
-            float throwReturn = toolProfile != null ? toolProfile.throwReturnTime : heavyTravelTime;
+            bool isOneHanded = activeTool != null ? activeTool.OneHanded : false;
+
+            // Source swing timing from tool profile if available, else use controller defaults
+            float swingWindup = toolProfile != null ? toolProfile.throwWindupTime : heavyTravelTime;
+            float swingTarget = toolProfile != null ? toolProfile.throwSwingTime : heavyTravelTime / 2;
+            float swingHold = toolProfile != null ? toolProfile.throwHoldTime : heavyHoldTime;
+            float swingReturn = toolProfile != null ? toolProfile.throwReturnTime : heavyTravelTime;
             float swingAngle = toolProfile != null ? toolProfile.throwSwingAngle : smallObjectSwingAngle;
 
             // Use hip rotation for swing — like heavy punch but simpler
@@ -828,28 +833,81 @@ namespace RabbleHouse
             Quaternion hipWindupRot = hipStart * windupRot;
             Quaternion hipSwingTarget = hipStart * swingRot;
 
+            // Source arm poses from tool profile if available, else use default raised-arms
+            // Right Arm Profile
+            Quaternion rightUpperStart = toolProfile != null
+                ? rightUpperArm.targetRotation   // current pose (already raised from RaiseArms)
+                : rightUpperArm.targetRotation;
+            Quaternion rightLowerStart = rightUpperArm.targetRotation;
+
+            Quaternion rightUpperWindup = toolProfile != null
+                ? Quaternion.Euler(toolProfile.rightUpperWindUp)
+                : rightUpperArm.targetRotation;
+            Quaternion rightLowerWindup = toolProfile != null
+                ? Quaternion.Euler(toolProfile.rightLowerWindUp)
+                : rightLowerArm.targetRotation;
+            Quaternion rightUpperSwing = toolProfile != null
+                ? Quaternion.Euler(toolProfile.rightUpperSwing)
+                : rightUpperArm.targetRotation;
+            Quaternion rightLowerSwing = toolProfile != null
+                ? Quaternion.Euler(toolProfile.rightLowerSwing)
+                : rightLowerArm.targetRotation;
+
+            // Left Arm Profile
+            Quaternion leftUpperStart = toolProfile != null
+                ? leftUpperArm.targetRotation   // current pose (already raised from RaiseArms)
+                : leftUpperArm.targetRotation;
+            Quaternion leftLowerStart = leftUpperArm.targetRotation;
+
+            Quaternion leftUpperWindup = toolProfile != null
+                ? Quaternion.Euler(toolProfile.leftUpperWindUp)
+                : leftUpperArm.targetRotation;
+            Quaternion leftLowerWindup = toolProfile != null
+                ? Quaternion.Euler(toolProfile.leftLowerWindUp)
+                : leftLowerArm.targetRotation;
+            Quaternion leftUpperSwing = toolProfile != null
+                ? Quaternion.Euler(toolProfile.leftUpperSwing)
+                : leftUpperArm.targetRotation;
+            Quaternion leftLowerSwing = toolProfile != null
+                ? Quaternion.Euler(toolProfile.leftLowerSwing)
+                : leftLowerArm.targetRotation;
+
             // Rotate hip to windup angle
             float elapsed = 0f;
-            float total = heavyTravelTime;
+            float total = swingWindup;
             while (elapsed < total)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
+                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
+                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
+                if (!isOneHanded)
+                {
+                    leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperStart, leftUpperWindup, t);
+                    leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerStart, leftLowerWindup, t);
+                }
 
                 yield return null;
             }
 
             // Rotate windup to swing
             elapsed = 0f;
-            total = heavyTravelTime / 2;
+            total = swingTarget;
             bool swingHitDone = false;
             while (elapsed < total)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
+                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperSwing, t);
+                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerWindup, rightLowerSwing, t);
 
+                if (!isOneHanded)
+                {
+                    leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperWindup, leftUpperSwing, t);
+                    leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerWindup, leftLowerSwing, t);
+                }
                 // Swing impact lands at ~50% of the swing arc
                 if (!swingHitDone && t >= 0.5f)
                 {
@@ -859,12 +917,11 @@ namespace RabbleHouse
                     }
                     swingHitDone = true;
                 }
-
                 yield return null;
             }
             // Phase 2: Hold briefly
             elapsed = 0f;
-            while (elapsed < heavyHoldTime)
+            while (elapsed < swingHold)
             {
                 elapsed += Time.deltaTime;
                 yield return null;
@@ -872,11 +929,20 @@ namespace RabbleHouse
 
             // Phase 3: Return to facing direction
             elapsed = 0f;
+            total = swingReturn;
             while (elapsed < total)
             {
                 elapsed += Time.deltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
+                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperSwing, rightUpperStart, t);
+                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerSwing, rightLowerStart, t);
+                if (!isOneHanded)
+                {
+                    leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperSwing, leftUpperStart, t);
+                    leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerSwing, leftLowerStart, t);
+                }
+
                 yield return null;
             }
 
@@ -892,6 +958,7 @@ namespace RabbleHouse
             hipRotationSuppressed = false;
             swingCooldownTimer = heavyPunchCooldown;
             isHeavyPunching = false;
+            if (heldObject.Durability <= 0 || heldObject == null) ResetBothArms();
         }
 
         private void StartLightPunch()
@@ -1454,33 +1521,6 @@ namespace RabbleHouse
             // cone gate = dot(toTarget, forward) >= 0.2  (≈ 78.5° half-angle)
             Vector3 hitCenter = coreRigidbody.position + Vector3.up * 0.5f;
             Vector3 fwd = coreRigidbody.transform.forward;
-
-            //// Draw the full overlap sphere in faint yellow
-            //Gizmos.color = new Color(1f, 1f, 0f, 0.25f);
-            //Gizmos.DrawWireSphere(hitCenter, punchRange);
-
-            //// Draw the hit-cone boundary lines (two lines at the cone edge)
-            //// cos(θ) = 0.2  →  θ = acos(0.2) ≈ 78.5°
-            //float coneAngle = Mathf.Acos(0.85f) * Mathf.Rad2Deg;
-            //float coneLen = punchRange;
-
-            //Gizmos.color = Color.yellow;
-            //Vector3 leftEdge  = Quaternion.AngleAxis(-coneAngle, Vector3.up) * fwd * coneLen;
-            //Vector3 rightEdge = Quaternion.AngleAxis( coneAngle, Vector3.up) * fwd * coneLen;
-
-            //Gizmos.DrawLine(hitCenter, hitCenter + leftEdge);
-            //Gizmos.DrawLine(hitCenter, hitCenter + rightEdge);
-
-            //// Arc across the cone to make it easier to read
-            //int segments = 12;
-            //Vector3 prev = hitCenter + leftEdge;
-            //for (int i = 1; i <= segments; i++)
-            //{
-            //    float a = Mathf.Lerp(-coneAngle, coneAngle, (float)i / segments);
-            //    Vector3 next = Quaternion.AngleAxis(a, Vector3.up) * fwd * coneLen;
-            //    Gizmos.DrawLine(prev, hitCenter + next);
-            //    prev = hitCenter + next;
-            //}
         }
     }
 }

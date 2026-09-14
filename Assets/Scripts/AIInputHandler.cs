@@ -23,6 +23,27 @@ namespace RabbleHouse
         [SerializeField] private float grabRange = 2.5f;
         [SerializeField] private float grabSearchRadius = 5f; // wider search for retreat-to-grab
 
+        [Header("Movement / Obstacle Avoidance")]
+        [SerializeField] private LayerMask obstacleMask;
+        [SerializeField] private float obstacleCheckDistance = 1.5f;
+        [SerializeField] private float obstacleCheckRadius = 0.45f;
+        [Tooltip("How strongly the AI prefers moving toward the target over avoiding an obstacle.")]
+        [Range(0f, 1f)]
+        [SerializeField] private float targetDirectionWeight = 0.7f;
+        [SerializeField] private float stuckTime = 0.8f;
+        [SerializeField] private float minimumProgress = 0.15f;
+        [SerializeField] private float avoidanceCommitTime = 1f;
+
+        private float stuckTimer;
+        private Vector3 lastMovementCheckPosition;
+
+        private int avoidanceSide = 0;
+        // -1 = left
+        //  1 = right
+        //  0 = no committed side
+
+        private float avoidanceEndTime;
+
         [Header("Attack Range")]
         [Tooltip("Base reach used for unarmed attacks.")]
         [SerializeField] private float attackRange = 2f;
@@ -608,11 +629,255 @@ namespace RabbleHouse
             if (toTarget.sqrMagnitude < 0.01f)
             {
                 MoveInput = Vector2.zero;
+                ResetObstacleAvoidance();
                 return;
             }
 
-            Vector3 dir = toTarget.normalized;
-            MoveInput = new Vector2(dir.x, dir.z).normalized;
+            Vector3 desiredDirection = toTarget.normalized;
+
+            // ---------------------------------------------------------
+            // Check whether the direct path is clear.
+            // ---------------------------------------------------------
+
+            if (!IsPathBlocked(desiredDirection))
+            {
+                // No obstacle -> go directly toward target.
+                ResetObstacleAvoidance();
+
+                MoveInput = new Vector2(
+                    desiredDirection.x,
+                    desiredDirection.z
+                ).normalized;
+
+                UpdateStuckDetection();
+                return;
+            }
+
+            // ---------------------------------------------------------
+            // Path is blocked -> find an avoidance direction.
+            // ---------------------------------------------------------
+
+            Vector3 avoidanceDirection = GetAvoidanceDirection(
+                desiredDirection,
+                targetPos
+            );
+
+            MoveInput = new Vector2(
+                avoidanceDirection.x,
+                avoidanceDirection.z
+            ).normalized;
+
+            UpdateStuckDetection();
+        }
+
+        private bool IsPathBlocked(Vector3 direction)
+        {
+            if (coreRb == null) return false;
+
+            direction.y = 0;
+            if (direction.sqrMagnitude < 0.001f) return false;
+
+            direction.Normalize();
+
+            Vector3 origin = coreRb.position + Vector3.up * 0.5f;
+
+            return Physics.SphereCast(
+                origin,
+                obstacleCheckRadius,
+                direction,
+                out _,
+                obstacleCheckDistance,
+                obstacleMask,
+                QueryTriggerInteraction.Ignore
+            );
+        }
+
+        private Vector3 GetAvoidanceDirection(Vector3 desiredDirection, Vector3 targetPos)
+        {
+            desiredDirection.y = 0f;
+            desiredDirection.Normalize();
+
+            // Continue using the same side while committed
+            // to navigating around the obstacle.
+            if (Time.time < avoidanceEndTime && avoidanceSide != 0)
+            {
+                Vector3 committedDirection =
+                    avoidanceSide < 0
+                        ? Vector3.Cross(Vector3.up, desiredDirection)
+                        : Vector3.Cross(desiredDirection, Vector3.up);
+
+                if (!IsPathBlocked(committedDirection))
+                    return committedDirection;
+            }
+
+            // Otherwise perform a fresh left/right evaluation
+            Vector3 leftDirection = Quaternion.Euler(0f, -60f, 0f) * desiredDirection;
+
+            Vector3 rightDirection = Quaternion.Euler(0f, 60f, 0f) * desiredDirection;
+
+            bool leftBlocked = IsPathBlocked(leftDirection);
+            bool rightBlocked = IsPathBlocked(rightDirection);
+
+            // ---------------------------------------------------------
+            // Both sides blocked.
+            // Try moving more perpendicular to the obstacle.
+            // ---------------------------------------------------------
+            if (leftBlocked && rightBlocked)
+            {
+                Vector3 left = Quaternion.Euler(0f, -90f, 0f) * desiredDirection;
+
+                Vector3 right = Quaternion.Euler(0f, 90f, 0f) * desiredDirection;
+
+                bool leftSideBlocked = IsPathBlocked(left);
+                bool rightSideBlocked = IsPathBlocked(right);
+
+                if (!leftSideBlocked && !rightSideBlocked)
+                {
+                    return ChooseBetterSide(left, right, targetPos);
+                }
+
+                if (!leftSideBlocked) return left;
+                if (!rightSideBlocked) return right;
+
+                // Completely surrounded.
+                return GetRecoveryDirection(desiredDirection);
+            }
+
+            // ---------------------------------------------------------
+            // One side is blocked.
+            // Take the open side.
+            // ---------------------------------------------------------
+            if (leftBlocked)
+            {
+                avoidanceSide = 1;
+                avoidanceEndTime = Time.time + avoidanceCommitTime;
+
+                return rightDirection;
+            }
+            if (rightBlocked)
+            {
+                avoidanceSide = -1;
+                avoidanceEndTime = Time.time + avoidanceCommitTime;
+
+                return leftDirection;
+            }
+
+            // ---------------------------------------------------------
+            // Both sides are open.
+            // Prefer the side that gets us closer to the target.
+            // ---------------------------------------------------------
+            return ChooseBetterSide(leftDirection, rightDirection, targetPos);
+        }
+
+        private Vector3 ChooseBetterSide(Vector3 leftDirection, Vector3 rightDirection, Vector3 targetPos)
+        {
+            Vector3 toTarget = targetPos - coreRb.position;
+
+            toTarget.y = 0f;
+
+            if (toTarget.sqrMagnitude < 0.001f)
+                return leftDirection;
+
+            toTarget.Normalize();
+
+            float leftScore = Vector3.Dot(leftDirection, toTarget);
+
+            float rightScore = Vector3.Dot(rightDirection, toTarget);
+
+            if (leftScore > rightScore)
+            {
+                avoidanceSide = -1;
+                avoidanceEndTime = Time.time + avoidanceCommitTime;
+
+                return leftDirection;
+            }
+            else
+            {
+                avoidanceSide = 1;
+                avoidanceEndTime = Time.time + avoidanceCommitTime;
+
+                return rightDirection;
+            }
+        }
+
+        private void UpdateStuckDetection()
+        {
+            if (coreRb == null) return;
+
+            Vector3 currentPosition = coreRb.position;
+            currentPosition.y = 0f;
+
+            Vector3 previousPosition = lastMovementCheckPosition;
+            previousPosition.y = 0f;
+
+            float distanceMoved = Vector3.Distance(currentPosition, previousPosition);
+
+            if (distanceMoved >= minimumProgress)
+            {
+                // AI is actually moving.
+                stuckTimer = 0f;
+                lastMovementCheckPosition = currentPosition;
+                return;
+            }
+
+            stuckTimer += Time.deltaTime;
+
+            if (stuckTimer >= stuckTime)
+            {
+                ForceAvoidanceRecovery();
+            }
+        }
+
+        private void ForceAvoidanceRecovery()
+        {
+            stuckTimer = 0f;
+
+            // Reverse the currently chosen side.
+            if (avoidanceSide == 0)
+                avoidanceSide = Random.value < 0.5f ? -1 : 1;
+            else
+                avoidanceSide *= -1;
+
+            avoidanceEndTime =
+                Time.time + avoidanceCommitTime;
+
+            lastMovementCheckPosition = coreRb.position;
+        }
+
+        private Vector3 GetRecoveryDirection(Vector3 desiredDirection)
+        {
+            desiredDirection.y = 0f;
+            desiredDirection.Normalize();
+
+            Vector3 left = Vector3.Cross(Vector3.up, desiredDirection);
+
+            Vector3 right = -left;
+
+            if (avoidanceSide < 0)
+            {
+                if (!IsPathBlocked(left))
+                    return left;
+
+                if (!IsPathBlocked(right))
+                    return right;
+            }
+            else
+            {
+                if (!IsPathBlocked(right))
+                    return right;
+
+                if (!IsPathBlocked(left))
+                    return left;
+            }
+
+            // Nothing available.
+            return Vector3.zero;
+        }
+
+        private void ResetObstacleAvoidance()
+        {
+            avoidanceSide = 0;
+            stuckTimer = 0f;
         }
 
         /// <summary>
