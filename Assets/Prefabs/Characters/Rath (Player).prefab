@@ -1484,6 +1484,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PlayerHealth
   maxHealth: 100
+  PlayerIndex: 0
 --- !u!114 &8739149798430607293
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1982,7 +1983,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8734858928434936975}
-  - component: {fileID: 5204156479376242000}
   m_Layer: 0
   m_Name: mixamorig:RightLeg
   m_TagString: Untagged
@@ -2006,29 +2006,6 @@ Transform:
   - {fileID: 7106527768620311148}
   m_Father: {fileID: 6950369232904915464}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!136 &5204156479376242000
-CapsuleCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3030164810627417285}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.03824881
-  m_Height: 0.15299524
-  m_Direction: 1
-  m_Center: {x: 0, y: 0.07649762, z: 0}
 --- !u!1 &3111806422009597906
 GameObject:
   m_ObjectHideFlags: 0

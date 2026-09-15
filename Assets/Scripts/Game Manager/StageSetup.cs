@@ -1,11 +1,13 @@
 using RabbleHouse;
 using System.Collections.Generic;
 using UnityEngine;
+using Unity.Cinemachine;
 
 public class StageSetup : MonoBehaviour
 {
     [Header("Characters")]
     [SerializeField] private CharacterData[] characters;
+    [SerializeField] private CinemachineCamera camera;
 
     [Header("Spawn Points")]
     [SerializeField] private Transform[] spawnPoints;
@@ -60,18 +62,35 @@ public class StageSetup : MonoBehaviour
         }
     }
 
+    private void SetTarget(PlayerHealth target)
+    {
+        Rigidbody coreRigidbody = FindCoreRigidbody(target);
+        // Update camera target
+        if (camera != null)
+        {
+            camera.Follow = coreRigidbody.transform;
+        }
+    }
+    private Rigidbody FindCoreRigidbody(PlayerHealth target)
+    {
+        Rigidbody[] bodies = target.GetComponentsInChildren<Rigidbody>(true);
+        foreach (var rb in bodies)
+            if (rb.transform.name.Contains("Hips"))
+                return rb;
+        return bodies.Length > 0 ? bodies[0] : null;
+    }
+
     private void SpawnPlayer(CharacterData character, int playerIndex, Transform spawnPoint)
     {
-        GameObject player = Instantiate(
-            character.playerPrefab,
-            spawnPoint.position,
-            spawnPoint.rotation
-        );
+        GameObject player = Instantiate(character.playerPrefab, spawnPoint.position, spawnPoint.rotation);
 
         PlayerHealth health = player.GetComponentInChildren<PlayerHealth>();
 
         if (health != null)
         {
+            // Set Camera to player
+            SetTarget(health);
+
             health.PlayerIndex = playerIndex;
             healthbars[playerIndex].SetCharacterData(character);
             healthbars[playerIndex].SetTarget(health);
