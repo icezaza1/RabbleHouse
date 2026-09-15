@@ -441,12 +441,22 @@ namespace RabbleHouse
                 }
                 else if (heldGrabbableType == GrabbableType.Tool)
                 {
-                    // One-handed grab — only right hand holds
-                    rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
-                    leftHandJoint = null;
-
                     // Cache tool behavior
                     activeTool = closest.GetComponent<ToolBehaviour>();
+
+                    // Right hand is always the primary hand.
+                    rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+
+                    // Two-handed tools also attach the left hand.
+                    if (activeTool != null && !activeTool.OneHanded)
+                    {
+                        leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
+                    }
+                    else
+                    {
+                        leftHandJoint = null;
+                    }
+
                     if (activeTool != null)
                         activeTool.OnToolGrabbed(this);
                 }
@@ -543,23 +553,58 @@ namespace RabbleHouse
             }
             else if (heldGrabbableType == GrabbableType.Tool)
             {
-                // Calculate rotation offset so the Grip Point matches the Hand orientation
-                Quaternion rotationOffset = handBody.rotation * Quaternion.Inverse(heldObject.gripPoint.localRotation);
-                heldObject.transform.rotation = rotationOffset;
+                // Only the primary/right hand positions the tool.
+                if (!isLeftHand)
+                {
+                    Quaternion rotationOffset =
+                        handBody.rotation *
+                        Quaternion.Inverse(heldObject.gripPoint.localRotation);
 
-                // Calculate position offset so the Grip Point sits directly on the Hand center
-                Vector3 positionOffset = handBody.position - (rotationOffset * heldObject.gripPoint.localPosition);
-                heldObject.transform.position = positionOffset;
+                    heldObject.transform.rotation = rotationOffset;
+
+                    Vector3 positionOffset =
+                        handBody.position -
+                        (rotationOffset * heldObject.gripPoint.localPosition);
+
+                    heldObject.transform.position = positionOffset;
+                }
 
                 // Tool: ConfigurableJoint with spring-damper
                 FixedJoint grabJoint = handBody.gameObject.AddComponent<FixedJoint>();
                 grabJoint.connectedBody = heldObject.Rigidbody;
-                grabJoint.connectedAnchor = Vector3.zero;
                 grabJoint.anchor = Vector3.zero;
+
+                // Primary hand
+                if (!isLeftHand)
+                {
+                    grabJoint.autoConfigureConnectedAnchor = false;
+                    grabJoint.autoConfigureConnectedAnchor = false;
+
+                    grabJoint.connectedAnchor =
+                        heldObject.Rigidbody.transform.InverseTransformPoint(
+                            heldObject.gripPoint.position
+                        );
+                }
+                // Secondary hand
+                else
+                {
+                    if (heldObject.secondaryGripPoint == null)
+                    {
+                        Debug.LogWarning(
+                            $"[PhysicCharacterController] {heldObject.name} is configured as a two-handed tool but has no Secondary Grip Point."
+                        );
+
+                        Destroy(grabJoint);
+                        return null;
+                    }
+
+                    grabJoint.autoConfigureConnectedAnchor = false;
+                    grabJoint.connectedAnchor = heldObject.Rigidbody.transform.InverseTransformPoint(heldObject.secondaryGripPoint.position);
+                }
                 grabJoint.breakForce = 1500f;
                 grabJoint.breakTorque = 1500f;
                 Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
-                if (balancer != null)
+                if (!isLeftHand && balancer != null)
                     balancer.weight *= 0.5f;
 
                 return grabJoint;
@@ -628,7 +673,7 @@ namespace RabbleHouse
             {
                 // Per-tool hold pose
                 var profile = tool.ArmProfile;
-                var oneHandedTool = tool.OneHanded;
+                bool oneHandedTool = tool.OneHanded;
                 RUpperBoneScript.enabled = false;
                 RLowerBoneScript.enabled = false;
 

@@ -13,24 +13,26 @@ public class NarfGun : ToolBehaviour
 
     public override bool OnToolLightAttack()
     {
-        if (Time.time < nextFireTime) return false;
         if (grabObject.Durability <= 0) return false;
 
-        nextFireTime = Time.time + fireRate;
-
-        // Spawn projectile from fire point
-        GameObject proj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
-        Projectile p = proj.GetComponent<Projectile>();
-        if (p != null)
+        if (Time.time > nextFireTime)
         {
-            p.damage = projectileDamage;
-            p.owner = holder;
-            p.Launch(firePoint.forward * projectileSpeed);
+            nextFireTime = Time.time + fireRate;
+
+            // Spawn projectile from fire point
+            GameObject proj = Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+            Projectile p = proj.GetComponent<Projectile>();
+            if (p != null)
+            {
+                p.damage = projectileDamage;
+                p.owner = holder;
+                p.Launch(firePoint.forward * projectileSpeed);
+            }
+
+            // Reduce durability
+            grabObject.ApplyDurabilityDamage(1);
         }
-
-        // Reduce durability
-        grabObject.ApplyDurabilityDamage(1);
-
+            
         return true;
     }
 

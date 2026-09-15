@@ -25,6 +25,8 @@ namespace RabbleHouse
 
         [Header("Generals")]
         public Transform gripPoint;
+        public Transform secondaryGripPoint;
+
         [SerializeField] private int durablility = 5;
         [Tooltip("Used to calculate how heavy the object is when being held.")]
         [SerializeField] private float heldMass = 1f;

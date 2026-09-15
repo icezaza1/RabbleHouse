@@ -4254,6 +4254,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PlayerHealth
   maxHealth: 200
+  PlayerIndex: 0
 --- !u!114 &7566654907962263778
 MonoBehaviour:
   m_ObjectHideFlags: 0

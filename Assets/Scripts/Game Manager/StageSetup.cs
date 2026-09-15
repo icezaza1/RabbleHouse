@@ -15,6 +15,9 @@ public class StageSetup : MonoBehaviour
     [Header("Healthbars")]
     [SerializeField] private HealthbarUI[] healthbars;
 
+    [Header("Debug / Testing")]
+    [SerializeField] private CharacterData defaultCharacter;
+
     private void Awake()
     {
         SpawnCharacters();
@@ -31,8 +34,9 @@ public class StageSetup : MonoBehaviour
 
         if (selectedCharacter == null)
         {
-            Debug.LogError("[StageSetup] No character selected!");
-            return;
+            selectedCharacter = defaultCharacter;
+
+            Debug.Log($"[StageSetup] No character selected. Using default: " + $"{selectedCharacter.characterName}");
         }
 
         if (spawnPoints.Length < 3)
@@ -62,7 +66,7 @@ public class StageSetup : MonoBehaviour
         }
     }
 
-    private void SetTarget(PlayerHealth target)
+    private void SetCameraTarget(PlayerHealth target)
     {
         Rigidbody coreRigidbody = FindCoreRigidbody(target);
         // Update camera target
@@ -89,7 +93,7 @@ public class StageSetup : MonoBehaviour
         if (health != null)
         {
             // Set Camera to player
-            SetTarget(health);
+            SetCameraTarget(health);
 
             health.PlayerIndex = playerIndex;
             healthbars[playerIndex].SetCharacterData(character);

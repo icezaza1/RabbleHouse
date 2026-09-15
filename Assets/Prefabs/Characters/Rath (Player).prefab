@@ -1483,7 +1483,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 183ba04ca8913444a806d1a0873d8e2c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PlayerHealth
-  maxHealth: 100
+  maxHealth: 200
   PlayerIndex: 0
 --- !u!114 &8739149798430607293
 MonoBehaviour:

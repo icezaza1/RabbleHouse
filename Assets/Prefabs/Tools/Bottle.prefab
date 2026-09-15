@@ -47,7 +47,7 @@ GameObject:
   - component: {fileID: 590122048294063389}
   - component: {fileID: 8475767359022814962}
   m_Layer: 6
-  m_Name: Vase
+  m_Name: Bottle
   m_TagString: Objects
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
