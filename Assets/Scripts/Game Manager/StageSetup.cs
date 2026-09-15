@@ -1,35 +1,111 @@
 using RabbleHouse;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class StageSetup : MonoBehaviour
 {
+    [Header("Characters")]
+    [SerializeField] private CharacterData[] characters;
+
+    [Header("Spawn Points")]
+    [SerializeField] private Transform[] spawnPoints;
+
+    [Header("Healthbars")]
+    [SerializeField] private HealthbarUI[] healthbars;
+
     private void Awake()
     {
-        // Find all characters and assign PlayerIndex
-        PhysicCharacterController[] controllers = FindObjectsByType<PhysicCharacterController>();
-
-        for (int i = 0; i < controllers.Length; i++)
-        {
-            PlayerHealth health = controllers[i].GetComponent<PlayerHealth>();
-            if (health != null)
-            {
-                health.PlayerIndex = i;  // 0 = human player, 1 = AI1, 2 = AI2
-                Debug.Log($"[StageSetup] {controllers[i].gameObject.name} -> PlayerIndex {i}");
-            }
-        }
+        SpawnCharacters();
     }
 
     private void Start()
     {
-        // Read selected difficulty from LobbyData
+        ApplyAIDifficulty();
+    }
+
+    private void SpawnCharacters()
+    {
+        CharacterData selectedCharacter = LobbyData.SelectedCharacter;
+
+        if (selectedCharacter == null)
+        {
+            Debug.LogError("[StageSetup] No character selected!");
+            return;
+        }
+
+        if (spawnPoints.Length < 3)
+        {
+            Debug.LogError("[StageSetup] Need 3 spawn points!");
+            return;
+        }
+
+        // Player
+        SpawnPlayer(selectedCharacter, 0, spawnPoints[0]);
+
+        // Spawn the remaining characters as AI
+        int playerIndex = 1;
+
+        foreach (CharacterData character in characters)
+        {
+            if (character == selectedCharacter)
+                continue;
+
+            SpawnAI(
+                character,
+                playerIndex,
+                spawnPoints[playerIndex]
+            );
+
+            playerIndex++;
+        }
+    }
+
+    private void SpawnPlayer(CharacterData character, int playerIndex, Transform spawnPoint)
+    {
+        GameObject player = Instantiate(
+            character.playerPrefab,
+            spawnPoint.position,
+            spawnPoint.rotation
+        );
+
+        PlayerHealth health = player.GetComponentInChildren<PlayerHealth>();
+
+        if (health != null)
+        {
+            health.PlayerIndex = playerIndex;
+            healthbars[playerIndex].SetCharacterData(character);
+            healthbars[playerIndex].SetTarget(health);
+        }
+    }
+
+    private void SpawnAI(CharacterData character, int playerIndex, Transform spawnPoint)
+    {
+        GameObject ai = Instantiate(
+            character.aiPrefab,
+            spawnPoint.position,
+            spawnPoint.rotation
+        );
+
+        PlayerHealth health = ai.GetComponentInChildren<PlayerHealth>();
+
+        if (health != null)
+        {
+            health.PlayerIndex = playerIndex;
+            healthbars[playerIndex].SetCharacterData(character);
+            healthbars[playerIndex].SetTarget(health);
+        }
+    }
+
+    private void ApplyAIDifficulty()
+    {
         int difficulty = LobbyData.SelectedDifficulty;
 
-        Debug.Log($"[GameSetup] Applying difficulty: {difficulty}");
+        Debug.Log($"[StageSetup] Applying difficulty: {difficulty}");
 
-        // Find all AI characters and apply difficulty
-        AIInputHandler[] allAI = FindObjectsByType<AIInputHandler>();
+        AIInputHandler[] allAI =
+            FindObjectsByType<AIInputHandler>();
 
-        foreach (var ai in allAI)
+        foreach (AIInputHandler ai in allAI)
         {
             ai.SetDifficulty(difficulty);
         }

@@ -1,5 +1,4 @@
 using RabbleHouse;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,48 +14,24 @@ public class HealthbarUI : MonoBehaviour
     [SerializeField] private int playerIndex = 0;
 
     private PlayerHealth targetHealth;
-    private void Start()
-    {
-        FindTarget();
-    }
 
-    private void FindTarget()
+    public void SetTarget(PlayerHealth health)
     {
-        // Unsubscribe from old target
         if (targetHealth != null)
             targetHealth.OnHealthChanged -= OnHealthChanged;
 
-        targetHealth = null;
-
-        // Find all characters in scene
-        GameObject[] allChars = GameObject.FindGameObjectsWithTag("Player");
-        foreach (var charObj in allChars)
-        {
-            PlayerHealth health = charObj.GetComponent<PlayerHealth>();
-            if (health != null && health.PlayerIndex == playerIndex)
-            {
-                targetHealth = health;
-                break;
-            }
-        }
+        targetHealth = health;
 
         if (targetHealth != null)
         {
             targetHealth.OnHealthChanged += OnHealthChanged;
             UpdateDisplay();
-            Debug.Log($"[HealthbarUI] Player {playerIndex} -> {targetHealth.transform.root.name}");
-        }
-        else
-        {
-            Debug.LogWarning($"[HealthbarUI] No PlayerHealth with index {playerIndex} found");
-            // Don't hide — just show empty bar until target spawns
         }
     }
 
     private void OnHealthChanged(int senderIndex, int newHealth)
     {
-        if (senderIndex == playerIndex)
-            UpdateDisplay();
+        UpdateDisplay();
     }
 
     private void UpdateDisplay()
@@ -74,5 +49,23 @@ public class HealthbarUI : MonoBehaviour
         // Set name based on index
         if (playerNameText != null)
             playerNameText.text = $"Player {playerIndex}";
+    }
+
+    public void SetCharacterData(CharacterData characterData)
+    {
+        if (characterIcon == null)
+            return;
+
+        if (characterData == null)
+        {
+            characterIcon.enabled = false;
+            return;
+        }
+
+        characterIcon.sprite = characterData.portrait;
+        characterIcon.enabled = characterData.portrait != null;
+
+        if (playerNameText != null)
+            playerNameText.text = characterData.characterName;
     }
 }

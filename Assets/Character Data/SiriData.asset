@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: SiriData
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Siri
-  portrait: {fileID: 0}
+  portrait: {fileID: 21300000, guid: 144c228cb5f32544b8015ba5e1f96805, type: 3}
+  playerPrefab: {fileID: 9072970447105802459, guid: b653f8aa68d46bf488851243d6d3a808, type: 3}
+  aiPrefab: {fileID: 4327557685003608254, guid: ef276c7925582a8428a99c090aa4e17a, type: 3}
   previewModel: {fileID: 4753806830598110046, guid: 610855f6c456c00408c71dadda9209c8, type: 3}

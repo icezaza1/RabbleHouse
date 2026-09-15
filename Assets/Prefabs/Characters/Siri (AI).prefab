@@ -2586,7 +2586,6 @@ GameObject:
   - component: {fileID: 2788050674851954698}
   - component: {fileID: 7804366302399180718}
   - component: {fileID: 5817549709274171950}
-  - component: {fileID: 6183203320342288096}
   - component: {fileID: 6574565156500540126}
   - component: {fileID: 988137887051196140}
   - component: {fileID: 8476080696932586732}
@@ -2701,18 +2700,6 @@ MonoBehaviour:
   stunDuration: 2
   knockdownDuration: 1.2
   knockbackForce: 100
---- !u!114 &6183203320342288096
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4444892559957084704}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df18a9390072c5c44b5c28a212aa30a5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PhysicInputHandler
 --- !u!114 &6574565156500540126
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2726,6 +2713,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PlayerHealth
   maxHealth: 200
+  PlayerIndex: 0
 --- !u!114 &988137887051196140
 MonoBehaviour:
   m_ObjectHideFlags: 0

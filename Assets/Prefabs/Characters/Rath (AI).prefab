@@ -5356,7 +5356,6 @@ GameObject:
   - component: {fileID: 7339088080009241571}
   - component: {fileID: 191359916181468743}
   - component: {fileID: 6638984371119658816}
-  - component: {fileID: 696503924305963396}
   - component: {fileID: 7613339924206783406}
   - component: {fileID: 2810515753360599448}
   m_Layer: 0
@@ -5482,18 +5481,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PlayerHealth
   maxHealth: 100
---- !u!114 &696503924305963396
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7758194756727148318}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: df18a9390072c5c44b5c28a212aa30a5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PhysicInputHandler
+  PlayerIndex: 0
 --- !u!114 &7613339924206783406
 MonoBehaviour:
   m_ObjectHideFlags: 0

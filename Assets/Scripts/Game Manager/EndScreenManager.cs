@@ -62,8 +62,6 @@ public class EndScreenManager : MonoBehaviour
         {
             OnSceneLoaded(SceneManager.GetActiveScene(), LoadSceneMode.Single);
         }
-        // Initialize the game
-        InitializeGame();
 
         // Hide end panel initially
         if (endPanel != null)

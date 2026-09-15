@@ -142,7 +142,7 @@ namespace RabbleHouse
             switch (difficulty)
             {
                 case 0: // Easy
-                    decisionInterval = 0.8f;
+                    decisionInterval = 1f;
                     attackCooldown = 2f;
                     health.SetMaxHealth(150);
                     break;

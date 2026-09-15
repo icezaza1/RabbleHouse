@@ -39,7 +39,14 @@ namespace RabbleHouse
         public bool IsStunned => isStunned;
         public bool IsKnockedDown => isKnockedDown;
         public bool IsDead => isDead;
-        public int PlayerIndex { get; set; } = 0;
+        public int PlayerIndex;
+        public CharacterData CharacterData { get; private set; }
+
+        public void Initialize(CharacterData characterData, int playerIndex)
+        {
+            CharacterData = characterData;
+            PlayerIndex = playerIndex;
+        }
 
         // Callbacks for UI / AI awareness
         public System.Action<int> OnTakeDamage;

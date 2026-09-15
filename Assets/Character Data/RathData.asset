@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: RathData
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Rath
-  portrait: {fileID: 0}
+  portrait: {fileID: 21300000, guid: 1080704f6954ad84f94db235d026fbdd, type: 3}
+  playerPrefab: {fileID: 4105068694119598862, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
+  aiPrefab: {fileID: 8997752965339002563, guid: 34917568fecc36e44a49d41a4d7fc259, type: 3}
   previewModel: {fileID: 6823013845621944633, guid: 69f3981be831158409b395b58bbdb019, type: 3}

@@ -13,5 +13,7 @@ MonoBehaviour:
   m_Name: RujData
   m_EditorClassIdentifier: Assembly-CSharp::CharacterData
   characterName: Ruj
-  portrait: {fileID: 0}
+  portrait: {fileID: 21300000, guid: fca5d9e4efdeade49a5f7a66eab2da01, type: 3}
+  playerPrefab: {fileID: 3596835553615735960, guid: d94315e47cf6d47489a615d9c84765c0, type: 3}
+  aiPrefab: {fileID: 1173483386113927474, guid: af453dc1d45b3da45a99eb421939170d, type: 3}
   previewModel: {fileID: 3939760007202786858, guid: 40542461075e9c44b9d2fc4eae3c09c5, type: 3}
