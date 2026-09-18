@@ -35,6 +35,7 @@ public class EndScreenManager : MonoBehaviour
     private List<PlayerHealth> aiCharacters = new List<PlayerHealth>();
     private CameraState currentState = CameraState.Normal;
     private bool isInitialized = false;
+    private bool gameEnded = false;
 
     // State management
     public enum CameraState { Normal, ZoomingIn, EndScreen }
@@ -92,6 +93,7 @@ public class EndScreenManager : MonoBehaviour
         }
 
         currentState = CameraState.Normal;
+        gameEnded = false;
         isInitialized = true;
     }
     private void InitializeGame()
@@ -138,12 +140,13 @@ public class EndScreenManager : MonoBehaviour
 
     private void OnPlayerDied(int playerIndex)
     {
+        if (gameEnded) return;
         StartCoroutine(EndGameSequence(false));
     }
 
     private void OnAIDied(int playerIndex)
     {
-
+        if (gameEnded) return;
         // Check if all AI are dead
         bool allAIDead = true;
         foreach (var ai in aiCharacters)
@@ -157,7 +160,6 @@ public class EndScreenManager : MonoBehaviour
 
         if (allAIDead)
         {
-            Debug.Log("[EndScreenManager] All AI characters defeated - player wins!");
             StartCoroutine(EndGameSequence(true));
         }
         else
@@ -168,6 +170,7 @@ public class EndScreenManager : MonoBehaviour
 
     private IEnumerator EndGameSequence(bool playerWon)
     {
+        gameEnded = true;
         currentState = CameraState.ZoomingIn;
 
         // Hide healthbar UI

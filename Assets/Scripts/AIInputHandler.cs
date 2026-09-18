@@ -25,13 +25,17 @@ namespace RabbleHouse
 
         [Header("Movement / Obstacle Avoidance")]
         [SerializeField] private LayerMask obstacleMask;
+        [SerializeField] private LayerMask grabbableMask;
         [SerializeField] private float obstacleCheckDistance = 1.5f;
         [SerializeField] private float obstacleCheckRadius = 0.45f;
         [Tooltip("How strongly the AI prefers moving toward the target over avoiding an obstacle.")]
         [Range(0f, 1f)]
         [SerializeField] private float targetDirectionWeight = 0.7f;
+        [Tooltip("How long the AI must make very little progress before recovering.")]
         [SerializeField] private float stuckTime = 0.8f;
+        [Tooltip("Minimum distance the AI must move during the stuck check.")]
         [SerializeField] private float minimumProgress = 0.15f;
+        [Tooltip("How long the AI commits to going around an obstacle.")]
         [SerializeField] private float avoidanceCommitTime = 1f;
 
         private float stuckTimer;
@@ -125,6 +129,7 @@ namespace RabbleHouse
         {
             controller = GetComponent<PhysicCharacterController>();
             coreRb = FindCoreRigidbody();
+            lastMovementCheckPosition = coreRb.position;
         }
 
         private Rigidbody FindCoreRigidbody()
@@ -639,15 +644,12 @@ namespace RabbleHouse
             // Check whether the direct path is clear.
             // ---------------------------------------------------------
 
-            if (!IsPathBlocked(desiredDirection))
+            if (!IsPathBlocked(desiredDirection, null))
             {
                 // No obstacle -> go directly toward target.
                 ResetObstacleAvoidance();
 
-                MoveInput = new Vector2(
-                    desiredDirection.x,
-                    desiredDirection.z
-                ).normalized;
+                SetMoveDirection(desiredDirection);
 
                 UpdateStuckDetection();
                 return;
@@ -657,20 +659,28 @@ namespace RabbleHouse
             // Path is blocked -> find an avoidance direction.
             // ---------------------------------------------------------
 
-            Vector3 avoidanceDirection = GetAvoidanceDirection(
-                desiredDirection,
-                targetPos
-            );
+            Vector3 avoidanceDirection = GetAvoidanceDirection(desiredDirection, targetPos);
 
-            MoveInput = new Vector2(
-                avoidanceDirection.x,
-                avoidanceDirection.z
-            ).normalized;
+            SetMoveDirection(avoidanceDirection);
 
             UpdateStuckDetection();
         }
 
-        private bool IsPathBlocked(Vector3 direction)
+        private void SetMoveDirection(Vector3 direction)
+        {
+            direction.y = 0f;
+
+            if (direction.sqrMagnitude < 0.001f)
+            {
+                MoveInput = Vector2.zero;
+                return;
+            }
+
+            direction.Normalize();
+
+            MoveInput = new Vector2(direction.x, direction.z).normalized;
+        }
+        private bool IsPathBlocked(Vector3 direction, Transform intendedTarget)
         {
             if (coreRb == null) return false;
 
@@ -681,32 +691,78 @@ namespace RabbleHouse
 
             Vector3 origin = coreRb.position + Vector3.up * 0.5f;
 
-            return Physics.SphereCast(
+            LayerMask combinedMask = obstacleMask | grabbableMask;
+
+            if (!Physics.SphereCast(
                 origin,
                 obstacleCheckRadius,
                 direction,
-                out _,
+                out RaycastHit hit,
                 obstacleCheckDistance,
-                obstacleMask,
-                QueryTriggerInteraction.Ignore
-            );
+                combinedMask,
+                QueryTriggerInteraction.Ignore)) 
+                return false;
+
+            // -------------------------------------------------
+            // Static obstacle
+            // -------------------------------------------------
+
+            if (IsInLayerMask(
+                hit.collider.gameObject.layer,
+                obstacleMask))
+                return true;
+
+            // -------------------------------------------------
+            // Grabbable object
+            // -------------------------------------------------
+
+            if (IsInLayerMask(
+                hit.collider.gameObject.layer,
+                grabbableMask))
+            {
+                // If this is the object we actually want to reach,
+                // don't consider it an obstacle.
+                if (IsSameTarget(hit.collider.transform, intendedTarget))
+                    return false;
+
+                // Otherwise treat it as a temporary obstacle.
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool IsInLayerMask(int layer, LayerMask mask)
+        {
+            return (mask.value & (1 << layer)) != 0;
+        }
+
+        private bool IsSameTarget(Transform hitTransform, Transform intendedTarget)
+        {
+            if (hitTransform == null || intendedTarget == null)
+                return false;
+
+            return hitTransform == intendedTarget ||
+                   hitTransform.IsChildOf(intendedTarget) ||
+                   intendedTarget.IsChildOf(hitTransform);
         }
 
         private Vector3 GetAvoidanceDirection(Vector3 desiredDirection, Vector3 targetPos)
         {
             desiredDirection.y = 0f;
+            if (desiredDirection.sqrMagnitude < 0.001f)
+                return Vector3.zero;
             desiredDirection.Normalize();
 
             // Continue using the same side while committed
             // to navigating around the obstacle.
             if (Time.time < avoidanceEndTime && avoidanceSide != 0)
             {
-                Vector3 committedDirection =
-                    avoidanceSide < 0
+                Vector3 committedDirection = avoidanceSide < 0
                         ? Vector3.Cross(Vector3.up, desiredDirection)
                         : Vector3.Cross(desiredDirection, Vector3.up);
 
-                if (!IsPathBlocked(committedDirection))
+                if (!IsPathBlocked(committedDirection, null))
                     return committedDirection;
             }
 
@@ -715,8 +771,8 @@ namespace RabbleHouse
 
             Vector3 rightDirection = Quaternion.Euler(0f, 60f, 0f) * desiredDirection;
 
-            bool leftBlocked = IsPathBlocked(leftDirection);
-            bool rightBlocked = IsPathBlocked(rightDirection);
+            bool leftBlocked = IsPathBlocked(leftDirection, null);
+            bool rightBlocked = IsPathBlocked(rightDirection, null);
 
             // ---------------------------------------------------------
             // Both sides blocked.
@@ -728,8 +784,8 @@ namespace RabbleHouse
 
                 Vector3 right = Quaternion.Euler(0f, 90f, 0f) * desiredDirection;
 
-                bool leftSideBlocked = IsPathBlocked(left);
-                bool rightSideBlocked = IsPathBlocked(right);
+                bool leftSideBlocked = IsPathBlocked(left, null);
+                bool rightSideBlocked = IsPathBlocked(right, null);
 
                 if (!leftSideBlocked && !rightSideBlocked)
                 {
@@ -747,14 +803,14 @@ namespace RabbleHouse
             // One side is blocked.
             // Take the open side.
             // ---------------------------------------------------------
-            if (leftBlocked)
+            if (leftBlocked && !rightBlocked)
             {
                 avoidanceSide = 1;
                 avoidanceEndTime = Time.time + avoidanceCommitTime;
 
                 return rightDirection;
             }
-            if (rightBlocked)
+            if (rightBlocked && !leftBlocked)
             {
                 avoidanceSide = -1;
                 avoidanceEndTime = Time.time + avoidanceCommitTime;
@@ -855,18 +911,18 @@ namespace RabbleHouse
 
             if (avoidanceSide < 0)
             {
-                if (!IsPathBlocked(left))
+                if (!IsPathBlocked(left, null))
                     return left;
 
-                if (!IsPathBlocked(right))
+                if (!IsPathBlocked(right, null))
                     return right;
             }
             else
             {
-                if (!IsPathBlocked(right))
+                if (!IsPathBlocked(right, null))
                     return right;
 
-                if (!IsPathBlocked(left))
+                if (!IsPathBlocked(left, null))
                     return left;
             }
 
@@ -928,7 +984,7 @@ namespace RabbleHouse
         {
             if (coreRb == null) return null;
 
-            Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up * 1f, retreatGrabRange, LayerMask.GetMask("Grabbable"));
+            Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up * 1f, retreatGrabRange, grabbableMask);
 
             List<GrabbableObject> valid = new List<GrabbableObject>();
             foreach (var hit in hits)
@@ -976,7 +1032,7 @@ namespace RabbleHouse
             if (coreRb == null) return null;
 
             // Use sphere around the AI for wider detection — not just in front
-            Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up * 1f, grabSearchRadius, LayerMask.GetMask("Grabbable"));
+            Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up * 1f, grabSearchRadius, grabbableMask);
 
             List<GrabbableObject> valid = new List<GrabbableObject>();
 

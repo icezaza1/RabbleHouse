@@ -2763,16 +2763,15 @@ MonoBehaviour:
   dialogueText: 'Press "Q" near an object to grab it
 
     - Left click to swing an
-    object, with a varies chance to stun the target, but you have to wait a while
-    to swing it again so time it carefully. Note that some objects have a different
-    functionalities.
+    object, but you have to wait a while to swing it again so time it carefully.
+    Note that some objects have a different functionalities.
 
-    - Right click to throw an object which can hit the target
-    from a distance, also have better chance to stun the target
+    - Right click to
+    throw an object which can hit the target from a distance.
 
     - Some objects
     are very big which can slow your character rotation, as well as unable to throw
-    it'
+    it.'
   uiDialogueTextField: {fileID: 1230841795}
 --- !u!65 &1162147847
 BoxCollider:
@@ -4849,12 +4848,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0ab13adfc54eb84f96c8df9ba2b8855, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialDialogue
-  dialogueText: '- Left Click to do light punch which deal horrible damage, but no
-    cooldown so you can deal rapid amount of damages in a quick succession
+  dialogueText: '- Left Click to do light punch which deal small damage, but no cooldown
+    so you can deal rapid amount of damages in a quick succession
 
-    -
-    Right Click to do heavy punch which has a small chance to stun target on hit.
-    However, this move have fairly long cooldown'
+    - Right Click
+    to do heavy punch which has a small chance to stun target on hit. However, this
+    move have long cooldown'
   uiDialogueTextField: {fileID: 1230841795}
 --- !u!65 &2121690871
 BoxCollider:

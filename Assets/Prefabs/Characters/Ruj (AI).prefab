@@ -2129,7 +2129,7 @@ MonoBehaviour:
   throwForce: 10
   punchForce: 100
   punchRange: 0.7
-  punchDamage: 2
+  punchDamage: 1
   heavyPunchDamage: 8
   heavyPunchHitType: 1
   heavyPunchEffectChance: 0.2
@@ -2180,8 +2180,11 @@ MonoBehaviour:
   obstacleMask:
     serializedVersion: 2
     m_Bits: 256
-  obstacleCheckDistance: 1
-  obstacleCheckRadius: 0.3
+  grabbableMask:
+    serializedVersion: 2
+    m_Bits: 64
+  obstacleCheckDistance: 0.3
+  obstacleCheckRadius: 0.15
   targetDirectionWeight: 0.7
   stuckTime: 0.8
   minimumProgress: 0.15

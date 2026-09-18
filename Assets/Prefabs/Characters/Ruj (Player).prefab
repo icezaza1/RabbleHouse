@@ -4222,7 +4222,7 @@ MonoBehaviour:
   throwForce: 10
   punchForce: 100
   punchRange: 0.7
-  punchDamage: 2
+  punchDamage: 1
   heavyPunchDamage: 8
   heavyPunchHitType: 1
   heavyPunchEffectChance: 0.2
