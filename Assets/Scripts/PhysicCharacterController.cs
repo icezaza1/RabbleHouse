@@ -57,6 +57,10 @@ namespace RabbleHouse
         [SerializeField] private ConfigurableJoint rightUpperArm;
         [SerializeField] private ConfigurableJoint rightLowerArm;
 
+        [Header("Small Object IK")]
+        [SerializeField] private Transform rightHandIKTarget;
+        [SerializeField] private Transform rightElbowIKHint;
+
         private JointDrive originalLeftUpperX, originalLeftUpperYZ, originalLeftLowerX, originalLeftLowerYZ;
         private JointDrive originalRightUpperX, originalRightUpperYZ, originalRightLowerX, originalRightLowerYZ;
 
@@ -224,12 +228,9 @@ namespace RabbleHouse
             // While holding an object, override both hand joints' targetRotation
             // so the arms raise.  LateUpdate runs after FixedUpdate, so our
             // value wins over ActiveRagdollBone's per-frame write.
-            if (heldObject != null && heldGrabbableType != GrabbableType.Tool)
+            if (heldObject != null && !isHeavyPunching)
             {
-                RaiseArmsForHeld();
-            }
-            else if (heldObject != null && !isHeavyPunching)
-            {
+                UpdateHeldObjectIK();
                 RaiseArmsForHeld();
             }
 
@@ -245,6 +246,9 @@ namespace RabbleHouse
 
         private void Update()
         {
+            if (currentState == CharacterState.Dead)
+                return;
+
             ReadInput();
             CheckGrounded();
             UpdateState();
@@ -469,7 +473,23 @@ namespace RabbleHouse
                 SetState(CharacterState.Grabbing);
             }
         }
-        
+
+        private void UpdateHeldObjectIK()
+        {
+            if (rightHandIKTarget == null) return;
+            if (heldObject == null)
+                return;
+
+            if (heldGrabbableType != GrabbableType.SmallObject)
+                return;
+
+            if (heldObject.gripPoint == null)
+                return;
+
+            rightHandIKTarget.position = heldObject.gripPoint.position;
+            rightHandIKTarget.rotation = heldObject.gripPoint.rotation;
+        }
+
         private Joint SetupGrabJoint(Rigidbody handBody, GrabbableObject obj, bool isLeftHand)
         {
             heldObject = obj;
@@ -509,8 +529,8 @@ namespace RabbleHouse
                 configJoint.yDrive = drive;
                 configJoint.zDrive = drive;
 
-                configJoint.breakForce = float.MaxValue;
-                configJoint.breakTorque = float.MaxValue;
+                configJoint.breakForce = 1500f;
+                configJoint.breakTorque = 1500f;
                 configJoint.enablePreprocessing = false;
                 Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
                 if (balancer != null)
@@ -674,6 +694,7 @@ namespace RabbleHouse
                 // Per-tool hold pose
                 var profile = tool.ArmProfile;
                 bool oneHandedTool = tool.OneHanded;
+
                 RUpperBoneScript.enabled = false;
                 RLowerBoneScript.enabled = false;
 
@@ -701,12 +722,21 @@ namespace RabbleHouse
                     // Zero out any existing angular velocity
                     leftUpperArm.targetAngularVelocity = Vector3.zero;
                 }
+
+                return;
             }
-            else
+
+            // Small object
+            if (heldGrabbableType == GrabbableType.SmallObject)
             {
-                // Existing hardcoded Small/Large pose
-                RaiseBothArms();
+                // Do not apply the hardcoded RaiseBothArms() pose.
+                // The hand ConfigurableJoints are responsible for
+                // connecting the hands to the object's grip points.
+                return;
             }
+
+            // Large object
+            RaiseBothArms();
         }
         public void RaiseBothArms()
         {

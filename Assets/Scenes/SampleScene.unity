@@ -119,6 +119,37 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &38142377
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 38142378}
+  m_Layer: 6
+  m_Name: LeftHandle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &38142378
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 38142377}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.0000001490116, y: 0.70710677, z: -0.70710677, w: 0.000000029802347}
+  m_LocalPosition: {x: -0.0027737622, y: 0.009000879, z: 0.01123433}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 543450652680158824}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &38606566
 GameObject:
   m_ObjectHideFlags: 0
@@ -892,7 +923,7 @@ Light:
   m_InnerSpotAngle: 21.80208
   m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
-    m_Type: 0
+    m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
     m_Strength: 0
@@ -1152,10 +1183,10 @@ Transform:
   m_Children:
   - {fileID: 543450652272318492}
   - {fileID: 543450652859841045}
-  - {fileID: 4647786207919726871}
   - {fileID: 2630851753673006103}
   - {fileID: 2747120763162539663}
   - {fileID: 543450652463740209}
+  - {fileID: 4647786207919726871}
   - {fileID: 543450652680158824}
   - {fileID: 543450651859043938}
   - {fileID: 8298193169700940463}
@@ -1348,7 +1379,7 @@ Transform:
   m_GameObject: {fileID: 543320513}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 3.25, y: 0, z: 0}
+  m_LocalPosition: {x: -2.61, y: 0, z: 1.4}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2795,7 +2826,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7309840329130205348, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3124,7 +3155,7 @@ Transform:
   m_GameObject: {fileID: 1362390238}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.5, y: 0, z: 1.75}
+  m_LocalPosition: {x: 4.53, y: 0, z: 1.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4344,6 +4375,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1896224590}
   m_CullTransparentMesh: 1
+--- !u!1 &1928552615
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1928552616}
+  m_Layer: 6
+  m_Name: RightHandle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1928552616
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1928552615}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.0000001490116, y: 0.70710677, z: -0.70710677, w: 0.000000029802347}
+  m_LocalPosition: {x: 0.0051031727, y: 0.008587266, z: 0.011316072}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 543450652680158824}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2035618922
 GameObject:
   m_ObjectHideFlags: 0
@@ -4816,7 +4878,9 @@ Transform:
   m_LocalPosition: {x: 3.4899998, y: -0.24999925, z: 4.3199997}
   m_LocalScale: {x: 36.236717, y: 36.236713, z: 36.236713}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1928552616}
+  - {fileID: 38142378}
   m_Father: {fileID: 448450347}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &543450652859841045
@@ -4961,9 +5025,11 @@ GameObject:
   - component: {fileID: 1711813856091407623}
   - component: {fileID: 3469287836664689103}
   - component: {fileID: 3469287836664689102}
-  m_Layer: 0
+  - component: {fileID: 3469287836664689104}
+  - component: {fileID: 3469287836664689105}
+  m_Layer: 6
   m_Name: PottedPlant
-  m_TagString: Untagged
+  m_TagString: Objects
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5602,6 +5668,67 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
+--- !u!114 &3469287836664689104
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132149008049362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c0aab8840b3b14e80a4cc9e0b0765a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
+  grabbableType: 2
+  gripPoint: {fileID: 1928552616}
+  secondaryGripPoint: {fileID: 38142378}
+  durablility: 5
+  heldMass: 1
+  hipRotationResistance: 10
+  swingDamage: 15
+  swingStunChance: 0.3
+  attackRangeBonus: 0
+  aiRangeBonus: 0
+  throwDamage: 20
+  throwStunChance: 0.7
+  throwMinSpeed: 3
+  knockbackForce: -1
+--- !u!114 &3469287836664689105
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132149008049362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ed65989dabdb2440a5a31980d12d756, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PottedPlant
+  armProfile:
+    throwWindupTime: 0.3
+    throwSwingTime: 0.5
+    throwHoldTime: 0.1
+    throwReturnTime: 0.3
+    throwSwingAngle: 45
+    rightUpperHold: {x: 0, y: 90, z: -60}
+    rightLowerHold: {x: 0, y: 0, z: 0}
+    leftUpperHold: {x: 0, y: -90, z: 60}
+    leftLowerHold: {x: 0, y: 0, z: 0}
+    rightUpperWindUp: {x: 0, y: 90, z: -60}
+    rightLowerWindUp: {x: 0, y: 0, z: 0}
+    leftUpperWindUp: {x: 0, y: 0, z: 0}
+    leftLowerWindUp: {x: 0, y: 0, z: 0}
+    rightUpperSwing: {x: 0, y: 90, z: -60}
+    rightLowerSwing: {x: 0, y: 0, z: 0}
+    leftUpperSwing: {x: 0, y: 0, z: 0}
+    leftLowerSwing: {x: 0, y: 0, z: 0}
+    throwWindUpRightUpper: {x: 0, y: 90, z: -60}
+    throwWindUpRightLower: {x: 0, y: 0, z: 0}
+    throwRightUpper: {x: 0, y: 90, z: -60}
+    throwRightLower: {x: 0, y: 0, z: 0}
+  oneHanded: 0
 --- !u!33 &3469287836709369264
 MeshFilter:
   m_ObjectHideFlags: 0
