@@ -2747,7 +2747,7 @@ MonoBehaviour:
   grabbableMask:
     serializedVersion: 2
     m_Bits: 64
-  obstacleCheckDistance: 0.3
+  obstacleCheckDistance: 0.4
   obstacleCheckRadius: 0.15
   targetDirectionWeight: 0.7
   stuckTime: 0.8

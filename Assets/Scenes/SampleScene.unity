@@ -6513,7 +6513,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6845286834639202231, guid: 00b11b42c69a15e469407b34687e8f7b, type: 3}
       propertyPath: grabbableType
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6845286834639202231, guid: 00b11b42c69a15e469407b34687e8f7b, type: 3}
       propertyPath: swingStunChance
@@ -6659,7 +6659,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6066479896959440593, guid: 0a655c37e2d5ea842994efe32cfd9049, type: 3}
       propertyPath: grabbableType
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6066479896959440593, guid: 0a655c37e2d5ea842994efe32cfd9049, type: 3}
       propertyPath: swingStunChance
