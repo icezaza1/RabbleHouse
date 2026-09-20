@@ -4923,6 +4923,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PlayerHealth
   maxHealth: 100
+  PlayerIndex: 0
 --- !u!114 &7946247371952453081
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4938,11 +4939,25 @@ MonoBehaviour:
   chaseRange: 30
   grabRange: 3
   grabSearchRadius: 20
+  obstacleMask:
+    serializedVersion: 2
+    m_Bits: 0
+  grabbableMask:
+    serializedVersion: 2
+    m_Bits: 0
+  obstacleCheckDistance: 1.5
+  obstacleCheckRadius: 0.45
+  targetDirectionWeight: 0.7
+  stuckTime: 0.8
+  minimumProgress: 0.15
+  avoidanceCommitTime: 1
   attackRange: 0.7
+  meleeRangePadding: 0.15
+  meleeAttackAngle: 100
+  rangedWeaponThreshold: 2
   decisionInterval: 0.5
   grabCooldown: 2
   attackCooldown: 1
-  moveSpeed: 5
   leadTime: 3
   velocitySmoothing: 0.1
   dodgeChance: 0.2

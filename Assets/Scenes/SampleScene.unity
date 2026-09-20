@@ -7150,7 +7150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9c0aab8840b3b14e80a4cc9e0b0765a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
-  grabbableType: 2
+  grabbableType: 0
   gripPoint: {fileID: 1517818004}
   secondaryGripPoint: {fileID: 1711148804}
   durablility: 1

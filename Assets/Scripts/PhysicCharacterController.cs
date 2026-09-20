@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using System.Collections;
+using UnityEngine.Animations.Rigging;
 
 namespace RabbleHouse
 {
@@ -56,10 +57,6 @@ namespace RabbleHouse
         [Header("Right Arm Joints")]
         [SerializeField] private ConfigurableJoint rightUpperArm;
         [SerializeField] private ConfigurableJoint rightLowerArm;
-
-        [Header("Small Object IK")]
-        [SerializeField] private Transform rightHandIKTarget;
-        [SerializeField] private Transform rightElbowIKHint;
 
         private JointDrive originalLeftUpperX, originalLeftUpperYZ, originalLeftLowerX, originalLeftLowerYZ;
         private JointDrive originalRightUpperX, originalRightUpperYZ, originalRightLowerX, originalRightLowerYZ;
@@ -230,7 +227,6 @@ namespace RabbleHouse
             // value wins over ActiveRagdollBone's per-frame write.
             if (heldObject != null && !isHeavyPunching)
             {
-                UpdateHeldObjectIK();
                 RaiseArmsForHeld();
             }
 
@@ -390,20 +386,20 @@ namespace RabbleHouse
 
             Quaternion targetRot = Quaternion.LookRotation(currentMoveDir);
 
-            // LargeObject: heavy object dragging behind makes hip rotation sluggish.
+            float rotationStrength = 1f;
+            // Small & LargeObject: heavy object dragging behind makes hip rotation sluggish.
             // Uses the object's hipRotationResistance (0 = instant turn, higher = slower).
-            if (heldGrabbableType == GrabbableType.LargeObject && heldObject != null)
+            if (heldObject != null)
             {
-                // Resistance 0 → instant (factor = 1), resistance 20+ → very sluggish (factor ~0.03)
                 float resistance = heldObject.HipRotationResistance;
-                float slowFactor = Mathf.Clamp01(1f / (1f + resistance * 0.05f));
-                hipJoint.targetRotation = Quaternion.Slerp(hipJoint.targetRotation, Quaternion.Inverse(targetRot),
-                    slowFactor * Time.fixedDeltaTime * balancerBlendSpeed);
+
+                rotationStrength = Mathf.Clamp01(1f / (1f + resistance * 0.05f));
             }
-            else
-            {
-                hipJoint.targetRotation = Quaternion.Inverse(targetRot);
-            }
+
+            hipJoint.targetRotation = Quaternion.Slerp(hipJoint.targetRotation, 
+                Quaternion.Inverse(targetRot),
+                rotationStrength * Time.fixedDeltaTime * balancerBlendSpeed
+            );
         }
 
         // --- GRAB / DROP ---
@@ -474,22 +470,6 @@ namespace RabbleHouse
             }
         }
 
-        private void UpdateHeldObjectIK()
-        {
-            if (rightHandIKTarget == null) return;
-            if (heldObject == null)
-                return;
-
-            if (heldGrabbableType != GrabbableType.SmallObject)
-                return;
-
-            if (heldObject.gripPoint == null)
-                return;
-
-            rightHandIKTarget.position = heldObject.gripPoint.position;
-            rightHandIKTarget.rotation = heldObject.gripPoint.rotation;
-        }
-
         private Joint SetupGrabJoint(Rigidbody handBody, GrabbableObject obj, bool isLeftHand)
         {
             heldObject = obj;
@@ -499,44 +479,40 @@ namespace RabbleHouse
             if (heldGrabbableType == GrabbableType.SmallObject)
             {
                 // Create ConfigurableJoint on the hand
-                ConfigurableJoint configJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
-                configJoint.connectedBody = heldObject.Rigidbody;
-                configJoint.anchor = Vector3.zero;
-
-                // connectedAnchor is in object local space — place ahead of character
-                Vector3 targetPos = coreRigidbody.position + coreRigidbody.transform.forward * smallObjectHoldOffset;
-                configJoint.autoConfigureConnectedAnchor = false;
-                configJoint.connectedAnchor = heldObject.Rigidbody.transform.InverseTransformPoint(targetPos);
+                ConfigurableJoint grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
+                grabJoint.connectedBody = heldObject.Rigidbody;
+                grabJoint.autoConfigureConnectedAnchor = true;
+                grabJoint.anchor = Vector3.zero;
 
                 // Lock angular so object doesn't rotate independently
-                configJoint.angularXMotion = ConfigurableJointMotion.Locked;
-                configJoint.angularYMotion = ConfigurableJointMotion.Locked;
-                configJoint.angularZMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
 
                 // Lock linear to hold position (will be driven by spring below)
-                configJoint.xMotion = ConfigurableJointMotion.Locked;
-                configJoint.yMotion = ConfigurableJointMotion.Locked;
-                configJoint.zMotion = ConfigurableJointMotion.Locked;
+                grabJoint.xMotion = ConfigurableJointMotion.Locked;
+                grabJoint.yMotion = ConfigurableJointMotion.Locked;
+                grabJoint.zMotion = ConfigurableJointMotion.Locked;
 
                 // Very high position spring to minimize snap-to-hand while allowing physics
                 JointDrive drive = new JointDrive
                 {
-                    positionSpring = 50000f,
-                    positionDamper = 500f,
-                    maximumForce = float.MaxValue
+                    positionSpring = 15000f,
+                    positionDamper = 15000f,
+                    maximumForce = 15000f
                 };
-                configJoint.xDrive = drive;
-                configJoint.yDrive = drive;
-                configJoint.zDrive = drive;
+                grabJoint.xDrive = drive;
+                grabJoint.yDrive = drive;
+                grabJoint.zDrive = drive;
 
-                configJoint.breakForce = 1500f;
-                configJoint.breakTorque = 1500f;
-                configJoint.enablePreprocessing = false;
+                grabJoint.breakForce = 1500f;
+                grabJoint.breakTorque = 1500f;
+                grabJoint.enablePreprocessing = false;
                 Physics.IgnoreCollision(handBody.GetComponent<Collider>(), heldObject.GetComponent<Collider>(), true);
                 if (balancer != null)
                     balancer.weight *= 0.5f;
 
-                return configJoint;
+                return grabJoint;
             }
             else if (heldGrabbableType == GrabbableType.LargeObject)
             {
@@ -597,7 +573,6 @@ namespace RabbleHouse
                 // Primary hand
                 if (!isLeftHand)
                 {
-                    grabJoint.autoConfigureConnectedAnchor = false;
                     grabJoint.autoConfigureConnectedAnchor = false;
 
                     grabJoint.connectedAnchor =
@@ -726,16 +701,7 @@ namespace RabbleHouse
                 return;
             }
 
-            // Small object
-            if (heldGrabbableType == GrabbableType.SmallObject)
-            {
-                // Do not apply the hardcoded RaiseBothArms() pose.
-                // The hand ConfigurableJoints are responsible for
-                // connecting the hands to the object's grip points.
-                return;
-            }
-
-            // Large object
+            // Small & Large object
             RaiseBothArms();
         }
         public void RaiseBothArms()
@@ -913,7 +879,7 @@ namespace RabbleHouse
             Quaternion rightUpperStart = toolProfile != null
                 ? rightUpperArm.targetRotation   // current pose (already raised from RaiseArms)
                 : rightUpperArm.targetRotation;
-            Quaternion rightLowerStart = rightUpperArm.targetRotation;
+            Quaternion rightLowerStart = rightLowerArm.targetRotation;
 
             Quaternion rightUpperWindup = toolProfile != null
                 ? Quaternion.Euler(toolProfile.rightUpperWindUp)
@@ -932,7 +898,7 @@ namespace RabbleHouse
             Quaternion leftUpperStart = toolProfile != null
                 ? leftUpperArm.targetRotation   // current pose (already raised from RaiseArms)
                 : leftUpperArm.targetRotation;
-            Quaternion leftLowerStart = leftUpperArm.targetRotation;
+            Quaternion leftLowerStart = leftLowerArm.targetRotation;
 
             Quaternion leftUpperWindup = toolProfile != null
                 ? Quaternion.Euler(toolProfile.leftUpperWindUp)
@@ -950,9 +916,10 @@ namespace RabbleHouse
             // Rotate hip to windup angle
             float elapsed = 0f;
             float total = swingWindup;
+
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
                 rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
@@ -963,7 +930,7 @@ namespace RabbleHouse
                     leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerStart, leftLowerWindup, t);
                 }
 
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Rotate windup to swing
@@ -972,7 +939,7 @@ namespace RabbleHouse
             bool swingHitDone = false;
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
                 rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperSwing, t);
@@ -994,14 +961,14 @@ namespace RabbleHouse
                     }
                     swingHitDone = true;
                 }
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
             // Phase 2: Hold briefly
             elapsed = 0f;
             while (elapsed < swingHold)
             {
-                elapsed += Time.deltaTime;
-                yield return null;
+                elapsed += Time.fixedDeltaTime;
+                yield return new WaitForFixedUpdate();
             }
 
             // Phase 3: Return to facing direction
@@ -1009,7 +976,7 @@ namespace RabbleHouse
             total = swingReturn;
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
                 rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperSwing, rightUpperStart, t);
@@ -1020,7 +987,7 @@ namespace RabbleHouse
                     leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerSwing, leftLowerStart, t);
                 }
 
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Stop object-based collision detection
@@ -1107,30 +1074,30 @@ namespace RabbleHouse
             float total = punchTravelTime;
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 upperJoint.targetRotation = Quaternion.Slerp(startUpper, targetUpper, t);
                 lowerJoint.targetRotation = Quaternion.Slerp(startLower, targetLower, t);
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // --- Hold the apex briefly ---
             elapsed = 0f;
             while (elapsed < punchHoldTime)
             {
-                elapsed += Time.deltaTime;
-                yield return null;
+                elapsed += Time.fixedDeltaTime;
+                yield return new WaitForFixedUpdate();
             }
 
             // --- Move back from punch to wind-up ---
             elapsed = 0f;
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 upperJoint.targetRotation = Quaternion.Slerp(targetUpper, startUpper, t);
                 lowerJoint.targetRotation = Quaternion.Slerp(targetLower, startLower, t);
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Clean-up: mark arm as finished
@@ -1261,10 +1228,10 @@ namespace RabbleHouse
 
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Phase 2: Hip hooks to opposite side, arm stays extended (hold) — THIS IS IMPACT
@@ -1272,7 +1239,7 @@ namespace RabbleHouse
             bool heavyHitDone = false;
             while (elapsed < heavyHoldTime)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / heavyHoldTime);
                 hipJoint.targetRotation = Quaternion.Lerp(hipWindupRot, hipHookRot, t);
                 upperJoint.targetRotation = Quaternion.Lerp(startUpper, targetUpper, t);
@@ -1285,19 +1252,19 @@ namespace RabbleHouse
                     CheckHit(heavyPunchDamage, punchForce, heavyPunchHitType, heavyPunchEffectChance, true);
                     heavyHitDone = true;
                 }
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Phase 3: Return hip to neutral and arm back to wind-up
             elapsed = 0f;
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipHookRot, hipStart, t);
                 upperJoint.targetRotation = Quaternion.Slerp(targetUpper, startUpper, t);
                 lowerJoint.targetRotation = Quaternion.Slerp(targetLower, startLower, t);
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Re-enable bone scripts
@@ -1364,12 +1331,12 @@ namespace RabbleHouse
             float total = throwWindup;
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
                 rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
                 rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Phase 2: Swing forward — at ~50% of this phase, THROW the object
@@ -1378,7 +1345,7 @@ namespace RabbleHouse
             bool objectThrown = false;
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
                 rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperThrow, t);
@@ -1390,15 +1357,15 @@ namespace RabbleHouse
                     ThrowHeldObject();
                     objectThrown = true;
                 }
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Phase 3: Hold briefly
             elapsed = 0f;
             while (elapsed < throwHold)
             {
-                elapsed += Time.deltaTime;
-                yield return null;
+                elapsed += Time.fixedDeltaTime;
+                yield return new WaitForFixedUpdate();
             }
 
             // Phase 4: Return to facing direction
@@ -1406,12 +1373,12 @@ namespace RabbleHouse
             total = throwReturn;
             while (elapsed < total)
             {
-                elapsed += Time.deltaTime;
+                elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
                 rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperThrow, rightUpperStart, t);
                 rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerThrow, rightLowerStart, t);
-                yield return null;
+                yield return new WaitForFixedUpdate();
             }
 
             // Restore hip rotation to current facing

@@ -53,6 +53,8 @@ namespace RabbleHouse
 
         private Rigidbody rb;
         private float originMass;
+        private float objectCollisionResistance;
+        private readonly Dictionary<Collider, float> collisionResistances = new Dictionary<Collider, float>();
         private bool isHeld = false;
         private bool isThrown = false; // only deal damage after explicit throw
         private PhysicCharacterController holder; // set by PhysicCharacterController before throw
@@ -64,6 +66,7 @@ namespace RabbleHouse
         public Rigidbody Rigidbody => rb;
         public bool IsHeld => isHeld;
         public float HipRotationResistance => hipRotationResistance;
+        public float ObjectCollisionResistance => objectCollisionResistance;
 
         public int Durability => durablility;
         /// <summary>Damage dealt while held and swung.</summary>
@@ -137,6 +140,39 @@ namespace RabbleHouse
             }
         }
 
+        private void OnCollisionStay(Collision collision)
+        {
+            if (!isHeld)
+                return;
+
+            if (holder != null &&
+                collision.transform.IsChildOf(holder.transform))
+            {
+                return;
+            }
+
+            // Collision impulse represents how strongly the physics system is resolving this contact.
+            float impulseMagnitude = collision.impulse.magnitude;
+
+            // Convert impulse into a manageable 0-1 resistance value.
+            //
+            // Increase this value if the object needs to resist more strongly.
+            collisionResistances[collision.collider] = Mathf.Clamp01(impulseMagnitude / 20f);
+
+            // Find the strongest active obstruction.
+            float strongestResistance = 0f;
+
+            foreach (float value in collisionResistances.Values)
+            {
+                strongestResistance = Mathf.Max(
+                    strongestResistance,
+                    value
+                );
+            }
+
+            objectCollisionResistance = strongestResistance;
+        }
+
         /// <summary>
         /// Detect impact against a damageable character after an explicit throw.
         /// Only deals damage if the object was thrown (isThrown) AND speed >= throwMinSpeed.
@@ -207,9 +243,27 @@ namespace RabbleHouse
                 // Consume the throw — object must be re-thrown to deal damage again
                 isThrown = false;
             }
-            
         }
 
+        private void OnCollisionExit(Collision collision)
+        {
+            if (collisionResistances.ContainsKey(collision.collider))
+            {
+                collisionResistances.Remove(collision.collider);
+            }
+
+            float strongestResistance = 0f;
+
+            foreach (float value in collisionResistances.Values)
+            {
+                strongestResistance = Mathf.Max(
+                    strongestResistance,
+                    value
+                );
+            }
+
+            objectCollisionResistance = strongestResistance;
+        }
         /// <summary>
         /// Reduce durability by 1 when the object hits a character.
         /// Returns the new durability (0 = destroyed).
