@@ -51,6 +51,12 @@ namespace RabbleHouse
         [Tooltip("Impulse applied to launch the target when this object hits (swing or throw). -1 = use target's default knockbackForce.")]
         [SerializeField] private float knockbackForce = -1f;
 
+        [Header("Break / Destroy")]
+        [SerializeField] private GameObject spawnOnDestroy;
+        [SerializeField] private int spawnAmount = 1;
+        [SerializeField] private Transform spawnPoint;
+        [SerializeField] private bool inheritVelocity = true;
+
         private Rigidbody rb;
         private float originMass;
         private float objectCollisionResistance;
@@ -75,6 +81,7 @@ namespace RabbleHouse
         public float KnockbackForce => knockbackForce;
         public float AttackRangeBonus => attackRangeBonus;
         public float AIRangeBonus => aiRangeBonus;
+        public GameObject SpawnOnDestroy => spawnOnDestroy;
 
         /// <summary>Register who threw this object (for self-damage prevention).</summary>
         public void SetThrower(PhysicCharacterController owner) => holder = owner;
@@ -272,14 +279,36 @@ namespace RabbleHouse
         {
             durablility -= amount;
             if (durablility < 0) durablility = 0;
+
             if (durablility <= 0)
             {
                 // Optional: play a break effect / sound here
-                Destroy(gameObject);
                 if (holder != null)
                     holder.ReleaseObject();
+
+                SpawnDestroyedObjects();
+
+                Destroy(gameObject);
             }
             return durablility;
+        }
+
+        private void SpawnDestroyedObjects()
+        {
+            if (spawnOnDestroy == null)
+                return;
+
+            Vector3 spawnPosition = spawnPoint != null ? spawnPoint.position : transform.position;
+
+            Quaternion spawnRotation = spawnPoint != null
+                ? spawnPoint.rotation
+                : Quaternion.identity;
+
+            Instantiate(
+                spawnOnDestroy,
+                spawnPosition,
+                spawnRotation
+            );
         }
     }
 }

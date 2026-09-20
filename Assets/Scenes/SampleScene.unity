@@ -5026,7 +5026,6 @@ GameObject:
   - component: {fileID: 3469287836664689103}
   - component: {fileID: 3469287836664689102}
   - component: {fileID: 3469287836664689104}
-  - component: {fileID: 3469287836664689105}
   m_Layer: 6
   m_Name: PottedPlant
   m_TagString: Objects
@@ -5680,11 +5679,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9c0aab8840b3b14e80a4cc9e0b0765a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
-  grabbableType: 2
+  grabbableType: 0
   gripPoint: {fileID: 1928552616}
   secondaryGripPoint: {fileID: 38142378}
   durablility: 5
-  heldMass: 1
+  heldMass: 0.3
   hipRotationResistance: 10
   swingDamage: 15
   swingStunChance: 0.3
@@ -5694,41 +5693,10 @@ MonoBehaviour:
   throwStunChance: 0.7
   throwMinSpeed: 3
   knockbackForce: -1
---- !u!114 &3469287836664689105
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 919132149008049362}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1ed65989dabdb2440a5a31980d12d756, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PottedPlant
-  armProfile:
-    throwWindupTime: 0.3
-    throwSwingTime: 0.5
-    throwHoldTime: 0.1
-    throwReturnTime: 0.3
-    throwSwingAngle: 45
-    rightUpperHold: {x: 0, y: 90, z: -60}
-    rightLowerHold: {x: 0, y: 0, z: 0}
-    leftUpperHold: {x: 0, y: -90, z: 60}
-    leftLowerHold: {x: 0, y: 0, z: 0}
-    rightUpperWindUp: {x: 0, y: 90, z: -60}
-    rightLowerWindUp: {x: 0, y: 0, z: 0}
-    leftUpperWindUp: {x: 0, y: 0, z: 0}
-    leftLowerWindUp: {x: 0, y: 0, z: 0}
-    rightUpperSwing: {x: 0, y: 90, z: -60}
-    rightLowerSwing: {x: 0, y: 0, z: 0}
-    leftUpperSwing: {x: 0, y: 0, z: 0}
-    leftLowerSwing: {x: 0, y: 0, z: 0}
-    throwWindUpRightUpper: {x: 0, y: 90, z: -60}
-    throwWindUpRightLower: {x: 0, y: 0, z: 0}
-    throwRightUpper: {x: 0, y: 90, z: -60}
-    throwRightLower: {x: 0, y: 0, z: 0}
-  oneHanded: 0
+  spawnOnDestroy: {fileID: 0}
+  spawnAmount: 1
+  spawnPoint: {fileID: 0}
+  inheritVelocity: 1
 --- !u!33 &3469287836709369264
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -5832,6 +5800,10 @@ MonoBehaviour:
   throwStunChance: 0.75
   throwMinSpeed: 3
   knockbackForce: -1
+  spawnOnDestroy: {fileID: 0}
+  spawnAmount: 1
+  spawnPoint: {fileID: 0}
+  inheritVelocity: 1
 --- !u!114 &3469287836709369270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5970,6 +5942,10 @@ MonoBehaviour:
   throwStunChance: 0.9
   throwMinSpeed: 3
   knockbackForce: -1
+  spawnOnDestroy: {fileID: 0}
+  spawnAmount: 1
+  spawnPoint: {fileID: 0}
+  inheritVelocity: 1
 --- !u!33 &3469287838460230292
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -6052,6 +6028,10 @@ MonoBehaviour:
   throwStunChance: 5
   throwMinSpeed: 3
   knockbackForce: -1
+  spawnOnDestroy: {fileID: 0}
+  spawnAmount: 1
+  spawnPoint: {fileID: 0}
+  inheritVelocity: 1
 --- !u!1 &3632183639602659713
 GameObject:
   m_ObjectHideFlags: 0
@@ -6316,7 +6296,6 @@ GameObject:
   - component: {fileID: 8588253967489494708}
   - component: {fileID: 8588253967489494707}
   - component: {fileID: 8588253967489494709}
-  - component: {fileID: 8588253967489494710}
   m_Layer: 6
   m_Name: Vase
   m_TagString: Objects
@@ -7153,52 +7132,21 @@ MonoBehaviour:
   grabbableType: 0
   gripPoint: {fileID: 1517818004}
   secondaryGripPoint: {fileID: 1711148804}
-  durablility: 1
+  durablility: 3
   heldMass: 0.2
   hipRotationResistance: 10
   swingDamage: 15
-  swingStunChance: 1
-  attackRangeBonus: 0
-  aiRangeBonus: 0
+  swingStunChance: 0.5
+  attackRangeBonus: 0.3
+  aiRangeBonus: 0.3
   throwDamage: 15
-  throwStunChance: 1
+  throwStunChance: 0.8
   throwMinSpeed: 3
   knockbackForce: -1
---- !u!114 &8588253967489494710
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5461617589508881325}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d17d3136ad3b2b46a6e03e02a43445a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Vase
-  armProfile:
-    throwWindupTime: 0.3
-    throwSwingTime: 0.5
-    throwHoldTime: 0.1
-    throwReturnTime: 0.3
-    throwSwingAngle: 45
-    rightUpperHold: {x: 0, y: 90, z: -60}
-    rightLowerHold: {x: 0, y: 0, z: 0}
-    leftUpperHold: {x: 0, y: -90, z: 60}
-    leftLowerHold: {x: 0, y: 0, z: 0}
-    rightUpperWindUp: {x: 0, y: 90, z: -60}
-    rightLowerWindUp: {x: 0, y: 0, z: 0}
-    leftUpperWindUp: {x: 0, y: -90, z: 60}
-    leftLowerWindUp: {x: 0, y: 0, z: 0}
-    rightUpperSwing: {x: 0, y: 90, z: -60}
-    rightLowerSwing: {x: 0, y: 0, z: 0}
-    leftUpperSwing: {x: 0, y: -90, z: 60}
-    leftLowerSwing: {x: 0, y: 0, z: 0}
-    throwWindUpRightUpper: {x: 30, y: 90, z: -60}
-    throwWindUpRightLower: {x: 0, y: 0, z: 0}
-    throwRightUpper: {x: 0, y: -90, z: 60}
-    throwRightLower: {x: 0, y: 0, z: 0}
-  oneHanded: 0
+  spawnOnDestroy: {fileID: 6229178388177330969, guid: 2cb9db5291830d64f8b95f59dc329eb5, type: 3}
+  spawnAmount: 1
+  spawnPoint: {fileID: 4647786207919726871}
+  inheritVelocity: 0
 --- !u!1001 &8805205975641529182
 PrefabInstance:
   m_ObjectHideFlags: 0

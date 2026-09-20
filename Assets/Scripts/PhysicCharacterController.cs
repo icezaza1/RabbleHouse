@@ -118,7 +118,6 @@ namespace RabbleHouse
         [SerializeField] private ArmPunchProfile rightHeavyProfile;
         [SerializeField] private float HipHookRotation;
         [SerializeField] private float smallObjectSwingAngle = 45f;
-        [SerializeField] private float smallObjectHoldOffset = 0.4f; // distance ahead of character
 
         [System.Serializable]
         private class ArmPunchProfile
@@ -360,7 +359,7 @@ namespace RabbleHouse
             right.Normalize();
 
             Vector3 moveDir = (forward * moveInput.y + right * moveInput.x).normalized;
-            Vector3 targetVel = moveDir * (isSprinting ? moveSpeed * 1.5f : moveSpeed);
+            Vector3 targetVel = moveDir * (isSprinting ? moveSpeed * 2f : moveSpeed);
             targetVel.y = coreRigidbody.linearVelocity.y;
 
             // Move Character
@@ -374,7 +373,7 @@ namespace RabbleHouse
             float highestSpeed = forwardSpeed > rightSpeed ? forwardSpeed : rightSpeed;
             if (highestSpeed > 0.1f)
             {
-                coreRigidbody.AddForce(Vector3.up * highestSpeed * (isSprinting ? 3.5f : 4.5f), ForceMode.Impulse);
+                coreRigidbody.AddForce(Vector3.up * highestSpeed * (isSprinting ? 2.5f : 4.5f), ForceMode.Impulse);
             }
         }
 
