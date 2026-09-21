@@ -1445,6 +1445,19 @@ namespace RabbleHouse
             SetState(CharacterState.Dead);
             ForceDropObject();
             ragdollMaster.EnableFullRagdoll();
+
+            // Change layer to grabbable (WIP)
+            ActiveRagdollBone[] ragdollBones = GetComponentsInChildren<ActiveRagdollBone>();
+            GrabbableObject selfBodyObject = coreRigidbody.GetComponent<GrabbableObject>();
+            int targetLayer = LayerMask.NameToLayer("Grabbable");
+
+            if (selfBodyObject == null) return;
+
+            coreRigidbody.gameObject.layer = targetLayer;
+            foreach (var bone in ragdollBones)
+            {
+                bone.gameObject.layer = targetLayer;
+            }
         }
 
         /// <summary>

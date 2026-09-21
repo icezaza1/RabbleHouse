@@ -74,7 +74,7 @@ public class WaterPuddle : MonoBehaviour
 
     private IEnumerator ScalePuddle(Vector3 initialScale, Vector3 targetScale)
     {
-        float duration = 1f;
+        float duration = 3f;
         float currentTime = 0f;
 
         while (currentTime < duration)

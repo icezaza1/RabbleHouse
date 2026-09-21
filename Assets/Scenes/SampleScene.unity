@@ -790,7 +790,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0.29697, y: 0, z: 0.25}
-  m_LocalScale: {x: 3, y: 3, z: 3}
+  m_LocalScale: {x: 5, y: 5, z: 5}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -2782,7 +2782,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6808236375617465979, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 2.3229723
+      value: -1.9270277
       objectReference: {fileID: 0}
     - target: {fileID: 6808236375617465979, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: m_LocalPosition.y
@@ -2790,7 +2790,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6808236375617465979, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.2658563
+      value: 3.2658563
       objectReference: {fileID: 0}
     - target: {fileID: 6808236375617465979, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -2826,7 +2826,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7309840329130205348, guid: 6f1ee33180cc3e441b055c49d92a585c, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5076,6 +5076,10 @@ PrefabInstance:
       propertyPath: throwStunChance
       value: 0.9
       objectReference: {fileID: 0}
+    - target: {fileID: 571722941230274644, guid: 12d1b0a0fca24ae4bb146c7441a6296a, type: 3}
+      propertyPath: hipRotationResistance
+      value: 60
+      objectReference: {fileID: 0}
     - target: {fileID: 5197094890591515609, guid: 12d1b0a0fca24ae4bb146c7441a6296a, type: 3}
       propertyPath: m_Name
       value: ShoeRack
@@ -5684,7 +5688,8 @@ MonoBehaviour:
   secondaryGripPoint: {fileID: 38142378}
   durablility: 5
   heldMass: 0.3
-  hipRotationResistance: 10
+  hipRotationResistance: 40
+  changeChildrenMass: 0
   swingDamage: 15
   swingStunChance: 0.3
   attackRangeBonus: 0
@@ -5696,7 +5701,6 @@ MonoBehaviour:
   spawnOnDestroy: {fileID: 0}
   spawnAmount: 1
   spawnPoint: {fileID: 0}
-  inheritVelocity: 1
 --- !u!33 &3469287836709369264
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -5791,7 +5795,8 @@ MonoBehaviour:
   secondaryGripPoint: {fileID: 2039320336}
   durablility: 5
   heldMass: 0.3
-  hipRotationResistance: 10
+  hipRotationResistance: 40
+  changeChildrenMass: 0
   swingDamage: 15
   swingStunChance: 0.5
   attackRangeBonus: 0
@@ -5803,7 +5808,6 @@ MonoBehaviour:
   spawnOnDestroy: {fileID: 0}
   spawnAmount: 1
   spawnPoint: {fileID: 0}
-  inheritVelocity: 1
 --- !u!114 &3469287836709369270
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5928,12 +5932,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e9c0aab8840b3b14e80a4cc9e0b0765a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
-  grabbableType: 1
+  grabbableType: 0
   gripPoint: {fileID: 543450652272318492}
   secondaryGripPoint: {fileID: 0}
   durablility: 2
   heldMass: 1
-  hipRotationResistance: 10
+  hipRotationResistance: 80
+  changeChildrenMass: 0
   swingDamage: 20
   swingStunChance: 0.7
   attackRangeBonus: 0
@@ -5945,7 +5950,6 @@ MonoBehaviour:
   spawnOnDestroy: {fileID: 0}
   spawnAmount: 1
   spawnPoint: {fileID: 0}
-  inheritVelocity: 1
 --- !u!33 &3469287838460230292
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -6019,7 +6023,8 @@ MonoBehaviour:
   secondaryGripPoint: {fileID: 0}
   durablility: 5
   heldMass: 1
-  hipRotationResistance: 10
+  hipRotationResistance: 40
+  changeChildrenMass: 0
   swingDamage: 15
   swingStunChance: 0.5
   attackRangeBonus: 0
@@ -6031,7 +6036,6 @@ MonoBehaviour:
   spawnOnDestroy: {fileID: 0}
   spawnAmount: 1
   spawnPoint: {fileID: 0}
-  inheritVelocity: 1
 --- !u!1 &3632183639602659713
 GameObject:
   m_ObjectHideFlags: 0
@@ -6607,7 +6611,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6845286834639202231, guid: 00b11b42c69a15e469407b34687e8f7b, type: 3}
       propertyPath: heldMass
-      value: 0.6
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 6845286834639202231, guid: 00b11b42c69a15e469407b34687e8f7b, type: 3}
       propertyPath: durablility
@@ -6631,7 +6635,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6845286834639202231, guid: 00b11b42c69a15e469407b34687e8f7b, type: 3}
       propertyPath: hipRotationResistance
-      value: 50
+      value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 9181717882487832518, guid: 00b11b42c69a15e469407b34687e8f7b, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6757,7 +6761,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6066479896959440593, guid: 0a655c37e2d5ea842994efe32cfd9049, type: 3}
       propertyPath: heldMass
-      value: 0.2
+      value: 0.3
       objectReference: {fileID: 0}
     - target: {fileID: 6066479896959440593, guid: 0a655c37e2d5ea842994efe32cfd9049, type: 3}
       propertyPath: swingDamage
@@ -6773,7 +6777,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6066479896959440593, guid: 0a655c37e2d5ea842994efe32cfd9049, type: 3}
       propertyPath: hipRotationResistance
-      value: 50
+      value: 80
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -7134,7 +7138,8 @@ MonoBehaviour:
   secondaryGripPoint: {fileID: 1711148804}
   durablility: 3
   heldMass: 0.2
-  hipRotationResistance: 10
+  hipRotationResistance: 40
+  changeChildrenMass: 0
   swingDamage: 15
   swingStunChance: 0.5
   attackRangeBonus: 0.3
@@ -7146,7 +7151,6 @@ MonoBehaviour:
   spawnOnDestroy: {fileID: 6229178388177330969, guid: 2cb9db5291830d64f8b95f59dc329eb5, type: 3}
   spawnAmount: 1
   spawnPoint: {fileID: 4647786207919726871}
-  inheritVelocity: 0
 --- !u!1001 &8805205975641529182
 PrefabInstance:
   m_ObjectHideFlags: 0

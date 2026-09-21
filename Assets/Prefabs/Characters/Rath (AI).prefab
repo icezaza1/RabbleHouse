@@ -109,6 +109,7 @@ GameObject:
   - component: {fileID: 8565072677074570710}
   - component: {fileID: 653693653391576970}
   - component: {fileID: 1050835664682413249}
+  - component: {fileID: 1773934766037779390}
   m_Layer: 0
   m_Name: mixamorig:Hips
   m_TagString: Player
@@ -301,6 +302,36 @@ ConfigurableJoint:
   m_EnablePreprocessing: 1
   m_MassScale: 1
   m_ConnectedMassScale: 1
+--- !u!114 &1773934766037779390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1001578288609107504}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9c0aab8840b3b14e80a4cc9e0b0765a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
+  grabbableType: 0
+  gripPoint: {fileID: 0}
+  secondaryGripPoint: {fileID: 0}
+  durablility: 999
+  heldMass: 0.5
+  hipRotationResistance: 10
+  changeChildrenMass: 1
+  swingDamage: 10
+  swingStunChance: 0.3
+  attackRangeBonus: 0
+  aiRangeBonus: 0
+  throwDamage: 10
+  throwStunChance: 0.7
+  throwMinSpeed: 3
+  knockbackForce: 50
+  spawnOnDestroy: {fileID: 0}
+  spawnAmount: 1
+  spawnPoint: {fileID: 0}
 --- !u!1 &1008234522277105529
 GameObject:
   m_ObjectHideFlags: 0
@@ -5436,7 +5467,6 @@ MonoBehaviour:
     punchLower: {x: 30, y: 60, z: 0}
   HipHookRotation: 90
   smallObjectSwingAngle: 90
-  smallObjectHoldOffset: 0
   leftArmProfile:
     windUpUpper: {x: -60, y: 0, z: -60}
     windUpLower: {x: 0, y: 0, z: 120}

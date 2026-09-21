@@ -131,4 +131,4 @@ MonoBehaviour:
     m_Bits: 8
   raycastHeight: 2
   raycastDistance: 10
-  lifetime: 10
+  lifetime: 15

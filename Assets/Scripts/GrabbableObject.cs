@@ -33,6 +33,10 @@ namespace RabbleHouse
         [Tooltip("Used to calculate how much the object resists hip rotation (LargeObject only).")]
         [SerializeField] private float hipRotationResistance = 10f;
 
+        [Tooltip("If true, children rigidbodies will scale down proportionally when grabbed.")]
+        [SerializeField] private bool changeChildrenMass = false;
+        private Dictionary<Rigidbody, float> childOriginMasses = new Dictionary<Rigidbody, float>();
+
         [Header("Damage (swung while held)")]
         [SerializeField] private int swingDamage = 15;
         [Tooltip("0-1 chance a swung object knocks the target down (launches them).")]
@@ -55,7 +59,6 @@ namespace RabbleHouse
         [SerializeField] private GameObject spawnOnDestroy;
         [SerializeField] private int spawnAmount = 1;
         [SerializeField] private Transform spawnPoint;
-        [SerializeField] private bool inheritVelocity = true;
 
         private Rigidbody rb;
         private float originMass;
@@ -93,11 +96,19 @@ namespace RabbleHouse
                 rb = gameObject.AddComponent<Rigidbody>();
 
             originMass = rb.mass;
+
+            CacheChildrenOriginalMasses();
         }
 
-        private void Update()
+        private void CacheChildrenOriginalMasses()
         {
-            
+            childOriginMasses.Clear();
+            Rigidbody[] childRbs = GetComponentsInChildren<Rigidbody>();
+            foreach (Rigidbody childRb in childRbs)
+            {
+                if (childRb == rb) continue; // Skip the main parent Rigidbody
+                childOriginMasses[childRb] = childRb.mass;
+            }
         }
 
         /// <summary>
@@ -126,6 +137,18 @@ namespace RabbleHouse
             rb.mass = heldMass;
             isHeld = true;
             holder = _holder as PhysicCharacterController;
+
+            // Change child masses when grabbed so they don't break physics constraints
+            if (changeChildrenMass)
+            {
+                foreach (var kvp in childOriginMasses)
+                {
+                    if (kvp.Key != null)
+                    {
+                        kvp.Key.mass = heldMass;
+                    }
+                }
+            }
         }
 
         /// <summary>Called by PhysicCharacterController when released.</summary>
@@ -133,6 +156,16 @@ namespace RabbleHouse
         {
             rb.mass = originMass;
             isHeld = false;
+
+            if (!changeChildrenMass) return;
+
+            foreach (var kvp in childOriginMasses)
+            {
+                if (kvp.Key != null)
+                {
+                    kvp.Key.mass = kvp.Value;
+                }
+            }
         }
 
         /// <summary>Called when thrown — the object now does damage on impact.</summary>
@@ -193,7 +226,7 @@ namespace RabbleHouse
             if (isSwinging && isHeld)
             {
                 PlayerHealth targetHealth = collision.gameObject.GetComponentInParent<PlayerHealth>();
-                if (targetHealth == null) return;
+                if (targetHealth == null || targetHealth.CurrentHealth <= 0) return;
 
                 // Don't hit the holder
                 if (holder != null && targetHealth.gameObject == holder.gameObject)
