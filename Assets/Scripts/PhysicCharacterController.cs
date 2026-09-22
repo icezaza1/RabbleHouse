@@ -1188,6 +1188,8 @@ namespace RabbleHouse
         private IEnumerator HeavyPunchRoutine(bool isLeft)
         {
             ArmPunchProfile profile = isLeft ? leftHeavyProfile : rightHeavyProfile;
+            Transform hand = isLeft ? leftHand : rightHand;
+            TrailRenderer handTrail = hand.GetComponent<TrailRenderer>();
 
             // Capture wind-up hip rotation (rotate hips toward the punching arm)
             Quaternion hipStart = hipJoint.targetRotation;
@@ -1240,6 +1242,9 @@ namespace RabbleHouse
             {
                 elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / heavyHoldTime);
+                if (handTrail != null)
+                    handTrail.enabled = true;
+
                 hipJoint.targetRotation = Quaternion.Lerp(hipWindupRot, hipHookRot, t);
                 upperJoint.targetRotation = Quaternion.Lerp(startUpper, targetUpper, t);
                 lowerJoint.targetRotation = Quaternion.Lerp(startLower, targetLower, t);
@@ -1263,6 +1268,10 @@ namespace RabbleHouse
                 hipJoint.targetRotation = Quaternion.Slerp(hipHookRot, hipStart, t);
                 upperJoint.targetRotation = Quaternion.Slerp(targetUpper, startUpper, t);
                 lowerJoint.targetRotation = Quaternion.Slerp(targetLower, startLower, t);
+
+                if (handTrail != null)
+                    handTrail.enabled = false;
+
                 yield return new WaitForFixedUpdate();
             }
 
