@@ -6,6 +6,13 @@ public class ActiveRagdollMaster : MonoBehaviour
     private ActiveRagdollBone[] ragdollBones;
     private ActiveRagdollBalancer balancer; // Reference to the balancer script from earlier
 
+    private ConfigurableJoint coreJoint;
+    // Stores the default strengths of the hips
+    private float savedSpringX;
+    private float savedDamperX;
+    private float savedSpringYZ;
+    private float savedDamperYZ;
+
     /// <summary>Read-only access to the Animated_Character rig (used by PhysicCharacterController to pin it to the physics body).</summary>
     public GameObject AnimatedRig => animatedRig;
 
@@ -16,11 +23,27 @@ public class ActiveRagdollMaster : MonoBehaviour
         // Automatically gather all the tracking bone scripts in the hierarchy
         ragdollBones = GetComponentsInChildren<ActiveRagdollBone>();
         balancer = GetComponentInChildren<ActiveRagdollBalancer>();
+        coreJoint = FindCoreJoint();
+
+        // Save the muscle values
+        savedSpringX = coreJoint.angularXDrive.positionSpring;
+        savedDamperX = coreJoint.angularXDrive.positionDamper;
+        savedSpringYZ = coreJoint.angularYZDrive.positionSpring;
+        savedDamperYZ = coreJoint.angularYZDrive.positionDamper;
     }
 
     void Update()
     {
 
+    }
+
+    private ConfigurableJoint FindCoreJoint()
+    {
+        ConfigurableJoint[] bodies = GetComponentsInChildren<ConfigurableJoint>(true);
+        foreach (var rb in bodies)
+            if (rb.transform.name.Contains("Hips"))
+                return rb;
+        return bodies.Length > 0 ? bodies[0] : null;
     }
 
     public void EnableFullRagdoll()
@@ -36,8 +59,21 @@ public class ActiveRagdollMaster : MonoBehaviour
         // 3. Drop all bone muscle strength to 0%
         foreach (var bone in ragdollBones)
         {
-            bone.SetMuscleStrength(0f);
+            bone.TurnOnMuscleStrength(false);
         }
+
+        // Set Core muscle strength
+        // Scale Angular X Drive
+        JointDrive xDrive = coreJoint.angularXDrive;
+        xDrive.positionSpring = 0f;
+        xDrive.positionDamper = 0f;
+        coreJoint.angularXDrive = xDrive;
+
+        // Scale Angular YZ Drive
+        JointDrive yzDrive = coreJoint.angularYZDrive;
+        yzDrive.positionSpring = 0f;
+        yzDrive.positionDamper = 0f;
+        coreJoint.angularYZDrive = yzDrive;
     }
 
     public void EnableActiveRagdoll()
@@ -53,7 +89,20 @@ public class ActiveRagdollMaster : MonoBehaviour
         // 3. Restore bone muscle strength to 100%
         foreach (var bone in ragdollBones)
         {
-            bone.SetMuscleStrength(1f);
+            bone.TurnOnMuscleStrength(true);
         }
+
+        // Set Core muscle strength
+        // Scale Angular X Drive
+        JointDrive xDrive = coreJoint.angularXDrive;
+        xDrive.positionSpring = savedSpringX;
+        xDrive.positionDamper = savedDamperX;
+        coreJoint.angularXDrive = xDrive;
+
+        // Scale Angular YZ Drive
+        JointDrive yzDrive = coreJoint.angularYZDrive;
+        yzDrive.positionSpring = savedSpringYZ;
+        yzDrive.positionDamper = savedDamperYZ;
+        coreJoint.angularYZDrive = yzDrive;
     }
 }

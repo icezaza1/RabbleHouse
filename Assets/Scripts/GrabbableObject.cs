@@ -220,6 +220,12 @@ namespace RabbleHouse
         /// </summary>
         private void OnCollisionEnter(Collision collision)
         {
+            HandleCollision(collision);
+        }
+
+        /// <summary>Process an impact reported by a child ragdoll rigidbody.</summary>
+        public void HandleCollision(Collision collision)
+        {
             // Only deal damage when the object was thrown, not when held or just bumped
             //if (!isSwinging || !isHeld) return;
             //if (isHeld || !isThrown || rb == null) return;

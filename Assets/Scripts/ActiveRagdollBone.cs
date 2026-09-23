@@ -12,6 +12,11 @@ public class ActiveRagdollBone : MonoBehaviour
     private float savedSpringYZ;
     private float savedDamperYZ;
 
+    // Stores the original angular motion
+    private ConfigurableJointMotion originalAngularX;
+    private ConfigurableJointMotion originalAngularY;
+    private ConfigurableJointMotion originalAngularZ;
+
     void Start()
     {
         joint = GetComponent<ConfigurableJoint>();
@@ -23,6 +28,11 @@ public class ActiveRagdollBone : MonoBehaviour
         savedDamperX = joint.angularXDrive.positionDamper;
         savedSpringYZ = joint.angularYZDrive.positionSpring;
         savedDamperYZ = joint.angularYZDrive.positionDamper;
+
+        // Save the joint motions
+        originalAngularX = joint.angularXMotion;
+        originalAngularY = joint.angularYMotion;
+        originalAngularZ = joint.angularZMotion;
     }
 
     void FixedUpdate()
@@ -31,21 +41,48 @@ public class ActiveRagdollBone : MonoBehaviour
         joint.targetRotation = CopyRotation();
     }
 
-    public void SetMuscleStrength(float percentage)
+    public void TurnOnMuscleStrength(bool toggle)
     {
         if (joint == null) return;
 
-        // Scale Angular X Drive
-        JointDrive xDrive = joint.angularXDrive;
-        xDrive.positionSpring = savedSpringX * percentage;
-        xDrive.positionDamper = savedDamperX * percentage;
-        joint.angularXDrive = xDrive;
+        if (!toggle)
+        {
+            joint.angularXMotion = ConfigurableJointMotion.Limited;
+            joint.angularYMotion = ConfigurableJointMotion.Limited;
+            joint.angularZMotion = ConfigurableJointMotion.Limited;
+            joint.enablePreprocessing = false;
 
-        // Scale Angular YZ Drive
-        JointDrive yzDrive = joint.angularYZDrive;
-        yzDrive.positionSpring = savedSpringYZ * percentage;
-        yzDrive.positionDamper = savedDamperYZ * percentage;
-        joint.angularYZDrive = yzDrive;
+            // Scale Angular X Drive
+            JointDrive xDrive = joint.angularXDrive;
+            xDrive.positionSpring = 0f;
+            xDrive.positionDamper = 0f;
+            joint.angularXDrive = xDrive;
+
+            // Scale Angular YZ Drive
+            JointDrive yzDrive = joint.angularYZDrive;
+            yzDrive.positionSpring = 0f;
+            yzDrive.positionDamper = 0f;
+            joint.angularYZDrive = yzDrive;
+        }
+        else if (toggle)
+        {
+            joint.angularXMotion = originalAngularX;
+            joint.angularYMotion = originalAngularY;
+            joint.angularZMotion = originalAngularZ;
+            joint.enablePreprocessing = true;
+
+            // Scale Angular X Drive
+            JointDrive xDrive = joint.angularXDrive;
+            xDrive.positionSpring = savedSpringX;
+            xDrive.positionDamper = savedDamperX;
+            joint.angularXDrive = xDrive;
+
+            // Scale Angular YZ Drive
+            JointDrive yzDrive = joint.angularYZDrive;
+            yzDrive.positionSpring = savedSpringYZ;
+            yzDrive.positionDamper = savedDamperYZ;
+            joint.angularYZDrive = yzDrive;
+        }
     }
 
     private Quaternion CopyRotation()
