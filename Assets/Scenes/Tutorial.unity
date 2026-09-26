@@ -941,6 +941,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5490856229435497530, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
+      propertyPath: vfxs.stepDustPrefab
+      value: 
+      objectReference: {fileID: 427585528}
+    - target: {fileID: 5490856229435497530, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
       propertyPath: vfxs.leftSwingPrefab
       value: 
       objectReference: {fileID: 904644994}
@@ -953,6 +957,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
+--- !u!1 &427585528 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7160589982563205781, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
+  m_PrefabInstance: {fileID: 421987609}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &483889980
 GameObject:
   m_ObjectHideFlags: 0

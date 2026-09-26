@@ -10,6 +10,7 @@ namespace RabbleHouse
     {
         public GameObject leftSwingPrefab;
         public GameObject rightSwingPrefab;
+        public GameObject stepDustPrefab;
     }
     /// <summary>
     /// Main controller for Physic_Character - the active ragdoll character.
@@ -356,6 +357,15 @@ namespace RabbleHouse
         {
             if (coreRigidbody == null) return;
             if (!isGrounded) return;
+
+            //Handle Particle
+            GameObject stepDust = vfxs?.stepDustPrefab;
+            if (stepDust != null)
+            {
+                ParticleSystem ps = stepDust.GetComponent<ParticleSystem>();
+                var emission = ps.emission;
+                emission.enabled = isSprinting ? true : false;
+            }
 
             // Sprint Handle
             isSprinting = (heldObject == null || heldGrabbableType == GrabbableType.Tool) && (sprintPressed ? true : false);
