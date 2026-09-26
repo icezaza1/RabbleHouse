@@ -4392,7 +4392,7 @@ ConfigurableJoint:
     spring: 0
     damper: 0
   m_AngularYLimit:
-    limit: 40
+    limit: 90
     bounciness: 0
     contactDistance: 0
   m_AngularZLimit:
