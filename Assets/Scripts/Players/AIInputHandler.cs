@@ -180,8 +180,8 @@ namespace RabbleHouse
             if (controller != null)
                 currentState = controller.CurrentState;
 
-            // Don't act while stunned or ragdoll
-            if (currentState == PhysicCharacterController.CharacterState.Stunned || currentState == PhysicCharacterController.CharacterState.Ragdoll)
+            // Don't act while ragdoll
+            if (currentState == PhysicCharacterController.CharacterState.Ragdoll)
             {
                 MoveInput = Vector2.zero;
                 SprintPressed = false;

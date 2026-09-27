@@ -7,7 +7,7 @@ namespace RabbleHouse
     {
         public void OnStunned(float duration)
         {
-            SetState(CharacterState.Stunned);
+            SetState(CharacterState.Ragdoll);
             StartCoroutine(StunRoutine(duration));
         }
 

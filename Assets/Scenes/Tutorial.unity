@@ -3009,6 +3009,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1633544933}
     m_Modifications:
+    - target: {fileID: 571722941230274644, guid: 12d1b0a0fca24ae4bb146c7441a6296a, type: 3}
+      propertyPath: durablility
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 571722941230274644, guid: 12d1b0a0fca24ae4bb146c7441a6296a, type: 3}
+      propertyPath: spawnOnDestroy
+      value: 
+      objectReference: {fileID: 8758560513174087879, guid: 7a17e513d19fcd44fb9287a8182f68dc, type: 3}
     - target: {fileID: 5197094890591515609, guid: 12d1b0a0fca24ae4bb146c7441a6296a, type: 3}
       propertyPath: m_Name
       value: ShoeRack

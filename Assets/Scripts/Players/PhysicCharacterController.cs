@@ -23,7 +23,6 @@ namespace RabbleHouse
         {
             Idle,
             Moving,
-            Stunned,
             Ragdoll,
             Dead,
             Grabbing,
@@ -328,7 +327,7 @@ namespace RabbleHouse
         // --- STATE MACHINE ---
         private void UpdateState()
         {
-            if (currentState == CharacterState.Stunned || currentState == CharacterState.Ragdoll)
+            if (currentState == CharacterState.Ragdoll)
                 return;
 
             if (currentState == CharacterState.Dead)
@@ -358,18 +357,17 @@ namespace RabbleHouse
             if (coreRigidbody == null) return;
             if (!isGrounded) return;
 
-            //Handle Particle
-            GameObject stepDust = vfxs?.stepDustPrefab;
-            if (stepDust != null)
-            {
-                ParticleSystem ps = stepDust.GetComponent<ParticleSystem>();
-                var emission = ps.emission;
-                emission.enabled = isSprinting ? true : false;
-            }
-
             // Sprint Handle
-            isSprinting = (heldObject == null || heldGrabbableType == GrabbableType.Tool) && (sprintPressed ? true : false);
+            isSprinting = (heldObject == null || heldGrabbableType == GrabbableType.Tool) && sprintPressed;
             targetAnimator.SetFloat("AnimationSpeed", isSprinting ? 1 : 2);
+
+            //Handle Particle
+            var stepDust = vfxs?.stepDustPrefab;
+            if (stepDust != null && stepDust.TryGetComponent<ParticleSystem>(out var ps))
+            {
+                var emission = ps.emission;
+                emission.enabled = currentState != CharacterState.Ragdoll && (isGrounded && isSprinting && moveInput.sqrMagnitude > 0.01f);
+            }
 
             Vector3 forward = Camera.main ? Camera.main.transform.forward : Vector3.forward;
             Vector3 right = Camera.main ? Camera.main.transform.right : Vector3.right;

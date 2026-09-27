@@ -1459,9 +1459,9 @@ MonoBehaviour:
   knockdownDuration: 1.2
   knockbackForce: 100
   vfxs:
-    leftSwingPrefab: {fileID: 0}
-    rightSwingPrefab: {fileID: 0}
-    stepDustPrefab: {fileID: 0}
+    leftSwingPrefab: {fileID: 2429189249140865257}
+    rightSwingPrefab: {fileID: 4711340654815071275}
+    stepDustPrefab: {fileID: 7160589982563205781}
 --- !u!114 &2640354395079180429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6570,6 +6570,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1dd92a592622b5448bc760e1a6731cf8, type: 3}
+--- !u!1 &4711340654815071275 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6578076940739369572, guid: 1dd92a592622b5448bc760e1a6731cf8, type: 3}
+  m_PrefabInstance: {fileID: 1884771275649226319}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5981816280011373265 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5272487333673266334, guid: 1dd92a592622b5448bc760e1a6731cf8, type: 3}
@@ -6648,6 +6653,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6bc4554dd4ff6994bb5ea0d5c6bdf94b, type: 3}
+--- !u!1 &2429189249140865257 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1474000815768477893, guid: 6bc4554dd4ff6994bb5ea0d5c6bdf94b, type: 3}
+  m_PrefabInstance: {fileID: 3873805065357170732}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &6192372766325591128 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6930264766054847604, guid: 6bc4554dd4ff6994bb5ea0d5c6bdf94b, type: 3}
@@ -6661,38 +6671,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2373102146900518641}
     m_Modifications:
-    - target: {fileID: 2207441414071912798, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
-      propertyPath: emitterVelocityMode
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2207441414071912798, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
-      propertyPath: InitialModule.startSize.scalar
-      value: 15
-      objectReference: {fileID: 0}
-    - target: {fileID: 2207441414071912798, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
-      propertyPath: InitialModule.startSize.minScalar
-      value: 5
-      objectReference: {fileID: 0}
-    - target: {fileID: 2207441414071912798, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
-      propertyPath: EmissionModule.rateOverTime.scalar
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2207441414071912798, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
-      propertyPath: InitialModule.startRotation.scalar
-      value: 3.1415925
-      objectReference: {fileID: 0}
-    - target: {fileID: 2207441414071912798, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
-      propertyPath: InitialModule.startRotation.minMaxState
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 2207441414071912798, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
-      propertyPath: InitialModule.startRotationX.minMaxState
-      value: 3
-      objectReference: {fileID: 0}
-    - target: {fileID: 2207441414071912798, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
-      propertyPath: InitialModule.startRotationY.minMaxState
-      value: 3
-      objectReference: {fileID: 0}
     - target: {fileID: 2389672421518529026, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -6745,5 +6723,10 @@ PrefabInstance:
 --- !u!4 &6998924107809795324 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2389672421518529026, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
+  m_PrefabInstance: {fileID: 4614217149521821438}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &7160589982563205781 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2546636787806501995, guid: e6f1abfda9c68014499c097233e73e61, type: 3}
   m_PrefabInstance: {fileID: 4614217149521821438}
   m_PrefabAsset: {fileID: 0}
