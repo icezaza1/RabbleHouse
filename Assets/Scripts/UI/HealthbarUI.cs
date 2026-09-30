@@ -10,8 +10,8 @@ public class HealthbarUI : MonoBehaviour
     [SerializeField] private Image characterIcon;
     [SerializeField] private TMP_Text playerNameText;
 
-    [Header("Target Assignment")]
-    [SerializeField] private int playerIndex = 0;
+    //[Header("Target Assignment")]
+    //[SerializeField] private int playerIndex = 0;
 
     private PlayerHealth targetHealth;
 
@@ -45,10 +45,6 @@ public class HealthbarUI : MonoBehaviour
         Color healthColor = healthPercent > 0.5f ? Color.green :
                             healthPercent > 0.25f ? Color.yellow : Color.red;
         healthBarFill.color = healthColor;
-
-        // Set name based on index
-        if (playerNameText != null)
-            playerNameText.text = $"Player {playerIndex}";
     }
 
     public void SetCharacterData(CharacterData characterData)
