@@ -1,6 +1,6 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &474193533600657023
+--- !u!1 &6526694489682875190
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -8,49 +8,49 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8207992271255752002}
-  - component: {fileID: 4326422730082542948}
-  - component: {fileID: 4812454320843498355}
-  - component: {fileID: 8907299142117182130}
-  - component: {fileID: 8279107788322097599}
-  - component: {fileID: 3440448065827405526}
+  - component: {fileID: 913851866481903925}
+  - component: {fileID: 538471449019231892}
+  - component: {fileID: 7608671191896240324}
+  - component: {fileID: 4235750784229113510}
+  - component: {fileID: 2394341169467839336}
+  - component: {fileID: 7228153614004434571}
   m_Layer: 6
-  m_Name: Sofa
+  m_Name: Lamp
   m_TagString: Objects
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8207992271255752002
+--- !u!4 &913851866481903925
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474193533600657023}
+  m_GameObject: {fileID: 6526694489682875190}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: -0, z: -0, w: 0.7071067}
-  m_LocalPosition: {x: -1.5, y: -0.25, z: -2.5}
-  m_LocalScale: {x: 100, y: 100, z: 100}
+  m_LocalPosition: {x: 3.5, y: 0.00000011920929, z: -1.5}
+  m_LocalScale: {x: 83.62938, y: 83.62937, z: 83.62937}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &4326422730082542948
+--- !u!33 &538471449019231892
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474193533600657023}
-  m_Mesh: {fileID: -5931087636805310408, guid: 92e3c5fc3ca2a8b46a5fb6af1657bb2e, type: 3}
---- !u!23 &4812454320843498355
+  m_GameObject: {fileID: 6526694489682875190}
+  m_Mesh: {fileID: -2124705421725058983, guid: ec5e67f2b33df6948891ea5553fb3527, type: 3}
+--- !u!23 &7608671191896240324
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474193533600657023}
+  m_GameObject: {fileID: 6526694489682875190}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -69,7 +69,8 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 6892232844440235036, guid: 92e3c5fc3ca2a8b46a5fb6af1657bb2e, type: 3}
+  - {fileID: 6892232844440235036, guid: ec5e67f2b33df6948891ea5553fb3527, type: 3}
+  - {fileID: 9185737683893222716, guid: ec5e67f2b33df6948891ea5553fb3527, type: 3}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -93,13 +94,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &8907299142117182130
+--- !u!65 &4235750784229113510
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474193533600657023}
+  m_GameObject: {fileID: 6526694489682875190}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -112,17 +113,17 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 0.03969034, y: 0.0129905995, z: 0.01194227}
-  m_Center: {x: 0, y: 0.000669744, z: 0.005971135}
---- !u!54 &8279107788322097599
+  m_Size: {x: 0.009077702, y: 0.009077699, z: 0.026334407}
+  m_Center: {x: -2.3283064e-10, y: -0.0000000027939675, z: 0.010318652}
+--- !u!54 &2394341169467839336
 Rigidbody:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474193533600657023}
+  m_GameObject: {fileID: 6526694489682875190}
   serializedVersion: 5
-  m_Mass: 20
+  m_Mass: 10
   m_LinearDamping: 0
   m_AngularDamping: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -141,33 +142,33 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &3440448065827405526
+--- !u!114 &7228153614004434571
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 474193533600657023}
+  m_GameObject: {fileID: 6526694489682875190}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e9c0aab8840b3b14e80a4cc9e0b0765a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
-  grabbableType: 1
-  gripPoint: {fileID: 8207992271255752002}
+  grabbableType: 0
+  gripPoint: {fileID: 913851866481903925}
   secondaryGripPoint: {fileID: 0}
-  durablility: 4
+  durablility: 5
   heldMass: 1
-  hipRotationResistance: 500
+  hipRotationResistance: 40
   changeChildrenMass: 0
-  swingDamage: 30
-  swingStunChance: 0.9
-  attackRangeBonus: 0.5
-  aiRangeBonus: 0.5
-  throwDamage: 20
-  throwStunChance: 0.7
+  swingDamage: 15
+  swingStunChance: 0.5
+  attackRangeBonus: 0
+  aiRangeBonus: 0
+  throwDamage: 15
+  throwStunChance: 5
   throwMinSpeed: 3
   knockbackForce: -1
   spawnOnDestroy:
   - {fileID: 8758560513174087879, guid: 7a17e513d19fcd44fb9287a8182f68dc, type: 3}
-  spawnPoint: {fileID: 8207992271255752002}
+  spawnPoint: {fileID: 913851866481903925}

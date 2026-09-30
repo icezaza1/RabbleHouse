@@ -157,18 +157,18 @@ MonoBehaviour:
   grabbableType: 0
   gripPoint: {fileID: 9181717882487832518}
   secondaryGripPoint: {fileID: 0}
-  durablility: 5
-  heldMass: 0.3
+  durablility: 3
+  heldMass: 0.4
   hipRotationResistance: 60
   changeChildrenMass: 0
-  swingDamage: 10
-  swingStunChance: 0.5
+  swingDamage: 20
+  swingStunChance: 0.8
   attackRangeBonus: 0.3
   aiRangeBonus: 0.5
   throwDamage: 20
-  throwStunChance: 0.8
+  throwStunChance: 0.9
   throwMinSpeed: 3
   knockbackForce: 125
-  spawnOnDestroy: {fileID: 0}
-  spawnAmount: 1
-  spawnPoint: {fileID: 0}
+  spawnOnDestroy:
+  - {fileID: 8758560513174087879, guid: 7a17e513d19fcd44fb9287a8182f68dc, type: 3}
+  spawnPoint: {fileID: 9181717882487832518}

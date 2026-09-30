@@ -56,8 +56,7 @@ namespace RabbleHouse
         [SerializeField] private float knockbackForce = -1f;
 
         [Header("Break / Destroy")]
-        [SerializeField] private GameObject spawnOnDestroy;
-        [SerializeField] private int spawnAmount = 1;
+        [SerializeField] private GameObject[] spawnOnDestroy;
         [SerializeField] private Transform spawnPoint;
 
         private Rigidbody rb;
@@ -84,7 +83,6 @@ namespace RabbleHouse
         public float KnockbackForce => knockbackForce;
         public float AttackRangeBonus => attackRangeBonus;
         public float AIRangeBonus => aiRangeBonus;
-        public GameObject SpawnOnDestroy => spawnOnDestroy;
 
         /// <summary>Register who threw this object (for self-damage prevention).</summary>
         public void SetThrower(PhysicCharacterController owner) => holder = owner;
@@ -343,11 +341,14 @@ namespace RabbleHouse
                 ? spawnPoint.rotation
                 : Quaternion.identity;
 
-            Instantiate(
-                spawnOnDestroy,
-                spawnPosition,
-                spawnRotation
-            );
+            foreach (GameObject _obj in spawnOnDestroy)
+            {
+                Instantiate(
+                    _obj,
+                    spawnPosition,
+                    spawnRotation
+                );
+            }
         }
     }
 }

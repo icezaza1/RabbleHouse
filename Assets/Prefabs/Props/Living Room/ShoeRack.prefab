@@ -155,14 +155,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 0
   gripPoint: {fileID: 7026505150047066537}
+  secondaryGripPoint: {fileID: 0}
   durablility: 5
-  heldMass: 0.5
-  hipRotationResistance: 10
+  heldMass: 0.3
+  hipRotationResistance: 60
+  changeChildrenMass: 0
   swingDamage: 15
-  swingStunChance: 0.3
+  swingStunChance: 0.7
   attackRangeBonus: 0
   aiRangeBonus: 0
-  throwDamage: 20
-  throwStunChance: 0.7
+  throwDamage: 15
+  throwStunChance: 0.9
   throwMinSpeed: 3
   knockbackForce: -1
+  spawnOnDestroy:
+  - {fileID: 8758560513174087879, guid: 7a17e513d19fcd44fb9287a8182f68dc, type: 3}
+  spawnPoint: {fileID: 7026505150047066537}
