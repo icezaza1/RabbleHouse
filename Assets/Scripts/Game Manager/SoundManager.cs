@@ -5,15 +5,14 @@ using UnityEngine;
 public class SoundManager : Singleton<SoundManager>
 {
     [SerializeField] private AudioSource SFXObject;
-    [SerializeField, Range(0f, 1f)] private float sfxVolume = 1f;
 
     private AudioSource audioSource;
 
     private void Awake()
     {
-        base.Awake();
         audioSource = GetComponent<AudioSource>();
         audioSource.playOnAwake = false;
+        base.Awake();
     }
 
     public void PlaySound(AudioClip audioClip, Transform spawnTransform, float volume)
