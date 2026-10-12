@@ -181,8 +181,8 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 328877743}
-  m_LocalRotation: {x: 0.000000019388066, y: 0.0000000074505815, z: -1.4445236e-16, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -2.9614396}
+  m_LocalRotation: {x: -0.214661, y: -1.7977635e-24, z: -3.9512056e-25, w: 0.9766886}
+  m_LocalPosition: {x: 0, y: 0, z: -2.882883}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -190,7 +190,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1021.4795, y: -539.9691}
+  m_AnchoredPosition: {x: -1019.8487, y: -540.06006}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &328877745
@@ -374,7 +374,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineRotationComposer
   Composition:
-    ScreenPosition: {x: 0, y: 0}
+    ScreenPosition: {x: 0, y: 0.4}
     DeadZone:
       Enabled: 0
       Size: {x: 0.2, y: 0.2}
@@ -460,7 +460,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 365193066}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000019388066, y: 0.0000000074505815, z: -1.5660406e-16, w: 1}
+  m_LocalRotation: {x: -0.21466102, y: -8.554612e-25, z: 3.8922724e-24, w: 0.9766886}
   m_LocalPosition: {x: -31.14, y: 0, z: -1.5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

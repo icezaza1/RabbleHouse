@@ -11,7 +11,7 @@ namespace RabbleHouse
             // Use HIP body position + forward offset for detection (check in front, not around)
             Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
             // Thin box extending forward, narrow on sides — only grabs in front
-            Collider[] hits = Physics.OverlapBox(origin, new Vector3(0.1f, 0.5f, grabRange * 0.5f), coreRigidbody.rotation, LayerMask.GetMask("Grabbable"));
+            Collider[] hits = Physics.OverlapBox(origin, new Vector3(0.1f, 0.6f, grabRange * 0.5f), coreRigidbody.rotation, LayerMask.GetMask("Grabbable"));
 
             GrabbableObject closest = null;
             float bestDist = float.MaxValue;

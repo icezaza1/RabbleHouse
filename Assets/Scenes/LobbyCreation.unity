@@ -1402,7 +1402,7 @@ MonoBehaviour:
   difficultyLeftArrow: {fileID: 77040493}
   difficultyRightArrow: {fileID: 169654282}
   confirmButton: {fileID: 526964018}
-  gameSceneName: SampleScene
+  gameSceneName: LivingRoom
 --- !u!1 &1661887619
 GameObject:
   m_ObjectHideFlags: 0

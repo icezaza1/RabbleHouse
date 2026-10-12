@@ -17,9 +17,10 @@ public class LobbyUI : MonoBehaviour
 
     [Header("Confirm")]
     [SerializeField] private Button confirmButton;
-    [SerializeField] private string gameSceneName = "SampleScene";
 
     private string[] stageNames = { "Living Room", "Kitchen" };
+    // Scene asset names must match the names listed in Build Settings.
+    private string[] stageSceneNames = { "LivingRoom", "Kitchen" };
     private string[] difficultyNames = { "Easy", "Normal", "Hard", "Expert" };
 
     private int currentStageIndex = 0;
@@ -82,6 +83,6 @@ public class LobbyUI : MonoBehaviour
         Debug.Log($"[Lobby] Starting game: Stage={stageNames[currentStageIndex]}, Difficulty={difficultyNames[currentDifficultyIndex]}");
 
         // Load the game scene
-        SceneTransitionManager.Instance.LoadScene(gameSceneName);
+        SceneTransitionManager.Instance.LoadScene(stageSceneNames[currentStageIndex]);
     }
 }

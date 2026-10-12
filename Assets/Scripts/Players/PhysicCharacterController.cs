@@ -434,7 +434,7 @@ namespace RabbleHouse
             // Grab box gizmo (existing)
             Gizmos.color = Color.green;
             Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
-            Vector3 halfExtents = new Vector3(0.1f, 0.5f, grabRange * 0.5f);
+            Vector3 halfExtents = new Vector3(0.1f, 0.6f, grabRange * 0.5f);
             Gizmos.matrix = Matrix4x4.TRS(origin, coreRigidbody.rotation, Vector3.one);
             Gizmos.DrawWireCube(Vector3.zero, halfExtents * 2f);
             Gizmos.matrix = oldMatrix;
