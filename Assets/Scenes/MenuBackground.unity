@@ -528,6 +528,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2415541357480662162, guid: dacff7ef23dd3d3408bc8767c004641b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: cb9617896a4677345933f44d027cd560, type: 2}
     - target: {fileID: 3328968330944480898, guid: dacff7ef23dd3d3408bc8767c004641b, type: 3}
       propertyPath: m_Name
       value: Living Room
@@ -580,6 +584,10 @@ PrefabInstance:
       propertyPath: m_LocalPosition.y
       value: -0.069
       objectReference: {fileID: 0}
+    - target: {fileID: 8690483820781821215, guid: dacff7ef23dd3d3408bc8767c004641b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: cb9617896a4677345933f44d027cd560, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 1279412215049797880, guid: dacff7ef23dd3d3408bc8767c004641b, type: 3}
