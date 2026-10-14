@@ -5,16 +5,24 @@ namespace RabbleHouse
 {
     public partial class AIInputHandler
     {
+        private readonly List<AIWaypoint> waypointRoute = new List<AIWaypoint>();
+        private int waypointRouteIndex;
+        private Transform waypointRouteTarget;
+        private Vector3 waypointRouteTargetPosition;
+        private float waypointRouteRefreshTime;
+
         //  MOVEMENT HELPERS
         // -----------------------------------------------------------------------
         private void HandleChasing(Transform target, float distToTarget)
         {
+            if (target == null) return;
+
             if (distToTarget < 1.5f)
-                MoveToward(target.position);
+                MoveToward(target.position, target);
             else
-                MoveToward(InterceptPosition(target));
+                MoveToward(InterceptPosition(target), target);
         }
-        private void MoveToward(Vector3 targetPos)
+        private void MoveToward(Vector3 targetPos, Transform intendedTarget)
         {
             if (coreRb == null) return;
             if (!controller.IsGrounded) return;
@@ -37,9 +45,10 @@ namespace RabbleHouse
             // Check whether the direct path is clear.
             // ---------------------------------------------------------
 
-            if (!IsPathBlocked(desiredDirection, null))
+            if (!IsPathBlocked(desiredDirection, intendedTarget))
             {
                 // No obstacle -> go directly toward target.
+                ClearWaypointRoute();
                 ResetObstacleAvoidance();
 
                 SetMoveDirection(desiredDirection);
@@ -48,15 +57,192 @@ namespace RabbleHouse
                 return;
             }
 
+            // A waypoint route provides a stable destination around walls;
+            // local steering remains the fallback for dynamic obstacles.
+            if (TryGetWaypointDirection(targetPos, intendedTarget, out Vector3 waypointDirection))
+            {
+                ResetObstacleAvoidance();
+                SetMoveDirection(waypointDirection);
+                UpdateStuckDetection();
+                return;
+            }
+
             // ---------------------------------------------------------
             // Path is blocked -> find an avoidance direction.
             // ---------------------------------------------------------
 
-            Vector3 avoidanceDirection = GetAvoidanceDirection(desiredDirection, targetPos);
+            Vector3 avoidanceDirection = GetAvoidanceDirection(desiredDirection, targetPos, intendedTarget);
 
             SetMoveDirection(avoidanceDirection);
 
             UpdateStuckDetection();
+        }
+
+        private bool TryGetWaypointDirection(Vector3 targetPos, Transform intendedTarget, out Vector3 direction)
+        {
+            direction = Vector3.zero;
+            bool needsRefresh = waypointRouteTarget != intendedTarget ||
+                                waypointRoute.Count == 0 ||
+                                waypointRouteIndex >= waypointRoute.Count ||
+                                Time.time >= waypointRouteRefreshTime ||
+                                (targetPos - waypointRouteTargetPosition).sqrMagnitude > 4f;
+            if (needsRefresh)
+            {
+                waypointRoute.Clear();
+                waypointRouteIndex = 0;
+                waypointRouteTarget = intendedTarget;
+                waypointRouteTargetPosition = targetPos;
+                waypointRouteRefreshTime = Time.time + 0.5f;
+                FindWaypointRoute(targetPos, intendedTarget, waypointRoute);
+            }
+
+            while (waypointRouteIndex < waypointRoute.Count && waypointRoute[waypointRouteIndex] == null)
+                waypointRouteIndex++;
+
+            while (waypointRouteIndex < waypointRoute.Count &&
+                   HorizontalDistance(coreRb.position, waypointRoute[waypointRouteIndex].transform.position) < 0.8f)
+                waypointRouteIndex++;
+
+            if (waypointRouteIndex >= waypointRoute.Count)
+                return false;
+
+            Vector3 waypointPosition = waypointRoute[waypointRouteIndex].transform.position;
+            direction = waypointPosition - coreRb.position;
+            direction.y = 0f;
+            return direction.sqrMagnitude > 0.001f;
+        }
+
+        private void FindWaypointRoute(Vector3 targetPos, Transform intendedTarget, List<AIWaypoint> route)
+        {
+            AIWaypoint[] nodes = FindObjectsByType<AIWaypoint>();
+            if (nodes.Length == 0) return;
+
+            int count = nodes.Length;
+            float[] distances = new float[count];
+            int[] previous = new int[count];
+            bool[] visited = new bool[count];
+            for (int i = 0; i < count; i++)
+            {
+                distances[i] = float.PositiveInfinity;
+                previous[i] = -1;
+                if (nodes[i] != null && HasClearSegment(coreRb.position, nodes[i].transform.position, null))
+                    distances[i] = HorizontalDistance(coreRb.position, nodes[i].transform.position);
+            }
+
+            int bestGoal = -1;
+            float bestTotalCost = float.PositiveInfinity;
+            for (int step = 0; step < count; step++)
+            {
+                int current = -1;
+                float currentDistance = float.PositiveInfinity;
+                for (int i = 0; i < count; i++)
+                {
+                    if (!visited[i] && distances[i] < currentDistance)
+                    {
+                        current = i;
+                        currentDistance = distances[i];
+                    }
+                }
+
+                if (current < 0) break;
+                visited[current] = true;
+
+                float finalLeg = HorizontalDistance(nodes[current].transform.position, targetPos);
+                if (currentDistance + finalLeg < bestTotalCost &&
+                    HasClearSegment(nodes[current].transform.position, targetPos, intendedTarget))
+                {
+                    bestGoal = current;
+                    bestTotalCost = currentDistance + finalLeg;
+                }
+
+                AIWaypoint[] neighbors = nodes[current].neighbors;
+                if (neighbors == null) continue;
+                for (int n = 0; n < neighbors.Length; n++)
+                {
+                    int neighborIndex = System.Array.IndexOf(nodes, neighbors[n]);
+                    if (neighborIndex < 0 || visited[neighborIndex] ||
+                        !HasClearSegment(nodes[current].transform.position, nodes[neighborIndex].transform.position, null))
+                        continue;
+
+                    float edgeCost = HorizontalDistance(nodes[current].transform.position, nodes[neighborIndex].transform.position);
+                    float candidateDistance = currentDistance + edgeCost;
+                    if (candidateDistance < distances[neighborIndex])
+                    {
+                        distances[neighborIndex] = candidateDistance;
+                        previous[neighborIndex] = current;
+                    }
+                }
+            }
+
+            if (bestGoal < 0) return;
+            List<AIWaypoint> reversedRoute = new List<AIWaypoint>();
+            for (int node = bestGoal; node >= 0; node = previous[node])
+                reversedRoute.Add(nodes[node]);
+            for (int i = reversedRoute.Count - 1; i >= 0; i--)
+                route.Add(reversedRoute[i]);
+        }
+
+        private bool HasClearSegment(Vector3 from, Vector3 to, Transform intendedTarget)
+        {
+            Vector3 delta = to - from;
+            delta.y = 0f;
+            float distance = delta.magnitude;
+            if (distance <= obstacleCheckRadius) return true;
+
+            Vector3 direction = delta / distance;
+            // Check at waypoint/core height as well as above it. A single high
+            // cast can pass over low counters that still block the character.
+            Vector3 lowOrigin = from;
+            Vector3 highOrigin = from + Vector3.up * 0.5f;
+            return !IsNavigationSweepBlocked(lowOrigin, direction, distance, intendedTarget) &&
+                   !IsNavigationSweepBlocked(highOrigin, direction, distance, intendedTarget);
+        }
+
+        private bool IsNavigationSweepBlocked(Vector3 origin, Vector3 direction, float distance, Transform intendedTarget)
+        {
+            LayerMask mask = obstacleMask | grabbableMask;
+            Collider[] overlaps = Physics.OverlapSphere(origin, obstacleCheckRadius, mask,
+                QueryTriggerInteraction.Ignore);
+            for (int i = 0; i < overlaps.Length; i++)
+            {
+                if (IsSameTarget(overlaps[i].transform, intendedTarget))
+                    continue;
+
+                int layer = overlaps[i].gameObject.layer;
+                bool isAhead = Vector3.Dot(direction, overlaps[i].bounds.center - origin) > 0f;
+                if (isAhead && (IsInLayerMask(layer, obstacleMask) || IsInLayerMask(layer, grabbableMask)))
+                    return true;
+            }
+
+            RaycastHit[] hits = Physics.SphereCastAll(origin, obstacleCheckRadius, direction, distance,
+                mask, QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                Transform hitTransform = hits[i].collider.transform;
+                if (IsSameTarget(hitTransform, intendedTarget))
+                    continue;
+
+                int layer = hits[i].collider.gameObject.layer;
+                if (IsInLayerMask(layer, obstacleMask) || IsInLayerMask(layer, grabbableMask))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private float HorizontalDistance(Vector3 from, Vector3 to)
+        {
+            from.y = 0f;
+            to.y = 0f;
+            return Vector3.Distance(from, to);
+        }
+
+        private void ClearWaypointRoute()
+        {
+            waypointRoute.Clear();
+            waypointRouteIndex = 0;
+            waypointRouteTarget = null;
         }
 
         private void SetMoveDirection(Vector3 direction)
@@ -82,47 +268,11 @@ namespace RabbleHouse
 
             direction.Normalize();
 
-            Vector3 origin = coreRb.position + Vector3.up * 0.5f;
-
-            LayerMask combinedMask = obstacleMask | grabbableMask;
-
-            if (!Physics.SphereCast(
-                origin,
-                obstacleCheckRadius,
-                direction,
-                out RaycastHit hit,
-                obstacleCheckDistance,
-                combinedMask,
-                QueryTriggerInteraction.Ignore)) 
-                return false;
-
-            // -------------------------------------------------
-            // Static obstacle
-            // -------------------------------------------------
-
-            if (IsInLayerMask(
-                hit.collider.gameObject.layer,
-                obstacleMask))
-                return true;
-
-            // -------------------------------------------------
-            // Grabbable object
-            // -------------------------------------------------
-
-            if (IsInLayerMask(
-                hit.collider.gameObject.layer,
-                grabbableMask))
-            {
-                // If this is the object we actually want to reach,
-                // don't consider it an obstacle.
-                if (IsSameTarget(hit.collider.transform, intendedTarget))
-                    return false;
-
-                // Otherwise treat it as a temporary obstacle.
-                return true;
-            }
-
-            return false;
+            // The core rigidbody is at the hips. Sweep at that height and
+            // above it so shorter counter colliders still block the route.
+            return IsNavigationSweepBlocked(coreRb.position, direction, obstacleCheckDistance, intendedTarget) ||
+                   IsNavigationSweepBlocked(coreRb.position + Vector3.up * 0.5f, direction,
+                       obstacleCheckDistance, intendedTarget);
         }
 
         private bool IsInLayerMask(int layer, LayerMask mask)
@@ -140,7 +290,7 @@ namespace RabbleHouse
                    intendedTarget.IsChildOf(hitTransform);
         }
 
-        private Vector3 GetAvoidanceDirection(Vector3 desiredDirection, Vector3 targetPos)
+        private Vector3 GetAvoidanceDirection(Vector3 desiredDirection, Vector3 targetPos, Transform intendedTarget)
         {
             desiredDirection.y = 0f;
             if (desiredDirection.sqrMagnitude < 0.001f)
@@ -155,98 +305,40 @@ namespace RabbleHouse
                         ? Vector3.Cross(Vector3.up, desiredDirection)
                         : Vector3.Cross(desiredDirection, Vector3.up);
 
-                if (!IsPathBlocked(committedDirection, null))
+                if (!IsPathBlocked(committedDirection, intendedTarget))
                     return committedDirection;
             }
 
-            // Otherwise perform a fresh left/right evaluation
-            Vector3 leftDirection = Quaternion.Euler(0f, -60f, 0f) * desiredDirection;
-
-            Vector3 rightDirection = Quaternion.Euler(0f, 60f, 0f) * desiredDirection;
-
-            bool leftBlocked = IsPathBlocked(leftDirection, null);
-            bool rightBlocked = IsPathBlocked(rightDirection, null);
-
-            // ---------------------------------------------------------
-            // Both sides blocked.
-            // Try moving more perpendicular to the obstacle.
-            // ---------------------------------------------------------
-            if (leftBlocked && rightBlocked)
+            // Probe progressively around the obstruction. The old two-angle
+            // check could repeatedly select a direction that still ran along
+            // the wall, or make no progress when the target was close to it.
+            Vector3 bestDirection = Vector3.zero;
+            float bestScore = float.NegativeInfinity;
+            for (int angle = -150; angle <= 150; angle += 30)
             {
-                Vector3 left = Quaternion.Euler(0f, -90f, 0f) * desiredDirection;
+                Vector3 candidate = Quaternion.Euler(0f, angle, 0f) * desiredDirection;
+                if (IsPathBlocked(candidate, intendedTarget)) continue;
 
-                Vector3 right = Quaternion.Euler(0f, 90f, 0f) * desiredDirection;
-
-                bool leftSideBlocked = IsPathBlocked(left, null);
-                bool rightSideBlocked = IsPathBlocked(right, null);
-
-                if (!leftSideBlocked && !rightSideBlocked)
+                float score = Vector3.Dot(candidate, desiredDirection);
+                // Keep a committed side when scores are nearly equal to avoid
+                // switching sides every frame at a wall corner.
+                int candidateSide = angle < 0 ? -1 : (angle > 0 ? 1 : 0);
+                if (candidateSide == avoidanceSide) score += 0.12f;
+                if (score > bestScore)
                 {
-                    return ChooseBetterSide(left, right, targetPos);
+                    bestScore = score;
+                    bestDirection = candidate;
                 }
-
-                if (!leftSideBlocked) return left;
-                if (!rightSideBlocked) return right;
-
-                // Completely surrounded.
-                return GetRecoveryDirection(desiredDirection);
             }
 
-            // ---------------------------------------------------------
-            // One side is blocked.
-            // Take the open side.
-            // ---------------------------------------------------------
-            if (leftBlocked && !rightBlocked)
+            if (bestDirection.sqrMagnitude > 0.001f)
             {
-                avoidanceSide = 1;
+                avoidanceSide = Vector3.Dot(Vector3.Cross(Vector3.up, desiredDirection), bestDirection) < 0f ? 1 : -1;
                 avoidanceEndTime = Time.time + avoidanceCommitTime;
-
-                return rightDirection;
-            }
-            if (rightBlocked && !leftBlocked)
-            {
-                avoidanceSide = -1;
-                avoidanceEndTime = Time.time + avoidanceCommitTime;
-
-                return leftDirection;
+                return bestDirection.normalized;
             }
 
-            // ---------------------------------------------------------
-            // Both sides are open.
-            // Prefer the side that gets us closer to the target.
-            // ---------------------------------------------------------
-            return ChooseBetterSide(leftDirection, rightDirection, targetPos);
-        }
-
-        private Vector3 ChooseBetterSide(Vector3 leftDirection, Vector3 rightDirection, Vector3 targetPos)
-        {
-            Vector3 toTarget = targetPos - coreRb.position;
-
-            toTarget.y = 0f;
-
-            if (toTarget.sqrMagnitude < 0.001f)
-                return leftDirection;
-
-            toTarget.Normalize();
-
-            float leftScore = Vector3.Dot(leftDirection, toTarget);
-
-            float rightScore = Vector3.Dot(rightDirection, toTarget);
-
-            if (leftScore > rightScore)
-            {
-                avoidanceSide = -1;
-                avoidanceEndTime = Time.time + avoidanceCommitTime;
-
-                return leftDirection;
-            }
-            else
-            {
-                avoidanceSide = 1;
-                avoidanceEndTime = Time.time + avoidanceCommitTime;
-
-                return rightDirection;
-            }
+            return GetRecoveryDirection(desiredDirection);
         }
 
         private void UpdateStuckDetection()

@@ -152,6 +152,7 @@ namespace RabbleHouse
 
         [Header("Combat")]
         [SerializeField] private float grabRange = 1.5f;
+        public float GrabRange => grabRange;
         [SerializeField] private float throwForce = 20f;
         [SerializeField] private float punchForce = 15f;
         [SerializeField] private float punchRange = 1f;
