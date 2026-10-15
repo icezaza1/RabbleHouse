@@ -199,13 +199,6 @@ namespace RabbleHouse
             // Execute current behavior
             ExecuteBehavior();
 
-            // Reach toward the selected object before asking the controller to
-            // create a pickup joint. The controller restores the normal pose
-            // whenever the AI leaves its Grab behavior.
-            if (controller != null)
-                controller.SetAIGrabReachPose(currentBehavior == AIBehavior.Grab &&
-                                              nearestGrabbableStatic != null &&
-                                              !controller.IsHoldingObject);
         }
 
     }

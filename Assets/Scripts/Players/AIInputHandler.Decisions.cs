@@ -121,9 +121,8 @@ namespace RabbleHouse
                         float distToGrabbable = Vector3.Distance(coreRb.position, grabbable.transform.position);
                         if (distToGrabbable > 1f)
                             SprintPressed = true;
-                        HandleChasing(grabbable.transform, distToGrabbable);
-                        // Only press grab once the controller confirms its hands are
-                        // close enough to make a stable, natural joint connection.
+                        HandleGrabbableApproach(grabbable, distToGrabbable);
+                        // Use the same pickup-volume check as the player.
                         if (Time.time >= nextGrabTime && controller.CanGrabObject(grabbable))
                         {
                             GrabPressed = true;

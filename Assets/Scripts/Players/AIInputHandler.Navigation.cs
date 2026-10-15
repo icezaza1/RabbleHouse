@@ -22,6 +22,42 @@ namespace RabbleHouse
             else
                 MoveToward(InterceptPosition(target), target);
         }
+
+        private void HandleGrabbableApproach(GrabbableObject grabbable, float distToGrabbable)
+        {
+            if (grabbable == null || coreRb == null)
+                return;
+
+            Vector3 direction = grabbable.transform.position - coreRb.position;
+            direction.y = 0f;
+            float distance = direction.magnitude;
+            if (distance < 0.001f)
+            {
+                MoveInput = Vector2.zero;
+                return;
+            }
+
+            direction /= distance;
+            Vector3 rayOrigin = coreRb.position + Vector3.up * 0.25f;
+            if (Physics.Raycast(rayOrigin, direction, out RaycastHit obstacleHit, distance,
+                    obstacleMask, QueryTriggerInteraction.Ignore) &&
+                obstacleHit.collider.bounds.max.y <= coreRb.position.y + 0.75f &&
+                grabbable.transform.position.y > obstacleHit.collider.bounds.max.y - 0.5f)
+            {
+                // Use a reachable staging point on the AI's side of the
+                // obstacle, then let the normal waypoint system route there.
+                // The AI's pickup box can reach across the remaining gap.
+                float standOff = obstacleCheckRadius + 0.1f;
+                float approachDistance = Mathf.Max(0f, obstacleHit.distance - standOff);
+                Vector3 approachPosition = coreRb.position + direction * approachDistance;
+                approachPosition.y = coreRb.position.y;
+                MoveToward(approachPosition, grabbable.transform);
+                return;
+            }
+
+            HandleChasing(grabbable.transform, distToGrabbable);
+        }
+
         private void MoveToward(Vector3 targetPos, Transform intendedTarget)
         {
             if (coreRb == null) return;

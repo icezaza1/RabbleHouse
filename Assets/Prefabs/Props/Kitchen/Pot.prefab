@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3268894944186795967}
   - component: {fileID: 5759712438354301986}
   - component: {fileID: 1013151489614282600}
+  - component: {fileID: 5391808713937763679}
   m_Layer: 6
   m_Name: Pot
   m_TagString: Objects
@@ -110,7 +111,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
@@ -172,3 +173,24 @@ MonoBehaviour:
   spawnOnDestroy:
   - {fileID: 8758560513174087879, guid: 7a17e513d19fcd44fb9287a8182f68dc, type: 3}
   spawnPoint: {fileID: 7142572565929818214}
+--- !u!65 &5391808713937763679
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6301839393189846013}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.007740696, y: 0.0077406964, z: 0.0050545633}
+  m_Center: {x: 0, y: 0, z: -1.164153e-10}
