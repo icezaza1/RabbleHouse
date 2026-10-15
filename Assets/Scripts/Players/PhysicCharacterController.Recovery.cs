@@ -13,6 +13,14 @@ namespace RabbleHouse
 
         private IEnumerator StunRoutine(float duration)
         {
+            //Turn off the particle if stunned
+            var stepDust = vfxs?.stepDustPrefab;
+            if (stepDust != null && stepDust.TryGetComponent<ParticleSystem>(out var ps))
+            {
+                var emission = ps.emission;
+                emission.enabled = false;
+            }
+
             ForceDropObject();
             ragdollMaster.EnableFullRagdoll();
             yield return new WaitForSeconds(duration);
@@ -35,6 +43,14 @@ namespace RabbleHouse
 
         private IEnumerator KnockdownRoutine(float duration)
         {
+            //Turn off the particle if stunned
+            var stepDust = vfxs?.stepDustPrefab;
+            if (stepDust != null && stepDust.TryGetComponent<ParticleSystem>(out var ps))
+            {
+                var emission = ps.emission;
+                emission.enabled = false;
+            }
+
             yield return new WaitForSeconds(duration);
 
             float elapsed = 0f;

@@ -152,7 +152,6 @@ namespace RabbleHouse
 
         [Header("Combat")]
         [SerializeField] private float grabRange = 1.5f;
-        public float GrabRange => grabRange;
         [SerializeField] private float throwForce = 20f;
         [SerializeField] private float punchForce = 15f;
         [SerializeField] private float punchRange = 1f;
@@ -237,6 +236,12 @@ namespace RabbleHouse
             if (heldObject != null && !isHeavyPunching)
             {
                 RaiseArmsForHeld();
+            }
+            else if (heldObject == null && aiGrabReachPoseActive)
+            {
+                // Keep the AI's reaching pose after the active-ragdoll bones
+                // update, just as the held-object pose is kept above.
+                RaiseBothArms();
             }
 
             // Handle light attack (punch or swing depending on held object)

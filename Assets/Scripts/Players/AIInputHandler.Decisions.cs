@@ -122,12 +122,18 @@ namespace RabbleHouse
                         if (distToGrabbable > 1f)
                             SprintPressed = true;
                         HandleChasing(grabbable.transform, distToGrabbable);
-                        if (Time.time >= nextGrabTime && distToGrabbable < grabRange)
+                        // Only press grab once the controller confirms its hands are
+                        // close enough to make a stable, natural joint connection.
+                        if (Time.time >= nextGrabTime && controller.CanGrabObject(grabbable))
                         {
                             GrabPressed = true;
                             nextGrabTime = Time.time + grabCooldown;
                             objectGrabTime = Time.time;
                             randomThrowHoldTime = Random.Range(minThrowHoldTime, maxThrowHoldTime);
+                            // Do not carry an unarmed dodge/circle/charge phase
+                            // into armed combat after the pickup succeeds.
+                            currentPhase = CombatPhase.None;
+                            scheduledRetreatTime = -1f;
                             // Force transition to Chase — don't wait for MakeDecision to catch up
                             currentBehavior = AIBehavior.Chase;
                         }

@@ -8,11 +8,11 @@ public class SoundManager : Singleton<SoundManager>
 
     private AudioSource audioSource;
 
-    private void Awake()
+    public override void Awake()
     {
+        base.Awake();
         audioSource = GetComponent<AudioSource>();
         audioSource.playOnAwake = false;
-        base.Awake();
     }
 
     public void PlaySound(AudioClip audioClip, Transform spawnTransform, float volume)

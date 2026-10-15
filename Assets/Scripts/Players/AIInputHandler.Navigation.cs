@@ -201,11 +201,17 @@ namespace RabbleHouse
         private bool IsNavigationSweepBlocked(Vector3 origin, Vector3 direction, float distance, Transform intendedTarget)
         {
             LayerMask mask = obstacleMask | grabbableMask;
+            Transform heldObject = controller != null && controller.HeldObject != null
+                ? controller.HeldObject.transform
+                : null;
             Collider[] overlaps = Physics.OverlapSphere(origin, obstacleCheckRadius, mask,
                 QueryTriggerInteraction.Ignore);
             for (int i = 0; i < overlaps.Length; i++)
             {
-                if (IsSameTarget(overlaps[i].transform, intendedTarget))
+                // The carried object moves with this AI and must not be treated
+                // as an obstacle blocking the route to the opponent.
+                if (IsSameTarget(overlaps[i].transform, intendedTarget) ||
+                    IsSameTarget(overlaps[i].transform, heldObject))
                     continue;
 
                 int layer = overlaps[i].gameObject.layer;
@@ -220,7 +226,8 @@ namespace RabbleHouse
             for (int i = 0; i < hits.Length; i++)
             {
                 Transform hitTransform = hits[i].collider.transform;
-                if (IsSameTarget(hitTransform, intendedTarget))
+                if (IsSameTarget(hitTransform, intendedTarget) ||
+                    IsSameTarget(hitTransform, heldObject))
                     continue;
 
                 int layer = hits[i].collider.gameObject.layer;
