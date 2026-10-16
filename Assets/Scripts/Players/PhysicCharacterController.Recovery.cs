@@ -77,7 +77,15 @@ namespace RabbleHouse
             ForceDropObject();
             ragdollMaster.EnableFullRagdoll();
 
-            // Change layer to grabbable (WIP)
+            //Turn off the particle if dead
+            var stepDust = vfxs?.stepDustPrefab;
+            if (stepDust != null && stepDust.TryGetComponent<ParticleSystem>(out var ps))
+            {
+                var emission = ps.emission;
+                emission.enabled = false;
+            }
+
+            // Change layer to grabbable
             ActiveRagdollBone[] ragdollBones = GetComponentsInChildren<ActiveRagdollBone>();
             GrabbableObject selfBodyObject = coreRigidbody.GetComponent<GrabbableObject>();
             int targetLayer = LayerMask.NameToLayer("Grabbable");

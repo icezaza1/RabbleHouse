@@ -1049,6 +1049,10 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4459724158021851945, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
+      propertyPath: m_Name
+      value: Face Normal
+      objectReference: {fileID: 0}
     - target: {fileID: 4711340654815071275, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -5571,6 +5575,10 @@ PrefabInstance:
     - target: {fileID: 3997579678248024621, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: maxHealth
       value: 60
+      objectReference: {fileID: 0}
+    - target: {fileID: 7946247371952453081, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: grabbableMask.m_Bits
+      value: 64
       objectReference: {fileID: 0}
     - target: {fileID: 8840718257727851571, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_LocalPosition.x

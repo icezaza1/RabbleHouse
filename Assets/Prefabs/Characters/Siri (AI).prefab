@@ -2731,6 +2731,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4fbc7d1b1dc6404e84fe0c5ae9c69af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PhysicCharacterController
+  aiGrabArmRaiseDistance: 1.5
   leftHand: {fileID: 4638710043999507430}
   rightHand: {fileID: 2028790188767411757}
   leftUpperArm: {fileID: 6454698527478488857}
@@ -2830,7 +2831,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.AIInputHandler
   chaseRange: 30
-  grabRange: 3
   grabSearchRadius: 20
   obstacleMask:
     serializedVersion: 2

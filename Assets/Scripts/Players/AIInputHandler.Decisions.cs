@@ -55,7 +55,7 @@ namespace RabbleHouse
                     currentBehavior = AIBehavior.Throw;
                 else if (targetInRange)
                     currentBehavior = AIBehavior.Attack;
-                else if (targetPlayer != null && ((currentPhase != CombatPhase.BaitPhase1) || (currentPhase != CombatPhase.BaitPhase2)))
+                else if (targetPlayer != null && ((currentPhase != CombatPhase.BaitPhase1) && (currentPhase != CombatPhase.BaitPhase2)))
                     currentBehavior = AIBehavior.Chase;
 
                 return;
@@ -78,7 +78,7 @@ namespace RabbleHouse
                     currentBehavior = AIBehavior.Grab;
                 else if (targetPlayer != null && distToTarget <= 1.5f)
                     currentBehavior = AIBehavior.Attack; // Only fight unarmed if really close
-                else if (targetPlayer != null && ((currentPhase != CombatPhase.BaitPhase1) || (currentPhase != CombatPhase.BaitPhase2)))
+                else if (targetPlayer != null && ((currentPhase != CombatPhase.BaitPhase1) && (currentPhase != CombatPhase.BaitPhase2)))
                     currentBehavior = AIBehavior.Chase;
                 else
                     currentBehavior = AIBehavior.Idle;
@@ -121,8 +121,9 @@ namespace RabbleHouse
                         float distToGrabbable = Vector3.Distance(coreRb.position, grabbable.transform.position);
                         if (distToGrabbable > 1f)
                             SprintPressed = true;
-                        HandleGrabbableApproach(grabbable, distToGrabbable);
-                        // Use the same pickup-volume check as the player.
+                        HandleChasing(grabbable.transform, distToGrabbable);
+                        // AI eligibility is based on physical hand reach rather
+                        // than the player's forward pickup box.
                         if (Time.time >= nextGrabTime && controller.CanGrabObject(grabbable))
                         {
                             GrabPressed = true;

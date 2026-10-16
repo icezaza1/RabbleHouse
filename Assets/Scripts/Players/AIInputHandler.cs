@@ -20,7 +20,6 @@ namespace RabbleHouse
         // --- AI CONFIGURATION ---
         [Header("Detection")]
         [SerializeField] private float chaseRange = 15f;
-        [SerializeField] private float grabRange = 2.5f;
         [SerializeField] private float grabSearchRadius = 5f; // wider search for retreat-to-grab
 
         [Header("Movement / Obstacle Avoidance")]
@@ -198,6 +197,14 @@ namespace RabbleHouse
 
             // Execute current behavior
             ExecuteBehavior();
+
+            // Keep the arms down during the approach run. Raise them only once
+            // the selected object is near the hands, before joint range is met.
+            if (controller != null)
+                controller.SetAIGrabReachPose(currentBehavior == AIBehavior.Grab &&
+                                              nearestGrabbableStatic != null &&
+                                              !controller.IsHoldingObject &&
+                                              controller.IsAIObjectWithinArmRaiseDistance(nearestGrabbableStatic));
 
         }
 

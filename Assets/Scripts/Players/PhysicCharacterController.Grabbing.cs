@@ -5,35 +5,110 @@ namespace RabbleHouse
 {
     public partial class PhysicCharacterController
     {
+        private float aiGrabHandReachDistance = 0.25f;
+        [SerializeField, Min(0f)] private float aiGrabArmRaiseDistance = 1.5f;
+        private bool aiGrabReachPoseActive;
+
         /// <summary>
-        /// Uses the same forward pickup box as the player so AI and player
-        /// eligibility match exactly.
+        /// AI pickup eligibility follows hand reach; player pickup eligibility
+        /// continues to use the forward-facing box in TryGrabObject.
         /// </summary>
         public bool CanGrabObject(GrabbableObject candidate)
         {
-            if (candidate == null || candidate.IsHeld || coreRigidbody == null)
+            if (candidate == null || candidate.IsHeld || candidate.Rigidbody == null)
                 return false;
 
-            Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
-            Collider[] hits = Physics.OverlapBox(origin, new Vector3(0.1f, 0.6f, grabRange * 0.5f),
-                coreRigidbody.rotation, LayerMask.GetMask("Grabbable"));
-            for (int i = 0; i < hits.Length; i++)
+            if (candidate.grabbableType == GrabbableType.Tool)
             {
-                if (hits[i].GetComponent<GrabbableObject>() == candidate)
+                // The right hand is the primary grip for tools.
+                return IsHandWithinGrabReach(rightHandRb, candidate);
+            }
+
+            // Let either hand initiate a natural pickup; only reachable hands
+            // will receive joints when the object is grabbed.
+            return IsHandWithinGrabReach(leftHandRb, candidate) ||
+                   IsHandWithinGrabReach(rightHandRb, candidate);
+        }
+
+        /// <summary>
+        /// Returns true when the selected object is near enough for the AI to
+        /// begin reaching, before it is close enough to create a grab joint.
+        /// </summary>
+        public bool IsAIObjectWithinArmRaiseDistance(GrabbableObject candidate)
+        {
+            if (candidate == null || candidate.IsHeld)
+                return false;
+
+            return IsHandWithinDistance(leftHandRb, candidate, aiGrabArmRaiseDistance) ||
+                   IsHandWithinDistance(rightHandRb, candidate, aiGrabArmRaiseDistance);
+        }
+
+        private bool IsHandWithinGrabReach(Rigidbody handBody, GrabbableObject candidate)
+        {
+            return IsHandWithinDistance(handBody, candidate, aiGrabHandReachDistance);
+        }
+
+        private bool IsHandWithinDistance(Rigidbody handBody, GrabbableObject candidate, float maxDistance)
+        {
+            if (handBody == null || candidate == null)
+                return false;
+
+            Collider[] colliders = candidate.GetComponentsInChildren<Collider>();
+            float maxDistanceSquared = maxDistance * maxDistance;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider candidateCollider = colliders[i];
+                if (candidateCollider == null || candidateCollider.isTrigger)
+                    continue;
+
+                Vector3 closestPoint = candidateCollider.ClosestPoint(handBody.position);
+                if ((closestPoint - handBody.position).sqrMagnitude <= maxDistanceSquared)
                     return true;
             }
 
             return false;
         }
 
+        /// <summary>
+        /// Let the AI raise its arms while reaching without changing the
+        /// player's pickup behavior or moving the target before joint setup.
+        /// </summary>
+        public void SetAIGrabReachPose(bool active)
+        {
+            if (heldObject != null || aiGrabReachPoseActive == active)
+                return;
+
+            aiGrabReachPoseActive = active;
+            if (active)
+                RaiseBothArms();
+            else
+                ResetBothArms();
+        }
+
         // --- GRAB / DROP ---
         private void TryGrabObject()
         {
-            // Shared player/AI pickup volume: a narrow box extending forward
-            // from the hips. The object is not repositioned before joint setup.
-            Vector3 origin = coreRigidbody.position + coreRigidbody.transform.forward * (grabRange * 0.5f);
-            Collider[] hits = Physics.OverlapBox(origin, new Vector3(0.1f, 0.6f, grabRange * 0.5f),
-                coreRigidbody.rotation, LayerMask.GetMask("Grabbable"));
+            Vector3 origin = coreRigidbody.position;
+            Collider[] hits;
+            if (aiInputHandler != null)
+            {
+                // AI searches from its hands so its reach pose determines pickup
+                // eligibility. This does not move or snap the object.
+                int grabbableLayer = LayerMask.GetMask("Grabbable");
+                var handHits = new System.Collections.Generic.List<Collider>();
+                if (leftHandRb != null)
+                    handHits.AddRange(Physics.OverlapSphere(leftHandRb.position, aiGrabHandReachDistance, grabbableLayer));
+                if (rightHandRb != null)
+                    handHits.AddRange(Physics.OverlapSphere(rightHandRb.position, aiGrabHandReachDistance, grabbableLayer));
+                hits = handHits.ToArray();
+            }
+            else
+            {
+                // Preserve the player's existing forward-facing pickup volume.
+                origin += coreRigidbody.transform.forward * (grabRange * 0.5f);
+                hits = Physics.OverlapBox(origin, new Vector3(0.1f, 0.6f, grabRange * 0.5f),
+                    coreRigidbody.rotation, LayerMask.GetMask("Grabbable"));
+            }
 
             GrabbableObject closest = null;
             float bestDist = float.MaxValue;
@@ -41,7 +116,8 @@ namespace RabbleHouse
             foreach (var hit in hits)
             {
                 var grabbable = hit.GetComponent<GrabbableObject>();
-                if (grabbable != null && !grabbable.IsHeld)
+                if (grabbable != null && !grabbable.IsHeld &&
+                    (aiInputHandler == null || CanGrabObject(grabbable)))
                 {
                     float d = Vector3.Distance(origin, hit.transform.position);
                     if (d < bestDist)
@@ -60,8 +136,18 @@ namespace RabbleHouse
 
                 if (heldGrabbableType == GrabbableType.SmallObject)
                 {
-                    leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
-                    rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+                    if (aiInputHandler != null)
+                    {
+                        if (IsHandWithinGrabReach(leftHandRb, closest))
+                            leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
+                        if (IsHandWithinGrabReach(rightHandRb, closest))
+                            rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+                    }
+                    else
+                    {
+                        leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
+                        rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+                    }
                 }
                 else if (heldGrabbableType == GrabbableType.Tool)
                 {
@@ -72,7 +158,8 @@ namespace RabbleHouse
                     rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
 
                     // Two-handed tools also attach the left hand.
-                    if (activeTool != null && !activeTool.OneHanded)
+                    if (activeTool != null && !activeTool.OneHanded &&
+                        (aiInputHandler == null || IsHandWithinGrabReach(leftHandRb, closest)))
                     {
                         leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
                     }
@@ -87,8 +174,18 @@ namespace RabbleHouse
                 else
                 {
                     // Two-handed grab
-                    leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
-                    rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+                    if (aiInputHandler != null)
+                    {
+                        if (IsHandWithinGrabReach(leftHandRb, closest))
+                            leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
+                        if (IsHandWithinGrabReach(rightHandRb, closest))
+                            rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+                    }
+                    else
+                    {
+                        leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
+                        rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+                    }
                 }
                 SetState(CharacterState.Grabbing);
             }
