@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace RabbleHouse
 {
@@ -11,6 +12,16 @@ namespace RabbleHouse
         SmallObject,  // Two-handed, LightAttack = heavy swing, HeavyAttack = throw
         LargeObject,  // Two-handed, LightAttack = heavy swing, heavier mass affects hip rotation
         Tool          // One-handed (right arm only), more details TBD
+    }
+
+    [System.Serializable]
+    public class SoundEffect
+    {
+        public AudioClip impactSFX;
+        [Range(0f, 1f)] public float impactVolume = 1f;
+        public AudioClip destroyedSFX;
+        [Range(0f, 1f)] public float destroyedVolume = 1f;
+        public AudioMixerGroup sfxMixerGroup;
     }
 
     /// <summary>
@@ -36,6 +47,7 @@ namespace RabbleHouse
         [Tooltip("If true, children rigidbodies will scale down proportionally when grabbed.")]
         [SerializeField] private bool changeChildrenMass = false;
         private Dictionary<Rigidbody, float> childOriginMasses = new Dictionary<Rigidbody, float>();
+        [SerializeField] private SoundEffect soundEffect;
 
         [Header("Damage (swung while held)")]
         [SerializeField] private int swingDamage = 15;
@@ -315,6 +327,9 @@ namespace RabbleHouse
         public int ApplyDurabilityDamage(int amount = 1)
         {
             durablility -= amount;
+            if (soundEffect.impactSFX != null && SoundManager.Instance != null)
+                SoundManager.Instance.PlaySound(soundEffect.impactSFX, transform, soundEffect.impactVolume, soundEffect.sfxMixerGroup);
+
             if (durablility < 0) durablility = 0;
 
             if (durablility <= 0)
@@ -323,6 +338,11 @@ namespace RabbleHouse
                 if (holder != null)
                     holder.ReleaseObject();
 
+                // Sound
+                if (soundEffect.destroyedSFX != null && SoundManager.Instance != null)
+                    SoundManager.Instance.PlaySound(soundEffect.destroyedSFX, transform, soundEffect.destroyedVolume, soundEffect.sfxMixerGroup);
+
+                // Break effect
                 SpawnDestroyedObjects();
 
                 Destroy(gameObject);

@@ -373,6 +373,23 @@ namespace RabbleHouse
 
             if (stuckTimer >= stuckTime)
             {
+                if (currentBehavior == AIBehavior.Grab && nearestGrabbableStatic != null)
+                {
+                    // A grabbable can block the approach or make the selected
+                    // object unreachable. Give up on it after sustained lack of
+                    // movement and try the closest other available object.
+                    failedGrabTargets.Add(nearestGrabbableStatic);
+                    GrabbableObject alternate = FindNearestGrabbable();
+                    if (alternate != null)
+                    {
+                        nearestGrabbableStatic = alternate;
+                        ClearWaypointRoute();
+                        ResetObstacleAvoidance();
+                        lastMovementCheckPosition = currentPosition;
+                        return;
+                    }
+                }
+
                 ForceAvoidanceRecovery();
             }
         }
@@ -541,6 +558,33 @@ namespace RabbleHouse
 
             // Pick one at random — more diverse behavior across multiple AIs
             return valid[Random.Range(0, valid.Count)];
+        }
+
+        private GrabbableObject FindNearestGrabbable()
+        {
+            if (coreRb == null) return null;
+
+            Collider[] hits = Physics.OverlapSphere(coreRb.position + Vector3.up, grabSearchRadius, grabbableMask);
+            HashSet<GrabbableObject> checkedObjects = new HashSet<GrabbableObject>();
+            GrabbableObject nearest = null;
+            float nearestDistance = float.PositiveInfinity;
+
+            foreach (Collider hit in hits)
+            {
+                GrabbableObject grabbable = hit.GetComponentInParent<GrabbableObject>();
+                if (grabbable == null || !checkedObjects.Add(grabbable) || grabbable.IsHeld ||
+                    !grabbable.gameObject.activeInHierarchy || failedGrabTargets.Contains(grabbable))
+                    continue;
+
+                float distance = HorizontalDistance(coreRb.position, grabbable.transform.position);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearest = grabbable;
+                }
+            }
+
+            return nearest;
         }
 
         /// <summary>

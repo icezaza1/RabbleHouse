@@ -1,35 +1,32 @@
 using UnityEngine;
+using UnityEngine.Audio;
+using static Unity.VisualScripting.Member;
 
-
-[RequireComponent(typeof(AudioSource))]
 public class SoundManager : Singleton<SoundManager>
 {
     [SerializeField] private AudioSource SFXObject;
 
-    private AudioSource audioSource;
-
     public override void Awake()
     {
         base.Awake();
-        audioSource = GetComponent<AudioSource>();
-        audioSource.playOnAwake = false;
     }
 
-    public void PlaySound(AudioClip audioClip, Transform spawnTransform, float volume)
+    public void PlaySound(AudioClip audioClip, Transform spawnTransform, float volume, AudioMixerGroup mixerGroup = null)
     {
         // Spawn gameobject
         AudioSource audioSource = Instantiate(SFXObject, spawnTransform.position, Quaternion.identity);
 
         audioSource.clip = audioClip;
         audioSource.volume = volume;
+
+        if (mixerGroup != null)
+            audioSource.outputAudioMixerGroup = mixerGroup;
+
         audioSource.Play();
-
-        float clipLength = audioSource.clip.length;
-
-        Destroy(audioSource.gameObject, clipLength);
+        Destroy(audioSource.gameObject, audioSource.clip.length);
     }
 
-    public void PlayRandomSound(AudioClip[] audioClip, Transform spawnTransform, float volume)
+    public void PlayRandomSound(AudioClip[] audioClip, Transform spawnTransform, float volume, AudioMixerGroup mixerGroup = null)
     {
         // Assign random index
         int rand = Random.Range(0, audioClip.Length);
@@ -39,10 +36,11 @@ public class SoundManager : Singleton<SoundManager>
 
         audioSource.clip = audioClip[rand];
         audioSource.volume = volume;
+
+        if (mixerGroup != null)
+            audioSource.outputAudioMixerGroup = mixerGroup;
+
         audioSource.Play();
-
-        float clipLength = audioSource.clip.length;
-
-        Destroy(audioSource.gameObject, clipLength);
+        Destroy(audioSource.gameObject, audioSource.clip.length);
     }
 }

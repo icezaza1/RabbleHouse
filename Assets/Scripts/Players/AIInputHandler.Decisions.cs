@@ -11,8 +11,8 @@ namespace RabbleHouse
 
             // Only pick a new target object if we don't already have a valid one.
             // (Re-rolling every tick made the AI wander between objects.)
-            if (nearestGrabbableStatic == null || nearestGrabbableStatic.IsHeld)
-                nearestGrabbableStatic = FindRandomGrabbable();
+            if (nearestGrabbableStatic == null || nearestGrabbableStatic.IsHeld || !nearestGrabbableStatic.gameObject.activeInHierarchy)
+                nearestGrabbableStatic = FindNearestGrabbable();
 
             bool isHolding = controller != null && controller.IsHoldingObject;
             float distToTarget = targetPlayer != null ? Vector3.Distance(coreRb.position, targetPlayer.position) : float.MaxValue;
@@ -127,6 +127,7 @@ namespace RabbleHouse
                         if (Time.time >= nextGrabTime && controller.CanGrabObject(grabbable))
                         {
                             GrabPressed = true;
+                            failedGrabTargets.Clear();
                             nextGrabTime = Time.time + grabCooldown;
                             objectGrabTime = Time.time;
                             randomThrowHoldTime = Random.Range(minThrowHoldTime, maxThrowHoldTime);

@@ -1955,7 +1955,6 @@ GameObject:
   - component: {fileID: 6390885972184696615}
   - component: {fileID: 8529225942502328575}
   - component: {fileID: 5795308505345070836}
-  - component: {fileID: 7029696476222447949}
   - component: {fileID: 8668036440434964476}
   - component: {fileID: 3901796371565211424}
   m_Layer: 6
@@ -2108,41 +2107,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &7029696476222447949
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7019620051361826316}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b02166746f7477045b6a98547d627ef6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CoatHanger
-  armProfile:
-    throwWindupTime: 0.5
-    throwSwingTime: 0.5
-    throwHoldTime: 0.5
-    throwReturnTime: 0.5
-    throwSwingAngle: 45
-    rightUpperHold: {x: 0, y: 90, z: -60}
-    rightLowerHold: {x: 90, y: 0, z: 0}
-    leftUpperHold: {x: 0, y: -90, z: 60}
-    leftLowerHold: {x: 0, y: 0, z: 0}
-    rightUpperWindUp: {x: 0, y: 0, z: 0}
-    rightLowerWindUp: {x: 0, y: 0, z: 0}
-    leftUpperWindUp: {x: 0, y: 0, z: 0}
-    leftLowerWindUp: {x: 0, y: 0, z: 0}
-    rightUpperSwing: {x: 0, y: 0, z: 0}
-    rightLowerSwing: {x: 0, y: 0, z: 0}
-    leftUpperSwing: {x: 0, y: 0, z: 0}
-    leftLowerSwing: {x: 0, y: 0, z: 0}
-    throwWindUpRightUpper: {x: 0, y: 0, z: 0}
-    throwWindUpRightLower: {x: 0, y: 0, z: 0}
-    throwRightUpper: {x: 0, y: 0, z: 0}
-    throwRightLower: {x: 0, y: 0, z: 0}
-  oneHanded: 0
 --- !u!114 &8668036440434964476
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2156,7 +2120,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 0
-  gripPoint: {fileID: 2879766985614353249}
+  gripPoint: {fileID: 540780960646739260}
   secondaryGripPoint: {fileID: 2428017272897112164}
   durablility: 5
   heldMass: 0.3
@@ -2170,8 +2134,9 @@ MonoBehaviour:
   throwStunChance: 0.75
   throwMinSpeed: 3
   knockbackForce: -1
-  spawnOnDestroy: []
-  spawnPoint: {fileID: 0}
+  spawnOnDestroy:
+  - {fileID: 8758560513174087879, guid: 7a17e513d19fcd44fb9287a8182f68dc, type: 3}
+  spawnPoint: {fileID: 540780960646739260}
 --- !u!65 &3901796371565211424
 BoxCollider:
   m_ObjectHideFlags: 0

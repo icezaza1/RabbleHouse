@@ -6,7 +6,7 @@ namespace RabbleHouse
     public partial class PhysicCharacterController
     {
         private float aiGrabHandReachDistance = 0.25f;
-        [SerializeField, Min(0f)] private float aiGrabArmRaiseDistance = 1.5f;
+        private float aiGrabArmRaiseDistance = 0.5f;
         private bool aiGrabReachPoseActive;
 
         /// <summary>
@@ -75,7 +75,8 @@ namespace RabbleHouse
         /// </summary>
         public void SetAIGrabReachPose(bool active)
         {
-            if (heldObject != null || aiGrabReachPoseActive == active)
+            if (heldObject != null || aiGrabReachPoseActive == active || 
+                (currentState == CharacterState.Ragdoll || currentState == CharacterState.Dead))
                 return;
 
             aiGrabReachPoseActive = active;

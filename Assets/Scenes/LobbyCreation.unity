@@ -1395,6 +1395,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2093aa789ae77834b8eeaf919dc94553, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LobbyUI
+  stageImage: {fileID: 1661887621}
+  stageThumbnails:
+  - {fileID: 21300000, guid: 663c3fc433d68654ebb162b65cd0ed2a, type: 3}
+  - {fileID: 21300000, guid: 4f7cf94f2547ff94ab40f6e517ff4e5e, type: 3}
   stageNameText: {fileID: 1747281368}
   stageLeftArrow: {fileID: 1063405970}
   stageRightArrow: {fileID: 118899142}
@@ -1402,7 +1406,6 @@ MonoBehaviour:
   difficultyLeftArrow: {fileID: 77040493}
   difficultyRightArrow: {fileID: 169654282}
   confirmButton: {fileID: 526964018}
-  gameSceneName: LivingRoom
 --- !u!1 &1661887619
 GameObject:
   m_ObjectHideFlags: 0
@@ -1460,7 +1463,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: 4f7cf94f2547ff94ab40f6e517ff4e5e, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

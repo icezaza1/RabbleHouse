@@ -6,6 +6,8 @@ using TMPro;
 public class LobbyUI : MonoBehaviour
 {
     [Header("Stage Selection")]
+    [SerializeField] private Image stageImage;
+    [SerializeField] private Sprite[] stageThumbnails;
     [SerializeField] private TextMeshProUGUI stageNameText;
     [SerializeField] private Button stageLeftArrow;
     [SerializeField] private Button stageRightArrow;
@@ -67,6 +69,12 @@ public class LobbyUI : MonoBehaviour
     private void UpdateStageDisplay()
     {
         stageNameText.text = stageNames[currentStageIndex];
+
+        if (stageThumbnails != null &&
+        currentStageIndex < stageThumbnails.Length)
+        {
+            stageImage.sprite = stageThumbnails[currentStageIndex];
+        }
     }
 
     private void UpdateDifficultyDisplay()

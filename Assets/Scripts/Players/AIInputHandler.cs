@@ -119,6 +119,7 @@ namespace RabbleHouse
         private Rigidbody targetRb;
         private PhysicCharacterController.CharacterState currentState = PhysicCharacterController.CharacterState.Idle;
         private GrabbableObject nearestGrabbableStatic;
+        private readonly HashSet<GrabbableObject> failedGrabTargets = new HashSet<GrabbableObject>();
 
         // Cached references
         private Rigidbody coreRb;

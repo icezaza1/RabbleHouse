@@ -119,11 +119,36 @@ namespace RabbleHouse
         private bool heavyPunchLeftArm = true; // toggle for next arm
         private float swingCooldownTimer = 0f;
 
-        [Header("Heavy Punch Profiles")]
-        [SerializeField] private ArmPunchProfile leftHeavyProfile;
-        [SerializeField] private ArmPunchProfile rightHeavyProfile;
-        [SerializeField] private float HipHookRotation;
-        [SerializeField] private float smallObjectSwingAngle = 45f;
+        // Heavy Punch Profiles
+        private ArmPunchProfile leftHeavyProfile = new ArmPunchProfile(
+            new Vector3(-40, 0, 0),
+            new Vector3(0, -60, 0),
+            new Vector3(0, 0, 90),
+            new Vector3(30, -60, 0)
+        );
+        private ArmPunchProfile rightHeavyProfile = new ArmPunchProfile(
+            new Vector3(-40, 0, 0),
+            new Vector3(0, 60, 0),
+            new Vector3(0, 0, -90),
+            new Vector3(30, 60, 0)
+        );
+
+        // Light Punch Profiles
+        private ArmPunchProfile leftArmProfile = new ArmPunchProfile(
+            new Vector3(-60, 0, -60),
+            new Vector3(0, 0, 120),
+            new Vector3(0, -60, 90),
+            new Vector3(0, 0, 0)
+        );
+        private ArmPunchProfile rightArmProfile = new ArmPunchProfile(
+            new Vector3(-60, 0, 60),
+            new Vector3(0, 0, -120),
+            new Vector3(0, 60, -90),
+            new Vector3(0, 0, 0)
+        );
+
+        private float HipHookRotation = 90f;
+        private float smallObjectSwingAngle = 90f;
 
         [System.Serializable]
         private class ArmPunchProfile
@@ -132,11 +157,15 @@ namespace RabbleHouse
             public Vector3 windUpLower;
             public Vector3 punchUpper;
             public Vector3 punchLower;
-        }
 
-        [Header("Arm Punch Profiles")]
-        [SerializeField] private ArmPunchProfile leftArmProfile;   // UpperLeft/LowerLeft
-        [SerializeField] private ArmPunchProfile rightArmProfile;  // UpperRight/LowerRight
+            public ArmPunchProfile(Vector3 wUpper, Vector3 wLower, Vector3 pUpper, Vector3 pLower)
+            {
+                windUpUpper = wUpper;
+                windUpLower = wLower;
+                punchUpper = pUpper;
+                punchLower = pLower;
+            }
+        }
 
         // --- SETTINGS ---
         [Header("Reference")]
@@ -147,7 +176,6 @@ namespace RabbleHouse
         [SerializeField] private LayerMask groundLayer = 1 << 0;
         [SerializeField] private float groundCheckDistance = 0.2f;
         [SerializeField] private float hipHeight = 0.95f;
-        [SerializeField] private float balancerWeightMoving = 0.3f;
         [SerializeField] private float balancerBlendSpeed = 6f;
 
         [Header("Combat")]
@@ -282,7 +310,7 @@ namespace RabbleHouse
             // Handle balancer weight
             if (balancer != null)
             {
-                float target = (currentState == CharacterState.Moving) ? balancerWeightMoving : 1f;
+                float target = 1f;
                 balancer.weight = Mathf.Lerp(balancer.weight, target, Time.fixedDeltaTime * balancerBlendSpeed);
             }
         }
@@ -327,10 +355,7 @@ namespace RabbleHouse
         // --- STATE MACHINE ---
         private void UpdateState()
         {
-            if (currentState == CharacterState.Ragdoll)
-                return;
-
-            if (currentState == CharacterState.Dead)
+            if (currentState == CharacterState.Ragdoll || currentState == CharacterState.Dead)
                 return;
 
             if (heldObject != null)
