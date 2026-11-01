@@ -2944,6 +2944,12 @@ MonoBehaviour:
   heldMass: 0.5
   hipRotationResistance: 10
   changeChildrenMass: 1
+  soundEffect:
+    impactSFX: {fileID: 0}
+    impactVolume: 1
+    destroyedSFX: {fileID: 0}
+    destroyedVolume: 1
+    sfxMixerGroup: {fileID: 0}
   swingDamage: 10
   swingStunChance: 0.3
   attackRangeBonus: 0
@@ -4217,28 +4223,6 @@ MonoBehaviour:
   heavyPunchCooldown: 3
   heavyTravelTime: 0.8
   heavyHoldTime: 0.1
-  leftHeavyProfile:
-    windUpUpper: {x: -40, y: 0, z: 0}
-    windUpLower: {x: 0, y: -60, z: 0}
-    punchUpper: {x: 0, y: 0, z: 90}
-    punchLower: {x: 30, y: -60, z: 0}
-  rightHeavyProfile:
-    windUpUpper: {x: -40, y: 0, z: 0}
-    windUpLower: {x: 0, y: 60, z: 0}
-    punchUpper: {x: 0, y: 0, z: -90}
-    punchLower: {x: 30, y: 60, z: 0}
-  HipHookRotation: 90
-  smallObjectSwingAngle: 90
-  leftArmProfile:
-    windUpUpper: {x: -60, y: 0, z: -60}
-    windUpLower: {x: 0, y: 0, z: 120}
-    punchUpper: {x: 0, y: -60, z: 90}
-    punchLower: {x: 0, y: 0, z: 0}
-  rightArmProfile:
-    windUpUpper: {x: -60, y: 0, z: 60}
-    windUpLower: {x: 0, y: 0, z: -120}
-    punchUpper: {x: 0, y: 60, z: -90}
-    punchLower: {x: 0, y: 0, z: 0}
   targetAnimator: {fileID: 3627315296275983357}
   grabAnchorPoint: {fileID: 5613450861178383581}
   moveSpeed: 1.5
@@ -4247,7 +4231,6 @@ MonoBehaviour:
     m_Bits: 8
   groundCheckDistance: 1
   hipHeight: 0.1
-  balancerWeightMoving: 1
   balancerBlendSpeed: 6
   grabRange: 0.3
   throwForce: 10
@@ -4264,6 +4247,7 @@ MonoBehaviour:
     leftSwingPrefab: {fileID: 120687793891089689}
     rightSwingPrefab: {fileID: 7023637903930321371}
     stepDustPrefab: {fileID: 4847408728246396773}
+  soundSet: {fileID: 11400000, guid: 2d5ef9a5d33217b4cbc0e9f91620da64, type: 2}
 --- !u!114 &5903537733122017025
 MonoBehaviour:
   m_ObjectHideFlags: 0

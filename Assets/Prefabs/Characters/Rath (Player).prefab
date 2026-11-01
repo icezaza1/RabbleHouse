@@ -1419,7 +1419,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4fbc7d1b1dc6404e84fe0c5ae9c69af, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.PhysicCharacterController
-  aiGrabHandReachDistance: 0.25
   leftHand: {fileID: 3493756989732882202}
   rightHand: {fileID: 5753110611535603872}
   leftUpperArm: {fileID: 7829295873346745536}
@@ -1433,28 +1432,6 @@ MonoBehaviour:
   heavyPunchCooldown: 3
   heavyTravelTime: 0.8
   heavyHoldTime: 0.1
-  leftHeavyProfile:
-    windUpUpper: {x: -40, y: 0, z: 0}
-    windUpLower: {x: 0, y: -60, z: 0}
-    punchUpper: {x: 0, y: 0, z: 90}
-    punchLower: {x: 30, y: -60, z: 0}
-  rightHeavyProfile:
-    windUpUpper: {x: -40, y: 0, z: 0}
-    windUpLower: {x: 0, y: 60, z: 0}
-    punchUpper: {x: 0, y: 0, z: -90}
-    punchLower: {x: 30, y: 60, z: 0}
-  HipHookRotation: 90
-  smallObjectSwingAngle: 90
-  leftArmProfile:
-    windUpUpper: {x: -60, y: 0, z: -60}
-    windUpLower: {x: 0, y: 0, z: 120}
-    punchUpper: {x: 0, y: -60, z: 90}
-    punchLower: {x: 0, y: 0, z: 0}
-  rightArmProfile:
-    windUpUpper: {x: -60, y: 0, z: 60}
-    windUpLower: {x: 0, y: 0, z: -120}
-    punchUpper: {x: 0, y: 60, z: -90}
-    punchLower: {x: 0, y: 0, z: 0}
   targetAnimator: {fileID: 4936072659245487132}
   grabAnchorPoint: {fileID: 1107581416876557496}
   moveSpeed: 1.5
@@ -1463,7 +1440,6 @@ MonoBehaviour:
     m_Bits: 8
   groundCheckDistance: 1
   hipHeight: 0.1
-  balancerWeightMoving: 1
   balancerBlendSpeed: 6
   grabRange: 0.3
   throwForce: 10
@@ -1480,6 +1456,7 @@ MonoBehaviour:
     leftSwingPrefab: {fileID: 2429189249140865257}
     rightSwingPrefab: {fileID: 4711340654815071275}
     stepDustPrefab: {fileID: 7160589982563205781}
+  soundSet: {fileID: 11400000, guid: 2d5ef9a5d33217b4cbc0e9f91620da64, type: 2}
 --- !u!114 &2640354395079180429
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3185,6 +3162,12 @@ MonoBehaviour:
   heldMass: 0.5
   hipRotationResistance: 10
   changeChildrenMass: 1
+  soundEffect:
+    impactSFX: {fileID: 0}
+    impactVolume: 1
+    destroyedSFX: {fileID: 0}
+    destroyedVolume: 1
+    sfxMixerGroup: {fileID: 0}
   swingDamage: 10
   swingStunChance: 0.3
   attackRangeBonus: 0

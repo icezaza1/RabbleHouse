@@ -328,7 +328,7 @@ namespace RabbleHouse
         {
             durablility -= amount;
             if (soundEffect.impactSFX != null && SoundManager.Instance != null)
-                SoundManager.Instance.PlaySound(soundEffect.impactSFX, transform, soundEffect.impactVolume, soundEffect.sfxMixerGroup);
+                SoundManager.Instance.PlaySound(soundEffect.impactSFX, transform, soundEffect.impactVolume, soundEffect.sfxMixerGroup, 1f);
 
             if (durablility < 0) durablility = 0;
 
@@ -340,7 +340,7 @@ namespace RabbleHouse
 
                 // Sound
                 if (soundEffect.destroyedSFX != null && SoundManager.Instance != null)
-                    SoundManager.Instance.PlaySound(soundEffect.destroyedSFX, transform, soundEffect.destroyedVolume, soundEffect.sfxMixerGroup);
+                    SoundManager.Instance.PlaySound(soundEffect.destroyedSFX, transform, soundEffect.destroyedVolume, soundEffect.sfxMixerGroup, 1f);
 
                 // Break effect
                 SpawnDestroyedObjects();

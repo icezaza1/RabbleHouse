@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1420339649705197292}
   - component: {fileID: 1626964977714926749}
+  - component: {fileID: 8592447775432425289}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -58,3 +59,19 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   defaultCharacter: {fileID: 11400000, guid: 79c7c2a5845d6e646862017ff53c7a75, type: 2}
+--- !u!114 &8592447775432425289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1457898018650850604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9367ce925b40e074fbd722d8cf1d1079, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SceneMusic
+  musics:
+  - {fileID: 8300000, guid: f92bef2b860f02a4ea9f6a4480afd4f0, type: 3}
+  - {fileID: 8300000, guid: 771983d920b9e8a4c969f2ecbc8a0278, type: 3}
+  mixerGroup: {fileID: -7371485706819781074, guid: e53eb03233e4c4b4eb796e93edeb9497, type: 2}

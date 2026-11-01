@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using TMPro;
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -25,6 +26,11 @@ public class EndScreenManager : MonoBehaviour
     [SerializeField] private float zoomDuration = 2f;
     [SerializeField] private float originFOV = 60f;
     [SerializeField] private float zoomFOV = 30f;
+
+    [Header("Sounds")]
+    [SerializeField] private AudioClip WinSound;
+    [SerializeField] private AudioClip LoseSound;
+    [SerializeField] private AudioMixerGroup mixerGroup;
 
     [Header("Game State")]
     [SerializeField] private string mainMenuSceneName = "Menu";
@@ -141,6 +147,7 @@ public class EndScreenManager : MonoBehaviour
     private void OnPlayerDied(int playerIndex)
     {
         if (gameEnded) return;
+        SoundManager.Instance.StopMusic();
         StartCoroutine(EndGameSequence(false));
     }
 
@@ -160,6 +167,7 @@ public class EndScreenManager : MonoBehaviour
 
         if (allAIDead)
         {
+            SoundManager.Instance.StopMusic();
             StartCoroutine(EndGameSequence(true));
         }
         else
@@ -297,6 +305,7 @@ public class EndScreenManager : MonoBehaviour
     {
         if (endPanel == null) return;
 
+        SoundManager.Instance.PlaySound(playerWon ? WinSound : LoseSound, transform, 1f, mixerGroup, 0f);
         endPanel.SetActive(true);
 
         // Update end message

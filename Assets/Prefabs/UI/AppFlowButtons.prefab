@@ -44,3 +44,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 20c32925bee2d9641a6db7e032c4612d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AppFlowButtons
+  onClickedSound: {fileID: 8300000, guid: 7082b8ce4ddfad849b992f5bb8e7770d, type: 3}
+  mixerGroup: {fileID: -577995385150194357, guid: e53eb03233e4c4b4eb796e93edeb9497, type: 2}

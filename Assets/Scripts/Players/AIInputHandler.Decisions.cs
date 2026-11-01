@@ -39,14 +39,7 @@ namespace RabbleHouse
             if (isHolding)
             {
                 // Armed vs armed/unarmed target — behavior selection extracted to helper below
-                bool targetIsArmed = targetPlayer != null && IsTargetArmed(targetPlayer);
                 float bonusRange = attackRange + (controller.HeldObject?.AIRangeBonus ?? 0f);
-                if (targetIsArmed)
-                {
-                    // ---- ARMED AI vs ARMED TARGET ----
-                    currentBehavior = AIBehavior.Attack; // HandleArmedCombat decides sub-behavior
-                    return;
-                }
 
                 // Ranged weapons and melee objects can use their own physical/effective attack range.
                 bool targetInRange = IsCurrentAttackTypeRanged() ? distToTarget <= GetEffectiveAttackRange(targetPlayer) : IsTargetInMeleeRange(targetPlayer);
@@ -64,14 +57,6 @@ namespace RabbleHouse
             {
                 // Reset object grab time when not holding
                 objectGrabTime = -1f;
-
-                bool targetIsArmed = targetPlayer != null && IsTargetArmed(targetPlayer);
-                if (targetIsArmed && currentBehavior != AIBehavior.Grab) // If not heading for targeted object, go for unarmed combat state
-                {
-                    // ---- UNARMED AI vs ARMED TARGET ----
-                    currentBehavior = AIBehavior.Attack; // HandleUnarmedCombat decides sub-behavior
-                    return;
-                }
 
                 // ---- UNARMED AI vs UNARMED TARGET ----
                 if (nearestGrabbableStatic != null && distToTarget > 1.5f)
@@ -103,7 +88,6 @@ namespace RabbleHouse
                     if (targetPlayer != null)
                     {
                         float distToTarget = Vector3.Distance(coreRb.position, targetPlayer.position);
-                        bool targetIsArmed = IsTargetArmed(targetPlayer);
 
                         if (distToTarget > 0.5f)
                             SprintPressed = true;
@@ -171,8 +155,6 @@ namespace RabbleHouse
                     GrabbableObject retreatTarget = FindRetreatGrabbable(threat);
                     if (threat != null)
                     {
-                        bool targetIsArmed = IsTargetArmed(threat);
-
                         // Chance to seek a random object while retreating
                         if (Random.value < retreatGrabChance && !controller.IsHoldingObject)
                         {

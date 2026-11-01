@@ -159,6 +159,13 @@ MonoBehaviour:
   durablility: 5
   heldMass: 0.1
   hipRotationResistance: 10
+  changeChildrenMass: 0
+  soundEffect:
+    impactSFX: {fileID: 0}
+    impactVolume: 1
+    destroyedSFX: {fileID: 8300000, guid: ceaa704607dc4054c8c96669c827fd4f, type: 3}
+    destroyedVolume: 1
+    sfxMixerGroup: {fileID: -577995385150194357, guid: e53eb03233e4c4b4eb796e93edeb9497, type: 2}
   swingDamage: 10
   swingStunChance: 0.5
   attackRangeBonus: 0.3
@@ -167,3 +174,6 @@ MonoBehaviour:
   throwStunChance: 0.8
   throwMinSpeed: 3
   knockbackForce: 125
+  spawnOnDestroy:
+  - {fileID: 8758560513174087879, guid: 7a17e513d19fcd44fb9287a8182f68dc, type: 3}
+  spawnPoint: {fileID: 1230901220661536725}

@@ -1,7 +1,16 @@
 using UnityEngine;
+using UnityEngine.Audio;
 
 public class AppFlowButtons : MonoBehaviour
 {
+    [SerializeField] private AudioClip onClickedSound;
+    [SerializeField] private AudioMixerGroup mixerGroup;
+
+    public void PlayClickSound()
+    {
+        if (onClickedSound != null && mixerGroup != null)
+            SoundManager.Instance.PlaySound(onClickedSound, transform, 1f, mixerGroup, 0f);
+    }
     public void LoadScene(string sceneName)
     {
         SceneTransitionManager.Instance.LoadScene(sceneName);

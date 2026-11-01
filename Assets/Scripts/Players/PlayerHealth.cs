@@ -76,11 +76,14 @@ namespace RabbleHouse
         ///                  Defaults to 1 (always applies).
         /// forceDirection — used by Knockdown to launch the target.
         /// </summary>
-        public void TakeDamage(int damage, Vector3 forceDirection, HitType hitType, float effectChance = 1f, int attackerIndex = -1)
+        public void TakeDamage(int damage, Vector3 forceDirection, HitType hitType, float effectChance = 1f, int attackerIndex = -1, bool playSound = true)
         {
             if (isDead) return;
 
             currentHealth = Mathf.Max(0, currentHealth - damage);
+            if (playSound)
+                controller.PlayHitSound();
+
             OnHealthChanged?.Invoke(PlayerIndex, currentHealth);
             OnTakeDamage?.Invoke(PlayerIndex);
 
@@ -122,7 +125,6 @@ namespace RabbleHouse
 
         private void Die()
         {
-            Debug.Log("die");
             isDead = true;
             OnDeath?.Invoke(PlayerIndex);
             if (controller != null)

@@ -77,6 +77,9 @@ namespace RabbleHouse
             ForceDropObject();
             ragdollMaster.EnableFullRagdoll();
 
+            // Sound
+            PlayCharacterSound(soundSet != null ? soundSet.death : null);
+
             //Turn off the particle if dead
             var stepDust = vfxs?.stepDustPrefab;
             if (stepDust != null && stepDust.TryGetComponent<ParticleSystem>(out var ps))

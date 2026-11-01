@@ -4486,6 +4486,12 @@ MonoBehaviour:
   heldMass: 0.3
   hipRotationResistance: 10
   changeChildrenMass: 1
+  soundEffect:
+    impactSFX: {fileID: 0}
+    impactVolume: 1
+    destroyedSFX: {fileID: 0}
+    destroyedVolume: 1
+    sfxMixerGroup: {fileID: 0}
   swingDamage: 10
   swingStunChance: 1
   attackRangeBonus: 0
@@ -4964,28 +4970,6 @@ MonoBehaviour:
   heavyPunchCooldown: 3
   heavyTravelTime: 0.8
   heavyHoldTime: 0.1
-  leftHeavyProfile:
-    windUpUpper: {x: -40, y: 0, z: 0}
-    windUpLower: {x: 0, y: -60, z: 0}
-    punchUpper: {x: 0, y: 0, z: 90}
-    punchLower: {x: 30, y: -60, z: 0}
-  rightHeavyProfile:
-    windUpUpper: {x: -40, y: 0, z: 0}
-    windUpLower: {x: 0, y: 60, z: 0}
-    punchUpper: {x: 0, y: 0, z: -90}
-    punchLower: {x: 30, y: 60, z: 0}
-  HipHookRotation: 90
-  smallObjectSwingAngle: 90
-  leftArmProfile:
-    windUpUpper: {x: -60, y: 0, z: -60}
-    windUpLower: {x: 0, y: 0, z: 120}
-    punchUpper: {x: 0, y: -60, z: 90}
-    punchLower: {x: 0, y: 0, z: 0}
-  rightArmProfile:
-    windUpUpper: {x: -60, y: 0, z: 60}
-    windUpLower: {x: 0, y: 0, z: -120}
-    punchUpper: {x: 0, y: 60, z: -90}
-    punchLower: {x: 0, y: 0, z: 0}
   targetAnimator: {fileID: 872801002291144339}
   grabAnchorPoint: {fileID: 7965873519905110664}
   moveSpeed: 1.5
@@ -4994,7 +4978,6 @@ MonoBehaviour:
     m_Bits: 8
   groundCheckDistance: 1
   hipHeight: 0.1
-  balancerWeightMoving: 1
   balancerBlendSpeed: 6
   grabRange: 0.3
   throwForce: 10
@@ -5011,6 +4994,7 @@ MonoBehaviour:
     leftSwingPrefab: {fileID: 2236566187120485659}
     rightSwingPrefab: {fileID: 760515612771313362}
     stepDustPrefab: {fileID: 9083293835613778154}
+  soundSet: {fileID: 11400000, guid: 2d5ef9a5d33217b4cbc0e9f91620da64, type: 2}
 --- !u!114 &3997579678248024621
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5038,7 +5022,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.AIInputHandler
   chaseRange: 5
-  grabRange: 3
   grabSearchRadius: 5
   obstacleMask:
     serializedVersion: 2

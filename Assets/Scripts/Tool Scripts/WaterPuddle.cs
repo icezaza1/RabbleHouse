@@ -1,9 +1,8 @@
 using RabbleHouse;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.TextCore.Text;
+using UnityEngine.Audio;
 
 public class WaterPuddle : MonoBehaviour
 {
@@ -13,6 +12,8 @@ public class WaterPuddle : MonoBehaviour
     [SerializeField] private float raycastDistance = 10f;
 
     [SerializeField] private float lifetime = 10f;
+    [SerializeField] private AudioClip tripSound;
+    [SerializeField] private AudioMixerGroup tripSfxGroup;
     private readonly HashSet<PlayerHealth> characters = new HashSet<PlayerHealth>();
 
     private void Start()
@@ -35,8 +36,14 @@ public class WaterPuddle : MonoBehaviour
 
         characters.Add(targetHealth);
 
-        // Trip character
-        targetHealth.TakeDamage(0, Vector3.zero, HitType.Stun, 0.3f);
+        // Play the trip sound only when this puddle actually causes a new stun.
+        bool wasStunned = targetHealth.IsStunned;
+        targetHealth.TakeDamage(0, Vector3.zero, HitType.Stun, 0.3f, playSound: false);
+        if (!wasStunned && targetHealth.IsStunned && tripSound != null &&
+            tripSfxGroup != null && SoundManager.Instance != null)
+        {
+            SoundManager.Instance.PlaySound(tripSound, targetHealth.transform, 1f, tripSfxGroup);
+        }
     }
 
     private void OnTriggerExit(Collider other)

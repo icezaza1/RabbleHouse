@@ -15,7 +15,7 @@ MonoBehaviour:
   AudioMixer: {fileID: 24100000, guid: e53eb03233e4c4b4eb796e93edeb9497, type: 2}
   MasterVolumeName: MasterVolume
   MasterVolume: 0
-  BGMVolumeName: BGMVolume
-  BGMVolume: 0
+  BGMVolumeName: MusicVolume
+  BGMVolume: -80
   SFXVolumeName: SFXVolume
-  SFXVolume: 0
+  SFXVolume: -40.138954

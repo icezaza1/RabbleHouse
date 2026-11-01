@@ -132,3 +132,5 @@ MonoBehaviour:
   raycastHeight: 2
   raycastDistance: 10
   lifetime: 15
+  tripSound: {fileID: 8300000, guid: d42e5ab3f7c10a244b6aa965c794af0c, type: 3}
+  tripSfxGroup: {fileID: -577995385150194357, guid: e53eb03233e4c4b4eb796e93edeb9497, type: 2}

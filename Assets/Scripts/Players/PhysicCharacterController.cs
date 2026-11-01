@@ -1,7 +1,8 @@
-using UnityEngine;
-using UnityEngine.InputSystem;
 using System.Collections;
+using UnityEngine;
 using UnityEngine.Animations.Rigging;
+using UnityEngine.Audio;
+using UnityEngine.InputSystem;
 
 namespace RabbleHouse
 {
@@ -198,6 +199,20 @@ namespace RabbleHouse
 
         [Header("Particles/VFXs")]
         [SerializeField] private VFXs vfxs;
+
+        [Header("Sounds")]
+        [SerializeField] private CharacterSoundSet soundSet;
+
+        public void PlayCharacterSound(AudioClip clip)
+        {
+            if (clip != null && SoundManager.Instance != null)
+                SoundManager.Instance.PlaySound(clip, coreRigidbody.transform, soundSet.volume, soundSet.sfxMixerGroup);
+        }
+
+        public void PlayHitSound()
+        {
+            PlayCharacterSound(soundSet != null ? soundSet.hit : null);
+        }
 
         // --- LIFECYCLE ---
         private void Awake()

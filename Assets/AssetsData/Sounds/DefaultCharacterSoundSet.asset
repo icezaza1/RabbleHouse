@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 071d100253070894d93cbac69fbf3f8f, type: 3}
+  m_Name: DefaultCharacterSoundSet
+  m_EditorClassIdentifier: Assembly-CSharp::CharacterSoundSet
+  swing: {fileID: 8300000, guid: 1ed745901807c484fa065b286d277b85, type: 3}
+  hit: {fileID: 8300000, guid: c841b024720799e47bbdd9e0bbf3b1b3, type: 3}
+  death: {fileID: 8300000, guid: 2ce1d5d4d7908cd4db9d93ecd50389b3, type: 3}
+  volume: 1

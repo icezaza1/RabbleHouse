@@ -173,6 +173,7 @@ namespace RabbleHouse
             elapsed = 0f;
             total = swingTarget;
             bool swingHitDone = false;
+            PlayCharacterSound(soundSet != null ? soundSet.swing : null);
             while (elapsed < total)
             {
                 elapsed += Time.fixedDeltaTime;
@@ -242,6 +243,7 @@ namespace RabbleHouse
 
         private void StartLightPunch()
         {
+            PlayCharacterSound(soundSet != null ? soundSet.swing : null);
             // Determine which arm is about to punch based on toggle direction
             bool isLeft = !lightPunchDirection;
             // Mark that arm as punching
@@ -475,6 +477,7 @@ namespace RabbleHouse
             // Phase 2: Hip hooks to opposite side, arm stays extended (hold) — THIS IS IMPACT
             elapsed = 0f;
             bool heavyHitDone = false;
+            PlayCharacterSound(soundSet != null ? soundSet.swing : null);
             while (elapsed < heavyHoldTime)
             {
                 elapsed += Time.fixedDeltaTime;

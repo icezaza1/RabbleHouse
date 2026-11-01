@@ -472,6 +472,18 @@ MonoBehaviour:
           m_StringArgument: MenuBackground
           m_BoolArgument: 0
         m_CallState: 2
+      - m_Target: {fileID: 419962208}
+        m_TargetAssemblyTypeName: AppFlowButtons, Assembly-CSharp
+        m_MethodName: PlayClickSound
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &164978837
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1056,10 +1068,6 @@ PrefabInstance:
     - target: {fileID: 4711340654815071275, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
       propertyPath: m_IsActive
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5490856229435497530, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
-      propertyPath: balancerWeightMoving
-      value: 0.2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -5777,10 +5785,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 1913982113533714742, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: SFXObject
-      value: 
-      objectReference: {fileID: 1156667335469419810, guid: 80df311a878cda24e86a1a93bf2cf4d9, type: 3}
     - target: {fileID: 4265317158944148636, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
       propertyPath: m_Name
       value: SoundManager
