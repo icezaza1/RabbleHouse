@@ -16,3 +16,4 @@ MonoBehaviour:
   hit: {fileID: 8300000, guid: c841b024720799e47bbdd9e0bbf3b1b3, type: 3}
   death: {fileID: 8300000, guid: 2ce1d5d4d7908cd4db9d93ecd50389b3, type: 3}
   volume: 1
+  sfxMixerGroup: {fileID: -577995385150194357, guid: e53eb03233e4c4b4eb796e93edeb9497, type: 2}
