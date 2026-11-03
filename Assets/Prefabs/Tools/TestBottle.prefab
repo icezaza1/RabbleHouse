@@ -47,7 +47,7 @@ GameObject:
   - component: {fileID: 590122048294063389}
   - component: {fileID: 8475767359022814962}
   m_Layer: 6
-  m_Name: Bottle
+  m_Name: TestBottle
   m_TagString: Objects
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -190,9 +190,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RabbleHouse.GrabbableObject
   grabbableType: 2
   gripPoint: {fileID: 8486534312563421682}
+  secondaryGripPoint: {fileID: 0}
   durablility: 1
   heldMass: 0.1
   hipRotationResistance: 10
+  changeChildrenMass: 0
+  soundEffect:
+    impactSFX: {fileID: 0}
+    impactVolume: 1
+    destroyedSFX: {fileID: 0}
+    destroyedVolume: 1
+    sfxMixerGroup: {fileID: 0}
   swingDamage: 10
   swingStunChance: 1
   attackRangeBonus: 0.4
@@ -201,6 +209,8 @@ MonoBehaviour:
   throwStunChance: 1
   throwMinSpeed: 3
   knockbackForce: -1
+  spawnOnDestroy: []
+  spawnPoint: {fileID: 0}
 --- !u!114 &8475767359022814962
 MonoBehaviour:
   m_ObjectHideFlags: 0

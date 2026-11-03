@@ -38,7 +38,7 @@ public class WaterPuddle : MonoBehaviour
 
         // Play the trip sound only when this puddle actually causes a new stun.
         bool wasStunned = targetHealth.IsStunned;
-        targetHealth.TakeDamage(0, Vector3.zero, HitType.Stun, 0.3f, playSound: false);
+        targetHealth.TakeDamage(0, Vector3.zero, HitType.Stun, 0.15f, playSound: false);
         if (!wasStunned && targetHealth.IsStunned && tripSound != null &&
             tripSfxGroup != null && SoundManager.Instance != null)
         {
