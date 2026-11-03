@@ -16,6 +16,6 @@ MonoBehaviour:
   MasterVolumeName: MasterVolume
   MasterVolume: 0
   BGMVolumeName: MusicVolume
-  BGMVolume: -80
+  BGMVolume: 0
   SFXVolumeName: SFXVolume
-  SFXVolume: -40.138954
+  SFXVolume: 0

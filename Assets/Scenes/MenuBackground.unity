@@ -446,6 +446,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MenuManager
   MenuName: Menu
+  m_SoundSettings: {fileID: 11400000, guid: 419550a1b41a6a947907a6cada5ed562, type: 2}
 --- !u!114 &599269284
 MonoBehaviour:
   m_ObjectHideFlags: 0

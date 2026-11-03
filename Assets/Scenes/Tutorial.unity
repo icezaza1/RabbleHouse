@@ -1015,7 +1015,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2602148589105405054, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 23
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2602148589105405054, guid: ae34d44c0b2759747910c8420c7978b8, type: 3}
       propertyPath: m_LocalPosition.y
@@ -1673,7 +1673,7 @@ Transform:
   m_GameObject: {fileID: 709065217}
   serializedVersion: 2
   m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 23, y: 5.023465, z: -4.503684}
+  m_LocalPosition: {x: -0.000000003513453, y: 5.023465, z: -4.503684}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2778,63 +2778,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 971784707}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1001 &1042478858
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 6301839393189846013, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_Name
-      value: Pot
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 27.744156
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0.35272837
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0.1919978
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071067
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7142572565929818214, guid: 4031f8481830145429e52aea5dabd857, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 4031f8481830145429e52aea5dabd857, type: 3}
 --- !u!1001 &1047641562
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2943,8 +2886,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0ab13adfc54eb84f96c8df9ba2b8855, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialDialogue
-  dialogueText: '- Right Click to do heavy punch which has a small chance to stun
-    target on hit. However, this move have long cooldown'
+  dialogueText: Right Click to do a heavy punch
   uiDialogueTextField: {fileID: 1230841795}
 --- !u!65 &1098271044
 BoxCollider:
@@ -3136,18 +3078,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0ab13adfc54eb84f96c8df9ba2b8855, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialDialogue
-  dialogueText: 'Press "Q" near an object to grab it
+  dialogueText: 'Press Q to grab an object
 
-    - Left click to swing an
-    object, but you have to wait a while to swing it again so time it carefully.
-    Note that some objects have a different functionalities.
+    - Left Click to attack
 
-    - Right click to
-    throw an object which can hit the target from a distance.
+    - Right
+    Click to throw
 
-    - Some objects
-    are very big which can slow your character rotation, as well as unable to throw
-    it.'
+    - Some objects are too large and cannot be thrown'
   uiDialogueTextField: {fileID: 1230841795}
 --- !u!65 &1162147847
 BoxCollider:
@@ -3641,7 +3579,7 @@ Transform:
   m_GameObject: {fileID: 1340113033}
   serializedVersion: 2
   m_LocalRotation: {x: 0.38268343, y: 0, z: 0, w: 0.92387956}
-  m_LocalPosition: {x: 23, y: 5.023465, z: -4.503684}
+  m_LocalPosition: {x: -0.000000003513453, y: 5.023465, z: -4.503684}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5646,8 +5584,20 @@ PrefabInstance:
       value: 60
       objectReference: {fileID: 0}
     - target: {fileID: 7946247371952453081, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: obstacleCheckRadius
+      value: 0.15
+      objectReference: {fileID: 0}
+    - target: {fileID: 7946247371952453081, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: grabbableMask.m_Bits
       value: 64
+      objectReference: {fileID: 0}
+    - target: {fileID: 7946247371952453081, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: obstacleCheckDistance
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 7946247371952453081, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
+      propertyPath: rangedWeaponThreshold
+      value: 2.5
       objectReference: {fileID: 0}
     - target: {fileID: 8840718257727851571, guid: 9655464db26549748be1298ec4cb66d5, type: 3}
       propertyPath: m_LocalPosition.x
@@ -5745,8 +5695,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a0ab13adfc54eb84f96c8df9ba2b8855, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TutorialDialogue
-  dialogueText: '- Left Click to do light punch which deal small damage, but no cooldown
-    so you can deal rapid amount of damages in a quick succession'
+  dialogueText: Left Click to punch
   uiDialogueTextField: {fileID: 1230841795}
 --- !u!65 &2121690871
 BoxCollider:
@@ -5777,63 +5726,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2121690868}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1001 &4070271451519915449
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: 4265317158944148636, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_Name
-      value: SoundManager
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 6705007586910196005, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: b33a4d6e01b9e4141a46d34c40b539a4, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
@@ -5850,5 +5742,3 @@ SceneRoots:
   - {fileID: 1557176071}
   - {fileID: 483889983}
   - {fileID: 419962207}
-  - {fileID: 1042478858}
-  - {fileID: 4070271451519915449}

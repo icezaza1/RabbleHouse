@@ -198,6 +198,12 @@ MonoBehaviour:
   heldMass: 0.1
   hipRotationResistance: 0
   changeChildrenMass: 0
+  soundEffect:
+    impactSFX: {fileID: 0}
+    impactVolume: 1
+    destroyedSFX: {fileID: 8300000, guid: c73985024d6b76441b7e35b315abdff7, type: 3}
+    destroyedVolume: 1
+    sfxMixerGroup: {fileID: -577995385150194357, guid: e53eb03233e4c4b4eb796e93edeb9497, type: 2}
   swingDamage: 10
   swingStunChance: 0.75
   attackRangeBonus: 0.4
