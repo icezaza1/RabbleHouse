@@ -398,6 +398,17 @@ namespace RabbleHouse
         {
             if (heldObject == null) return;
 
+            // Contact-held objects use separate joints from the legacy grab
+            // path, so release both hand connections before applying throw velocity.
+            if (playerContactHeldObject == heldObject)
+            {
+                ReleasePlayerContactJoint(ref playerLeftContactJoint);
+                ReleasePlayerContactJoint(ref playerRightContactJoint);
+                playerContactHeldObject = null;
+                leftArmToggle = false;
+                rightArmToggle = false;
+            }
+
             // Tell the object who threw it (for self-damage prevention)
             heldObject.SetThrower(this);
 

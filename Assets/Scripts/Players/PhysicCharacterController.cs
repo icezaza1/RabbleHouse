@@ -78,10 +78,18 @@ namespace RabbleHouse
 
         // --- INPUT ---
         private Vector2 moveInput;
+        private bool leftArmPressed;
+        private bool rightArmPressed;
         private bool grabPressed;
         private bool lightAttackPressed;
         private bool heavyAttackPressed;
         private bool sprintPressed;
+        // Experimental contact joints are independent of the legacy grab state.
+        private bool leftArmToggle;
+        private bool rightArmToggle;
+        private Joint playerLeftContactJoint;
+        private Joint playerRightContactJoint;
+        private GrabbableObject playerContactHeldObject;
 
         // --- GRAB TYPES ---
         private GrabbableType heldGrabbableType = GrabbableType.SmallObject;
@@ -269,16 +277,16 @@ namespace RabbleHouse
 
         private void LateUpdate()
         {
-            // Dead characters do nothing — no movement, no attacks
-            if (currentState == CharacterState.Dead)
+            // Dead and stunned characters do not process arm poses or attacks.
+            if (currentState == CharacterState.Dead || currentState == CharacterState.Ragdoll)
                 return;
 
-            // While holding an object, override both hand joints' targetRotation
-            // so the arms raise.  LateUpdate runs after FixedUpdate, so our
-            // value wins over ActiveRagdollBone's per-frame write.
             if (heldObject != null && !isHeavyPunching)
             {
-                RaiseArmsForHeld();
+                if (aiInputHandler != null)
+                    AIRaiseArmsForHeld();
+                else
+                    ApplyToolHoldPose();
             }
 
             // Handle light attack (punch or swing depending on held object)
@@ -296,15 +304,33 @@ namespace RabbleHouse
             if (currentState == CharacterState.Dead)
                 return;
 
+            // Stun/knockdown should block controls, while cooldowns continue
+            // counting down during the recovery period.
+            HandlePunchCooldown();
+            if (currentState == CharacterState.Ragdoll)
+                return;
+
             ReadInput();
             CheckGrounded();
             UpdateState();
-            HandlePunchCooldown();
             CheckLightPunchWindowExpiry();
         }
 
         private void FixedUpdate()
         {
+            if (aiInputHandler == null && leftArmToggle)
+                TryCreatePlayerContactJoint(leftHandRb, ref playerLeftContactJoint);
+            else if (aiInputHandler == null && !leftArmToggle)
+                ReleasePlayerContactJoint(ref playerLeftContactJoint);
+
+            if (aiInputHandler == null && rightArmToggle)
+                TryCreatePlayerContactJoint(rightHandRb, ref playerRightContactJoint);
+            else if (aiInputHandler == null && !rightArmToggle)
+                ReleasePlayerContactJoint(ref playerRightContactJoint);
+
+            if (aiInputHandler == null)
+                UpdatePlayerContactHeldObject();
+
             switch (currentState)
             {
                 case CharacterState.Idle:
@@ -351,19 +377,49 @@ namespace RabbleHouse
             else if (inputHandler != null)
             {
                 moveInput = inputHandler.MoveInput;
-                grabPressed = inputHandler.GrabPressed;
+                leftArmPressed = inputHandler.LeftArmPressed;
+                rightArmPressed = inputHandler.RightArmPressed;
+                //grabPressed = inputHandler.GrabPressed;
                 lightAttackPressed = inputHandler.LightAttackPressed;
                 heavyAttackPressed = inputHandler.HeavyAttackPressed;
                 sprintPressed = inputHandler.SprintPressed;
             }
 
-            // Toggle grab: press to grab, press again to drop.
+            // AI retains its existing pickup toggle. Player Grab toggles the
+            // experimental arm reach/contact-joint mode while preserving the
+            // legacy pickup methods for future comparison.
             if (grabPressed)
             {
-                if (heldObject == null)
-                    TryGrabObject();
+                if (aiInputHandler != null)
+                {
+                    if (heldObject == null)
+                        TryGrabObject();
+                    else
+                        ReleaseObject();
+                }
                 else
                     ReleaseObject();
+            }
+
+            if (heldObject == null || playerContactHeldObject != null)
+            {
+                if (leftArmPressed)
+                {
+                    leftArmToggle = !leftArmToggle;
+                    if (leftArmToggle)
+                        RaiseArm(true);
+                    else
+                        ResetArm(true);
+                }
+
+                if (rightArmPressed)
+                {
+                    rightArmToggle = !rightArmToggle;
+                    if (rightArmToggle)
+                        RaiseArm(false);
+                    else
+                        ResetArm(false);
+                }
             }
         }
 
