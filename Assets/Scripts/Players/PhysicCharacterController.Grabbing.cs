@@ -55,16 +55,28 @@ namespace RabbleHouse
             if (isTool && isPrimaryToolHand && closest.gripPoint != null)
             {
                 Transform toolTransform = closest.transform;
-                Quaternion gripRotationInToolSpace = Quaternion.Inverse(toolTransform.rotation) *
-                    closest.gripPoint.rotation;
-                Vector3 gripPositionInToolSpace =
-                    toolTransform.InverseTransformPoint(closest.gripPoint.position);
+                Transform handGripPoint = isPrimaryToolHand ? closest.gripPoint : closest.secondaryGripPoint;
 
-                Quaternion toolRotation = handBody.rotation * Quaternion.Inverse(gripRotationInToolSpace);
-                Vector3 toolPosition = handBody.position - toolRotation * gripPositionInToolSpace;
-                toolTransform.rotation = toolRotation;
-                toolTransform.position = toolPosition;
-                Physics.SyncTransforms();
+                if (handGripPoint != null)
+                {
+                    // Figure out the spatial offset between the tool root and its own grip point
+                    Quaternion gripRotationInToolSpace = Quaternion.Inverse(toolTransform.rotation) * handGripPoint.rotation;
+                    Vector3 gripPositionInToolSpace = toolTransform.InverseTransformPoint(handGripPoint.position);
+
+                    // Match the tool perfectly to the current hand orientation
+                    Quaternion toolRotation = handBody.rotation * Quaternion.Inverse(gripRotationInToolSpace);
+                    Vector3 toolPosition = handBody.position - toolRotation * gripPositionInToolSpace;
+
+                    toolTransform.rotation = toolRotation;
+                    toolTransform.position = toolPosition;
+
+                    // Kill momentum completely so the joint doesn't inherit dirty physics data
+                    closest.Rigidbody.linearVelocity = Vector3.zero;
+                    closest.Rigidbody.angularVelocity = Vector3.zero;
+
+                    // Forces Unity to update the physics engine matrices immediately before the joint attaches
+                    Physics.SyncTransforms();
+                }
             }
 
             // Create ConfigurableJoint on the hand after any tool alignment.
@@ -85,18 +97,18 @@ namespace RabbleHouse
                 {
                     grabJoint.autoConfigureConnectedAnchor = true;
                 }
-                grabJoint.xMotion = ConfigurableJointMotion.Locked;
-                grabJoint.yMotion = ConfigurableJointMotion.Locked;
-                grabJoint.zMotion = ConfigurableJointMotion.Locked;
-                grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
-                grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
-                grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
+                grabJoint.xMotion = ConfigurableJointMotion.Limited;
+                grabJoint.yMotion = ConfigurableJointMotion.Limited;
+                grabJoint.zMotion = ConfigurableJointMotion.Limited;
+                grabJoint.angularXMotion = ConfigurableJointMotion.Limited;
+                grabJoint.angularYMotion = ConfigurableJointMotion.Limited;
+                grabJoint.angularZMotion = ConfigurableJointMotion.Limited;
+
                 grabJoint.breakForce = 1500f;
                 grabJoint.breakTorque = 1500f;
                 grabJoint.enablePreprocessing = false;
-                Collider objectCollider = closest.GetComponent<Collider>();
-                if (objectCollider != null)
-                    Physics.IgnoreCollision(handCollider, objectCollider, true);
+
+                IgnoreEntireCharacter(closest.gameObject, true);
             }
             else
             {
@@ -134,11 +146,23 @@ namespace RabbleHouse
 
         private void ReleasePlayerContactJoint(ref Joint contactJoint)
         {
+            GrabbableObject releasedObject = GetContactJointTarget(contactJoint);
+            bool wasToolJoint = releasedObject != null &&
+                releasedObject.grabbableType == GrabbableType.Tool &&
+                releasedObject.GetComponent<ToolBehaviour>() != null;
+
             if (contactJoint != null)
             {
                 Destroy(contactJoint);
             }
             contactJoint = null;
+
+            if (wasToolJoint &&
+                GetContactJointTarget(playerLeftContactJoint) != releasedObject &&
+                GetContactJointTarget(playerRightContactJoint) != releasedObject)
+            {
+                IgnoreEntireCharacter(releasedObject.gameObject, false);
+            }
         }
 
         private void UpdatePlayerContactHeldObject()
@@ -189,6 +213,24 @@ namespace RabbleHouse
             return contactJoint != null && contactJoint.connectedBody != null
                 ? contactJoint.connectedBody.GetComponentInParent<GrabbableObject>()
                 : null;
+        }
+
+        // Helper method to completely decouple the weapon from colliding with the user
+        private void IgnoreEntireCharacter(GameObject toolObj, bool ignore)
+        {
+            Collider[] playerColliders = transform.root.GetComponentsInChildren<Collider>();
+            Collider[] toolColliders = toolObj.GetComponentsInChildren<Collider>();
+
+            foreach (var pCol in playerColliders)
+            {
+                foreach (var tCol in toolColliders)
+                {
+                    if (pCol != null && tCol != null)
+                    {
+                        Physics.IgnoreCollision(pCol, tCol, ignore);
+                    }
+                }
+            }
         }
 
         private float aiGrabHandReachDistance = 0.25f;
