@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Drawing;
 using UnityEngine;
+using static Unity.Cinemachine.CinemachineSplineRoll;
 
 namespace RabbleHouse
 {
@@ -48,14 +49,13 @@ namespace RabbleHouse
             // heldObject is assigned only after both contact joints are evaluated.
             ToolBehaviour candidateTool = closest.GetComponent<ToolBehaviour>();
             bool isTool = closest.grabbableType == GrabbableType.Tool && candidateTool != null;
-            bool isPrimaryToolHand = handBody == rightHandRb;
-            if (isTool && !isPrimaryToolHand && candidateTool.OneHanded)
-                return;
+            bool isLeftHand = handBody == leftHandRb;
+            bool usesPrimaryGrip = !isLeftHand || candidateTool == null || candidateTool.OneHanded;
 
-            if (isTool && isPrimaryToolHand && closest.gripPoint != null)
+            if (isTool && usesPrimaryGrip && closest.gripPoint != null)
             {
                 Transform toolTransform = closest.transform;
-                Transform handGripPoint = isPrimaryToolHand ? closest.gripPoint : closest.secondaryGripPoint;
+                Transform handGripPoint = usesPrimaryGrip ? closest.gripPoint : closest.secondaryGripPoint;
 
                 if (handGripPoint != null)
                 {
@@ -65,6 +65,8 @@ namespace RabbleHouse
 
                     // Match the tool perfectly to the current hand orientation
                     Quaternion toolRotation = handBody.rotation * Quaternion.Inverse(gripRotationInToolSpace);
+                    if (isLeftHand)
+                        toolRotation *= Quaternion.Euler(candidateTool.Data.leftHandRotationOffset);
                     Vector3 toolPosition = handBody.position - toolRotation * gripPositionInToolSpace;
 
                     toolTransform.rotation = toolRotation;
@@ -85,7 +87,7 @@ namespace RabbleHouse
             {
                 grabJoint.connectedBody = closest.Rigidbody;
                 grabJoint.anchor = Vector3.zero;
-                Transform handGripPoint = isPrimaryToolHand
+                Transform handGripPoint = usesPrimaryGrip
                     ? closest.gripPoint
                     : closest.secondaryGripPoint;
                 if (handGripPoint != null)
@@ -172,8 +174,13 @@ namespace RabbleHouse
             ToolBehaviour rightHandTool = rightTarget != null
                 ? rightTarget.GetComponent<ToolBehaviour>()
                 : null;
+            ToolBehaviour leftHandTool = leftTarget != null
+                ? leftTarget.GetComponent<ToolBehaviour>()
+                : null;
             GrabbableObject contactTarget = rightHandTool != null && rightHandTool.OneHanded
                 ? rightTarget
+                : leftHandTool != null && leftHandTool.OneHanded
+                    ? leftTarget
                 : leftTarget != null && leftTarget == rightTarget
                     ? leftTarget
                     : null;
@@ -189,6 +196,7 @@ namespace RabbleHouse
                 {
                     activeTool.OnToolReleased();
                     activeTool = null;
+                    activeToolIsLeftHanded = false;
                 }
                 playerContactHeldObject.ReleaseByPlayer();
                 heldObject = null;
@@ -203,6 +211,7 @@ namespace RabbleHouse
             heldObject = contactTarget;
             contactTarget.GrabByPlayer(this);
             activeTool = contactTarget.GetComponent<ToolBehaviour>();
+            activeToolIsLeftHanded = leftTarget == contactTarget && rightTarget != contactTarget;
             if (activeTool != null)
                 activeTool.OnToolGrabbed(this);
             heldGrabbableType = contactTarget.grabbableType;
@@ -248,8 +257,10 @@ namespace RabbleHouse
 
             if (candidate.grabbableType == GrabbableType.Tool)
             {
-                // The right hand is the primary grip for tools.
-                return IsHandWithinGrabReach(rightHandRb, candidate);
+                ToolBehaviour tool = candidate.GetComponent<ToolBehaviour>();
+                return tool != null && tool.OneHanded
+                    ? IsHandWithinGrabReach(leftHandRb, candidate) || IsHandWithinGrabReach(rightHandRb, candidate)
+                    : IsHandWithinGrabReach(rightHandRb, candidate);
             }
 
             // Let either hand initiate a natural pickup; only reachable hands
@@ -383,10 +394,17 @@ namespace RabbleHouse
                     // Cache tool behavior
                     activeTool = closest.GetComponent<ToolBehaviour>();
 
-                    // Right hand is always the primary hand.
-                    rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+                    bool useLeftHand = activeTool != null && activeTool.OneHanded &&
+                        IsHandWithinGrabReach(leftHandRb, closest) &&
+                        (aiInputHandler == null || !IsHandWithinGrabReach(rightHandRb, closest));
+                    activeToolIsLeftHanded = useLeftHand;
 
-                    // Two-handed tools also attach the left hand.
+                    if (useLeftHand)
+                        leftHandJoint = SetupGrabJoint(leftHandRb, closest, true);
+                    else
+                        rightHandJoint = SetupGrabJoint(rightHandRb, closest, false);
+
+                    // Two-handed tools also attach the other hand.
                     if (activeTool != null && !activeTool.OneHanded &&
                         (aiInputHandler == null || IsHandWithinGrabReach(leftHandRb, closest)))
                     {
@@ -499,8 +517,10 @@ namespace RabbleHouse
             }
             else if (heldGrabbableType == GrabbableType.Tool)
             {
-                // Only the primary/right hand positions the tool.
-                if (!isLeftHand)
+                // A one-handed tool uses its main grip point in either hand;
+                // a two-handed tool uses the secondary grip for the left hand.
+                bool usesPrimaryGrip = !isLeftHand || activeTool == null || activeTool.OneHanded;
+                if (usesPrimaryGrip)
                 {
                     Quaternion rotationOffset =
                         handBody.rotation *
@@ -521,7 +541,7 @@ namespace RabbleHouse
                 grabJoint.anchor = Vector3.zero;
 
                 // Primary hand
-                if (!isLeftHand)
+                if (usesPrimaryGrip)
                 {
                     grabJoint.autoConfigureConnectedAnchor = false;
 
@@ -582,6 +602,7 @@ namespace RabbleHouse
                 activeTool.OnToolReleased();
                 activeTool = null;
             }
+            activeToolIsLeftHanded = false;
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
@@ -620,6 +641,7 @@ namespace RabbleHouse
                 activeTool.OnToolReleased();
                 activeTool = null;
             }
+            activeToolIsLeftHanded = false;
 
             heldObject.ReleaseByPlayer();
             heldObject = null;
@@ -639,34 +661,28 @@ namespace RabbleHouse
             if (tool != null)
             {
                 // Per-tool hold pose
-                var profile = tool.ArmProfile;
+                var profile = tool.Data;
                 bool oneHandedTool = tool.OneHanded;
 
-                RUpperBoneScript.enabled = false;
-                RLowerBoneScript.enabled = false;
+                if (!oneHandedTool || !activeToolIsLeftHanded)
+                {
+                    RUpperBoneScript.enabled = false;
+                    RLowerBoneScript.enabled = false;
+                    SetXYZJointStrength(rightUpperArm, 12000f, 240f);
+                    SetXYZJointStrength(rightLowerArm, 12000f, 240f);
+                    rightUpperArm.targetRotation = Quaternion.Euler(profile.rightUpperHold);
+                    rightLowerArm.targetRotation = Quaternion.Euler(profile.rightLowerHold);
+                    rightUpperArm.targetAngularVelocity = Vector3.zero;
+                }
 
-                SetXYZJointStrength(rightUpperArm, 12000f, 240f);
-                SetXYZJointStrength(rightLowerArm, 12000f, 240f);
-
-                // Set target rotations
-                rightUpperArm.targetRotation = Quaternion.Euler(profile.rightUpperHold);
-                rightLowerArm.targetRotation = Quaternion.Euler(profile.rightLowerHold);
-                // Zero out any existing angular velocity
-                rightUpperArm.targetAngularVelocity = Vector3.zero;
-
-
-                if (!oneHandedTool)
+                if (!oneHandedTool || activeToolIsLeftHanded)
                 {
                     LUpperBoneScript.enabled = false;
                     LLowerBoneScript.enabled = false;
-
                     SetXYZJointStrength(leftUpperArm, 12000f, 240f);
                     SetXYZJointStrength(leftLowerArm, 12000f, 240f);
-
-                    // Set target rotations
                     leftUpperArm.targetRotation = Quaternion.Euler(profile.leftUpperHold);
                     leftLowerArm.targetRotation = Quaternion.Euler(profile.leftLowerHold);
-                    // Zero out any existing angular velocity
                     leftUpperArm.targetAngularVelocity = Vector3.zero;
                 }
 
@@ -735,7 +751,7 @@ namespace RabbleHouse
             ToolBehaviour tool = activeTool != null
                 ? activeTool
                 : heldObject != null ? heldObject.GetComponent<ToolBehaviour>() : null;
-            ToolArmProfile profile = tool != null ? tool.ArmProfile : null;
+            ToolData profile = tool != null ? tool.Data : null;
             if (profile == null)
                 return;
 
@@ -745,7 +761,7 @@ namespace RabbleHouse
             bool applyLeftPose = !contactHeld ||
                 (leftArmToggle && GetContactJointTarget(playerLeftContactJoint) == heldObject);
 
-            if (applyRightPose)
+            if ((!tool.OneHanded || !activeToolIsLeftHanded) && applyRightPose)
             {
                 RUpperBoneScript.enabled = false;
                 RLowerBoneScript.enabled = false;
@@ -756,7 +772,7 @@ namespace RabbleHouse
                 rightUpperArm.targetAngularVelocity = Vector3.zero;
             }
 
-            if (tool.OneHanded || !applyLeftPose)
+            if ((tool.OneHanded && !activeToolIsLeftHanded) || !applyLeftPose)
                 return;
 
             LUpperBoneScript.enabled = false;

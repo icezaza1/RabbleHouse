@@ -472,28 +472,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1492cb37bcf528b488872b77eaced2e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NarfGun
-  armProfile:
-    throwWindupTime: 0.3
-    throwSwingTime: 0.5
-    throwHoldTime: 0.1
-    throwReturnTime: 0.3
-    throwSwingAngle: 45
-    rightUpperHold: {x: 300, y: 90, z: 270}
-    rightLowerHold: {x: 0, y: 340, z: 270}
-    leftUpperHold: {x: 0, y: 0, z: 0}
-    leftLowerHold: {x: 0, y: 0, z: 0}
-    rightUpperWindUp: {x: 0, y: 0, z: 0}
-    rightLowerWindUp: {x: 0, y: 0, z: 0}
-    leftUpperWindUp: {x: 0, y: 0, z: 0}
-    leftLowerWindUp: {x: 0, y: 0, z: 0}
-    rightUpperSwing: {x: 0, y: 0, z: 0}
-    rightLowerSwing: {x: 0, y: 0, z: 0}
-    leftUpperSwing: {x: 0, y: 0, z: 0}
-    leftLowerSwing: {x: 0, y: 0, z: 0}
-    throwWindUpRightUpper: {x: 30, y: 130, z: 0}
-    throwWindUpRightLower: {x: 0, y: 0, z: 0}
-    throwRightUpper: {x: 0, y: 130, z: 270}
-    throwRightLower: {x: 0, y: 0, z: 0}
+  toolData: {fileID: 11400000, guid: 2169fc06e7e01184b8973653f70747e5, type: 2}
   oneHanded: 1
   projectilePrefab: {fileID: 1023245977510872113, guid: 20d72e3d92cfd7f4da26efe059aa8479, type: 3}
   firePoint: {fileID: 8014693670915171422}

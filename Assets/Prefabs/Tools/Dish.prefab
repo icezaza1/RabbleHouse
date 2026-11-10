@@ -13,8 +13,8 @@ GameObject:
   - component: {fileID: 4282347543428922568}
   - component: {fileID: 1091556128647201463}
   - component: {fileID: 5796353279703863522}
-  - component: {fileID: 6163830400535186539}
   - component: {fileID: 5892221307147703957}
+  - component: {fileID: 6163830400535186539}
   m_Layer: 6
   m_Name: Dish
   m_TagString: Objects
@@ -144,41 +144,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 0
---- !u!114 &6163830400535186539
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2193505357557224322}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7d17d3136ad3b2b46a6e03e02a43445a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Vase
-  armProfile:
-    throwWindupTime: 0.3
-    throwSwingTime: 0.5
-    throwHoldTime: 0.1
-    throwReturnTime: 0.3
-    throwSwingAngle: 45
-    rightUpperHold: {x: 0, y: 90, z: 270}
-    rightLowerHold: {x: 0, y: 0, z: 0}
-    leftUpperHold: {x: 0, y: 0, z: 0}
-    leftLowerHold: {x: 0, y: 0, z: 0}
-    rightUpperWindUp: {x: 30, y: 130, z: 0}
-    rightLowerWindUp: {x: 0, y: 0, z: 0}
-    leftUpperWindUp: {x: 0, y: 0, z: 0}
-    leftLowerWindUp: {x: 0, y: 0, z: 0}
-    rightUpperSwing: {x: 0, y: 130, z: 270}
-    rightLowerSwing: {x: 0, y: 0, z: 0}
-    leftUpperSwing: {x: 0, y: 0, z: 0}
-    leftLowerSwing: {x: 0, y: 0, z: 0}
-    throwWindUpRightUpper: {x: 30, y: 130, z: 0}
-    throwWindUpRightLower: {x: 0, y: 0, z: 0}
-    throwRightUpper: {x: 0, y: 130, z: 270}
-    throwRightLower: {x: 0, y: 0, z: 0}
-  oneHanded: 1
 --- !u!114 &5892221307147703957
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -215,6 +180,20 @@ MonoBehaviour:
   spawnOnDestroy:
   - {fileID: 8758560513174087879, guid: 7a17e513d19fcd44fb9287a8182f68dc, type: 3}
   spawnPoint: {fileID: 7769390792203137840}
+--- !u!114 &6163830400535186539
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2193505357557224322}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d17d3136ad3b2b46a6e03e02a43445a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Vase
+  toolData: {fileID: 11400000, guid: e78a59076e0684f4ba15d0a769e7971c, type: 2}
+  oneHanded: 1
 --- !u!1 &8724352883235680228
 GameObject:
   m_ObjectHideFlags: 0

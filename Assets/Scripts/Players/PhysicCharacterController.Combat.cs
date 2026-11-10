@@ -89,16 +89,18 @@ namespace RabbleHouse
         private IEnumerator HeldObjectSwingRoutine()
         {
             var activeTool = heldObject?.GetComponent<ToolBehaviour>();
-            var toolProfile = activeTool?.ArmProfile;
+            var toolProfile = activeTool?.Data;
 
             bool isOneHanded = activeTool != null ? activeTool.OneHanded : false;
 
             // Source swing timing from tool profile if available, else use controller defaults
-            float swingWindup = toolProfile != null ? toolProfile.throwWindupTime : heavyTravelTime;
-            float swingTarget = toolProfile != null ? toolProfile.throwSwingTime : heavyTravelTime / 2;
-            float swingHold = toolProfile != null ? toolProfile.throwHoldTime : heavyHoldTime;
-            float swingReturn = toolProfile != null ? toolProfile.throwReturnTime : heavyTravelTime;
-            float swingAngle = toolProfile != null ? toolProfile.throwSwingAngle : smallObjectSwingAngle;
+            float swingWindup = toolProfile != null ? toolProfile.swingWindupTime : heavyTravelTime;
+            float swingTarget = toolProfile != null ? toolProfile.swingSwingTime : heavyTravelTime / 2;
+            float swingHold = toolProfile != null ? toolProfile.swingHoldTime : heavyHoldTime;
+            float swingReturn = toolProfile != null ? toolProfile.swingReturnTime : heavyTravelTime;
+            float swingAngle = toolProfile != null ? toolProfile.swingAngle : smallObjectSwingAngle;
+            if (isOneHanded && activeToolIsLeftHanded)
+                swingAngle = -swingAngle;
 
             // Use hip rotation for swing — like heavy punch but simpler
             hipRotationSuppressed = true;
@@ -158,10 +160,23 @@ namespace RabbleHouse
                 elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
-                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
-                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
-                if (!isOneHanded)
+                if (isOneHanded)
                 {
+                    if (!activeToolIsLeftHanded)
+                    {
+                        rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
+                        rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
+                    }
+                    else
+                    {
+                        leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperStart, leftUpperWindup, t);
+                        leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerStart, leftLowerWindup, t);
+                    }
+                }
+                else if (!isOneHanded)
+                {
+                    rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
+                    rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
                     leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperStart, leftUpperWindup, t);
                     leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerStart, leftLowerWindup, t);
                 }
@@ -179,11 +194,24 @@ namespace RabbleHouse
                 elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
-                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperSwing, t);
-                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerWindup, rightLowerSwing, t);
 
-                if (!isOneHanded)
+                if (isOneHanded)
                 {
+                    if (!activeToolIsLeftHanded)
+                    {
+                        rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperSwing, t);
+                        rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerWindup, rightLowerSwing, t);
+                    }
+                    else
+                    {
+                        leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperWindup, leftUpperSwing, t);
+                        leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerWindup, leftLowerSwing, t);
+                    }
+                }
+                else if (!isOneHanded)
+                {
+                    rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperSwing, t);
+                    rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerWindup, rightLowerSwing, t);
                     leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperWindup, leftUpperSwing, t);
                     leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerWindup, leftLowerSwing, t);
                 }
@@ -216,10 +244,23 @@ namespace RabbleHouse
                 elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
-                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperSwing, rightUpperStart, t);
-                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerSwing, rightLowerStart, t);
-                if (!isOneHanded)
+                if (isOneHanded)
                 {
+                    if (!activeToolIsLeftHanded)
+                    {
+                        rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperSwing, rightUpperStart, t);
+                        rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerSwing, rightLowerStart, t);
+                    }
+                    else
+                    {
+                        leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperSwing, leftUpperStart, t);
+                        leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerSwing, leftLowerStart, t);
+                    }
+                }
+                else if (!isOneHanded)
+                {
+                    rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperSwing, rightUpperStart, t);
+                    rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerSwing, rightLowerStart, t);
                     leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperSwing, leftUpperStart, t);
                     leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerSwing, leftLowerStart, t);
                 }
@@ -548,16 +589,20 @@ namespace RabbleHouse
         {
             // Resolve the active tool's profile (null if holding SmallObject/LargeObject)
             var activeTool = heldObject?.GetComponent<ToolBehaviour>();
-            var toolProfile = activeTool?.ArmProfile;
+            var toolProfile = activeTool?.Data;
+            bool isOneHanded = activeTool != null ? activeTool.OneHanded : false;
 
             // Source throw timing from tool profile if available, else use controller defaults
-            float throwWindup = toolProfile != null ? toolProfile.throwWindupTime : heavyTravelTime;
-            float throwSwing = toolProfile != null ? toolProfile.throwSwingTime : heavyTravelTime / 2;
-            float throwHold = toolProfile != null ? toolProfile.throwHoldTime : heavyHoldTime;
-            float throwReturn = toolProfile != null ? toolProfile.throwReturnTime : heavyTravelTime;
-            float swingAngle = toolProfile != null ? toolProfile.throwSwingAngle : smallObjectSwingAngle;
+            float throwWindup = toolProfile != null ? toolProfile.swingWindupTime : heavyTravelTime;
+            float throwSwing = toolProfile != null ? toolProfile.swingSwingTime : heavyTravelTime / 2;
+            float throwHold = toolProfile != null ? toolProfile.swingHoldTime : heavyHoldTime;
+            float throwReturn = toolProfile != null ? toolProfile.swingReturnTime : heavyTravelTime;
+            float swingAngle = toolProfile != null ? toolProfile.swingAngle : smallObjectSwingAngle;
 
-            // Source arm poses from tool profile if available, else use default raised-arms
+            if (isOneHanded && activeToolIsLeftHanded)
+                swingAngle = -swingAngle;
+
+            // Right Arm Profile
             Quaternion rightUpperStart = toolProfile != null
                 ? rightUpperArm.targetRotation   // current pose (already raised from RaiseArms)
                 : rightUpperArm.targetRotation;
@@ -575,6 +620,25 @@ namespace RabbleHouse
             Quaternion rightLowerThrow = toolProfile != null
                 ? Quaternion.Euler(toolProfile.throwRightLower) //toolProfile.throwRightLower
                 : Quaternion.Euler(270, 0, 0);
+
+            // Left Arm Profile
+            Quaternion leftUpperStart = toolProfile != null
+                ? leftUpperArm.targetRotation   // current pose (already raised from RaiseArms)
+                : leftUpperArm.targetRotation;
+            Quaternion leftLowerStart = leftLowerArm.targetRotation;
+
+            Quaternion leftUpperWindup = toolProfile != null
+                ? Quaternion.Euler(toolProfile.throwWindUpLeftUpper)
+                : leftUpperArm.targetRotation;
+            Quaternion leftLowerWindup = toolProfile != null
+                ? Quaternion.Euler(toolProfile.throwWindUpLeftLower)
+                : leftLowerArm.targetRotation;
+            Quaternion leftUpperThrow = toolProfile != null
+                ? Quaternion.Euler(toolProfile.throwLeftUpper)
+                : leftUpperArm.targetRotation;
+            Quaternion leftLowerThrow = toolProfile != null
+                ? Quaternion.Euler(toolProfile.throwLeftLower)
+                : leftLowerArm.targetRotation;
 
             // Wind-up → Swing → THROW (mid-swing) → Return
             hipRotationSuppressed = true;
@@ -594,8 +658,24 @@ namespace RabbleHouse
                 elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipStart, hipWindupRot, t);
-                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
-                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
+                if (isOneHanded)
+                {
+                    if (!activeToolIsLeftHanded)
+                    {
+                        rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
+                        rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
+                    }
+                    else
+                    {
+                        leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperStart, leftUpperWindup, t);
+                        leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerStart, leftLowerWindup, t);
+                    }
+                }
+                else
+                {
+                    rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperStart, rightUpperWindup, t);
+                    rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerStart, rightLowerWindup, t);
+                }
                 yield return new WaitForFixedUpdate();
             }
 
@@ -608,8 +688,24 @@ namespace RabbleHouse
                 elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipWindupRot, hipSwingTarget, t);
-                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperThrow, t);
-                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerWindup, rightLowerThrow, t);
+                if (isOneHanded)
+                {
+                    if (!activeToolIsLeftHanded)
+                    {
+                        rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperThrow, t);
+                        rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerWindup, rightLowerThrow, t);
+                    }
+                    else
+                    {
+                        leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperWindup, leftUpperThrow, t);
+                        leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerWindup, leftLowerThrow, t);
+                    }
+                }
+                else
+                {
+                    rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperWindup, rightUpperThrow, t);
+                    rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerWindup, rightLowerThrow, t);
+                }
 
                 // Throw mid-swing (at 70% of the swing phase)
                 if (!objectThrown && t >= 0.70f)
@@ -636,8 +732,25 @@ namespace RabbleHouse
                 elapsed += Time.fixedDeltaTime;
                 float t = Mathf.Clamp01(elapsed / total);
                 hipJoint.targetRotation = Quaternion.Slerp(hipSwingTarget, hipStart, t);
-                rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperThrow, rightUpperStart, t);
-                rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerThrow, rightLowerStart, t);
+                if (isOneHanded)
+                {
+                    if (!activeToolIsLeftHanded)
+                    {
+                        rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperThrow, rightUpperStart, t);
+                        rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerThrow, rightLowerStart, t);
+                    }
+                    else
+                    {
+                        leftUpperArm.targetRotation = Quaternion.Lerp(leftUpperThrow, leftUpperStart, t);
+                        leftLowerArm.targetRotation = Quaternion.Lerp(leftLowerThrow, leftLowerStart, t);
+                    }
+                }
+                else
+                {
+                    rightUpperArm.targetRotation = Quaternion.Lerp(rightUpperThrow, rightUpperStart, t);
+                    rightLowerArm.targetRotation = Quaternion.Lerp(rightLowerThrow, rightLowerStart, t);
+                }
+
                 yield return new WaitForFixedUpdate();
             }
 

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8facef07deea5f4a89f824df379b24b, type: 3}
+  m_Name: Bottles
+  m_EditorClassIdentifier: Assembly-CSharp::ToolData
+  swingWindupTime: 0.3
+  swingSwingTime: 0.5
+  swingHoldTime: 0.1
+  swingReturnTime: 0.3
+  swingAngle: 45
+  rightUpperHold: {x: 300, y: 90, z: 270}
+  rightLowerHold: {x: 0, y: 0, z: 0}
+  leftUpperHold: {x: 300, y: 270, z: 90}
+  leftLowerHold: {x: 0, y: 0, z: 0}
+  rightUpperWindUp: {x: 30, y: 130, z: 0}
+  rightLowerWindUp: {x: 0, y: 0, z: 0}
+  leftUpperWindUp: {x: 30, y: -130, z: 0}
+  leftLowerWindUp: {x: 0, y: 0, z: 0}
+  rightUpperSwing: {x: 0, y: 130, z: 270}
+  rightLowerSwing: {x: 0, y: 0, z: 0}
+  leftUpperSwing: {x: 0, y: -130, z: 90}
+  leftLowerSwing: {x: 0, y: 0, z: 0}
+  throwWindUpRightUpper: {x: 30, y: 130, z: 0}
+  throwWindUpRightLower: {x: 0, y: 0, z: 0}
+  throwWindUpLeftUpper: {x: 30, y: -130, z: 0}
+  throwWindUpLeftLower: {x: 0, y: 0, z: 0}
+  throwRightUpper: {x: 0, y: 130, z: 270}
+  throwRightLower: {x: 0, y: 0, z: 0}
+  throwLeftUpper: {x: 0, y: -130, z: 90}
+  throwLeftLower: {x: 0, y: 0, z: 0}

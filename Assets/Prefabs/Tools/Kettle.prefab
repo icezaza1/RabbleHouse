@@ -193,28 +193,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d17d3136ad3b2b46a6e03e02a43445a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Vase
-  armProfile:
-    throwWindupTime: 0.3
-    throwSwingTime: 0.5
-    throwHoldTime: 0.1
-    throwReturnTime: 0.3
-    throwSwingAngle: 45
-    rightUpperHold: {x: 0, y: 90, z: 270}
-    rightLowerHold: {x: 0, y: 0, z: 0}
-    leftUpperHold: {x: 0, y: 0, z: 0}
-    leftLowerHold: {x: 0, y: 0, z: 0}
-    rightUpperWindUp: {x: 30, y: 130, z: 0}
-    rightLowerWindUp: {x: 0, y: 0, z: 0}
-    leftUpperWindUp: {x: 0, y: 0, z: 0}
-    leftLowerWindUp: {x: 0, y: 0, z: 0}
-    rightUpperSwing: {x: 0, y: 130, z: 270}
-    rightLowerSwing: {x: 0, y: 0, z: 0}
-    leftUpperSwing: {x: 0, y: 0, z: 0}
-    leftLowerSwing: {x: 0, y: 0, z: 0}
-    throwWindUpRightUpper: {x: 30, y: 130, z: 0}
-    throwWindUpRightLower: {x: 0, y: 0, z: 0}
-    throwRightUpper: {x: 0, y: 130, z: 270}
-    throwRightLower: {x: 0, y: 0, z: 0}
+  toolData: {fileID: 11400000, guid: e78a59076e0684f4ba15d0a769e7971c, type: 2}
   oneHanded: 1
 --- !u!1 &6522014038977046901
 GameObject:

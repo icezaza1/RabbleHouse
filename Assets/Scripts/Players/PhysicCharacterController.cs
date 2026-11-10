@@ -75,6 +75,7 @@ namespace RabbleHouse
         private Rigidbody rightHandRb;
         private Joint rightHandJoint;
         private ToolBehaviour activeTool;
+        private bool activeToolIsLeftHanded;
 
         // --- INPUT ---
         private Vector2 moveInput;
