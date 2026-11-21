@@ -31,6 +31,7 @@ namespace RabbleHouse
 
             GrabbableObject closest = null;
             float closestDistance = float.MaxValue;
+            bool oneHandedToolAlreadyClaimed = HasOneHandedToolClaim();
             foreach (Collider overlap in overlaps)
             {
                 if (overlap == null || overlap.attachedRigidbody == handBody)
@@ -40,6 +41,11 @@ namespace RabbleHouse
                 if (candidate == null || candidate.Rigidbody == null ||
                     candidate.transform.IsChildOf(transform) ||
                     candidate == leftToolEquipTarget || candidate == rightToolEquipTarget)
+                    continue;
+
+                Joint otherHandJoint = isLeftHand ? playerRightContactJoint : playerLeftContactJoint;
+                bool connectedToOtherHand = GetContactJointTarget(otherHandJoint) == candidate;
+                if (connectedToOtherHand && IsOneHandedTool(candidate))
                     continue;
 
                 // Once one hand owns a two-handed tool, allow the other hand
@@ -54,7 +60,8 @@ namespace RabbleHouse
                 float distance = Vector3.Distance(overlap.ClosestPoint(handBody.position), handBody.position);
                 bool inHandContact = System.Array.IndexOf(contactOverlaps, overlap) >= 0;
                 bool magneticallyReachable = candidate.grabbableType == GrabbableType.Tool &&
-                    candidate.MagneticPickupEnabled && distance <= candidate.MagneticPickupRadius;
+                    !oneHandedToolAlreadyClaimed && candidate.MagneticPickupEnabled &&
+                    distance <= candidate.MagneticPickupRadius;
                 if (!inHandContact && !magneticallyReachable)
                     continue;
 
@@ -79,7 +86,9 @@ namespace RabbleHouse
             {
                 Transform handGripPoint = usesPrimaryGrip ? closest.gripPoint : closest.secondaryGripPoint;
 
-                if (handGripPoint != null)
+                bool alreadyConnectedToOtherHand = GetContactJointTarget(
+                    isLeftHand ? playerRightContactJoint : playerLeftContactJoint) == closest;
+                if (handGripPoint != null && !alreadyConnectedToOtherHand)
                 {
                     SetToolEquipInProgress(isLeftHand, true);
                     SetToolEquipTarget(isLeftHand, closest);
@@ -161,7 +170,6 @@ namespace RabbleHouse
 
             if (toolRb != null)
             {
-                tool.GrabByPlayer(this);
                 IgnoreEntireCharacter(tool.gameObject, true);
                 toolRb.isKinematic = true;
             }
@@ -232,7 +240,6 @@ namespace RabbleHouse
                 if (!completed && toolRb != null)
                 {
                     toolRb.isKinematic = wasKinematic;
-                    if (tool != null) tool.ReleaseByPlayer();
                 }
                 if (!completed && tool != null &&
                     GetContactJointTarget(playerLeftContactJoint) != tool &&
@@ -256,6 +263,31 @@ namespace RabbleHouse
             else rightToolEquipTarget = target;
         }
         private bool IsArmToggleOn(bool isLeftHand) => isLeftHand ? leftArmToggle : rightArmToggle;
+
+        private bool HasOneHandedToolClaim()
+        {
+            foreach (GrabbableObject contactObject in playerContactHeldObjects)
+            {
+                ToolBehaviour behaviour = contactObject != null
+                    ? contactObject.GetComponent<ToolBehaviour>()
+                    : null;
+                if (behaviour != null && behaviour.OneHanded)
+                    return true;
+            }
+
+            return IsOneHandedTool(leftToolEquipTarget) ||
+                   IsOneHandedTool(rightToolEquipTarget) ||
+                   IsOneHandedTool(GetContactJointTarget(playerLeftContactJoint)) ||
+                   IsOneHandedTool(GetContactJointTarget(playerRightContactJoint));
+        }
+
+        private static bool IsOneHandedTool(GrabbableObject candidate)
+        {
+            ToolBehaviour behaviour = candidate != null
+                ? candidate.GetComponent<ToolBehaviour>()
+                : null;
+            return behaviour != null && behaviour.OneHanded;
+        }
 
         private void ReleasePlayerContactJoint(ref Joint contactJoint)
         {
@@ -288,21 +320,28 @@ namespace RabbleHouse
             ToolBehaviour leftHandTool = leftTarget != null
                 ? leftTarget.GetComponent<ToolBehaviour>()
                 : null;
-            GrabbableObject contactTarget = rightHandTool != null && rightHandTool.OneHanded
-                ? rightTarget
-                : leftHandTool != null && leftHandTool.OneHanded
-                    ? leftTarget
-                    : leftTarget != null && leftTarget == rightTarget
+            bool previousToolStillHeld = playerContactHeldObject != null &&
+                (leftTarget == playerContactHeldObject || rightTarget == playerContactHeldObject);
+            GrabbableObject contactTarget = previousToolStillHeld
+                ? playerContactHeldObject
+                : rightHandTool != null && rightHandTool.OneHanded
+                    ? rightTarget
+                    : leftHandTool != null && leftHandTool.OneHanded
                         ? leftTarget
-                        : rightHandTool != null
-                            ? rightTarget
-                            : leftHandTool != null
-                                ? leftTarget
-                                : null;
+                        : leftTarget != null && leftTarget == rightTarget
+                            ? leftTarget
+                            : null;
 
             var currentTargets = new HashSet<GrabbableObject>();
-            if (leftTarget != null) currentTargets.Add(leftTarget);
-            if (rightTarget != null) currentTargets.Add(rightTarget);
+            if (leftTarget != null && leftTarget == rightTarget)
+            {
+                currentTargets.Add(leftTarget);
+            }
+            else
+            {
+                if (IsOneHandedTool(leftTarget)) currentTargets.Add(leftTarget);
+                if (IsOneHandedTool(rightTarget)) currentTargets.Add(rightTarget);
+            }
 
             foreach (GrabbableObject previouslyHeld in new List<GrabbableObject>(playerContactHeldObjects))
             {
