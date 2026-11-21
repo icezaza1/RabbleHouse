@@ -441,11 +441,12 @@ namespace RabbleHouse
 
             // Contact-held objects use separate joints from the legacy grab
             // path, so release both hand connections before applying throw velocity.
-            if (playerContactHeldObject == heldObject)
+            bool hadContactHeldObjects = playerContactHeldObjects.Count > 0;
+            if (hadContactHeldObjects)
             {
                 ReleasePlayerContactJoint(ref playerLeftContactJoint);
                 ReleasePlayerContactJoint(ref playerRightContactJoint);
-                playerContactHeldObject = null;
+                ReleaseTrackedPlayerContactObjects(heldObject);
                 leftArmToggle = false;
                 rightArmToggle = false;
             }
@@ -459,11 +460,11 @@ namespace RabbleHouse
             leftHandJoint = rightHandJoint = null;
 
             // Clean up tool
-            if (activeTool != null)
+            if (activeTool != null && !hadContactHeldObjects)
             {
                 activeTool.OnToolReleased();
-                activeTool = null;
             }
+            activeTool = null;
 
             // Throw in character's forward direction
             Vector3 throwDir = coreRigidbody.transform.forward;

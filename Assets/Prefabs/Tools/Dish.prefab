@@ -159,6 +159,8 @@ MonoBehaviour:
   grabbableType: 2
   gripPoint: {fileID: 4491560520342528351}
   secondaryGripPoint: {fileID: 0}
+  magneticPickupEnabled: 1
+  magneticPickupRadius: 0.5
   durablility: 1
   heldMass: 0.1
   hipRotationResistance: 0
@@ -192,7 +194,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7d17d3136ad3b2b46a6e03e02a43445a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Vase
-  toolData: {fileID: 11400000, guid: e78a59076e0684f4ba15d0a769e7971c, type: 2}
+  toolData: {fileID: 11400000, guid: dab2f3d1e6eec71429df1853fbf2027d, type: 2}
   oneHanded: 1
 --- !u!1 &8724352883235680228
 GameObject:

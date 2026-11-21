@@ -10,17 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f8facef07deea5f4a89f824df379b24b, type: 3}
-  m_Name: Dish_Kettle
+  m_Name: Spoon
   m_EditorClassIdentifier: Assembly-CSharp::ToolData
   swingWindupTime: 0.3
   swingSwingTime: 0.5
   swingHoldTime: 0.1
   swingReturnTime: 0.3
-  swingAngle: 45
-  leftHandRotationOffset: {x: 0, y: 0, z: 0}
-  rightUpperHold: {x: 0, y: 90, z: 270}
+  swingAngle: 60
+  leftHandRotationOffset: {x: 0, y: 180, z: 180}
+  rightUpperHold: {x: 300, y: 90, z: 270}
   rightLowerHold: {x: 0, y: 0, z: 0}
-  leftUpperHold: {x: 0, y: 270, z: 90}
+  leftUpperHold: {x: 300, y: 270, z: 90}
   leftLowerHold: {x: 0, y: 0, z: 0}
   rightUpperWindUp: {x: 30, y: 130, z: 0}
   rightLowerWindUp: {x: 0, y: 0, z: 0}

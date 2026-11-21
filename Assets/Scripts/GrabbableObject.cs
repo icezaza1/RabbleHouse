@@ -38,6 +38,12 @@ namespace RabbleHouse
         public Transform gripPoint;
         public Transform secondaryGripPoint;
 
+        [Header("Magnetic Pickup")]
+        [SerializeField] private bool magneticPickupEnabled;
+        [SerializeField, Range(0f, 3f)] private float magneticPickupRadius = 1.5f;
+        public bool MagneticPickupEnabled => magneticPickupEnabled;
+        public float MagneticPickupRadius => magneticPickupRadius;
+
         [SerializeField] private int durablility = 5;
         [Tooltip("Used to calculate how heavy the object is when being held.")]
         [SerializeField] private float heldMass = 1f;

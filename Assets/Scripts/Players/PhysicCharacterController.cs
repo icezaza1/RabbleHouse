@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 using UnityEngine.Audio;
@@ -90,7 +91,12 @@ namespace RabbleHouse
         private bool rightArmToggle;
         private Joint playerLeftContactJoint;
         private Joint playerRightContactJoint;
+        private bool leftToolEquipInProgress;
+        private bool rightToolEquipInProgress;
+        private GrabbableObject leftToolEquipTarget;
+        private GrabbableObject rightToolEquipTarget;
         private GrabbableObject playerContactHeldObject;
+        private readonly HashSet<GrabbableObject> playerContactHeldObjects = new HashSet<GrabbableObject>();
 
         // --- GRAB TYPES ---
         private GrabbableType heldGrabbableType = GrabbableType.SmallObject;

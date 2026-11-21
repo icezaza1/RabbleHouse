@@ -17,7 +17,7 @@ MonoBehaviour:
   swingHoldTime: 0.1
   swingReturnTime: 0.3
   swingAngle: 45
-  leftHandRotationOffset: {x: 0, y: 0, z: 0}
+  leftHandRotationOffset: {x: 0, y: 180, z: 180}
   rightUpperHold: {x: 300, y: 90, z: 270}
   rightLowerHold: {x: 0, y: 0, z: 0}
   leftUpperHold: {x: 300, y: 270, z: 90}

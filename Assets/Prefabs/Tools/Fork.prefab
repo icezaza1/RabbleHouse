@@ -159,6 +159,8 @@ MonoBehaviour:
   grabbableType: 2
   gripPoint: {fileID: 8007727424014756468}
   secondaryGripPoint: {fileID: 0}
+  magneticPickupEnabled: 1
+  magneticPickupRadius: 0.5
   durablility: 2
   heldMass: 0.1
   hipRotationResistance: 0

@@ -1,7 +1,6 @@
 using System.Collections;
-using System.Drawing;
+using System.Collections.Generic;
 using UnityEngine;
-using static Unity.Cinemachine.CinemachineSplineRoll;
 
 namespace RabbleHouse
 {
@@ -9,7 +8,8 @@ namespace RabbleHouse
     {
         private void TryCreatePlayerContactJoint(Rigidbody handBody, ref Joint contactJoint)
         {
-            if (handBody == null || contactJoint != null)
+            bool isLeftHand = handBody == leftHandRb;
+            if (handBody == null || contactJoint != null || IsToolEquipInProgress(isLeftHand))
                 return;
 
             Collider handCollider = handBody.GetComponent<Collider>();
@@ -17,10 +17,18 @@ namespace RabbleHouse
                 return;
 
             // Use actual hand-collider contact geometry so the object only
-            // attaches after the raised hand reaches it.
+            // attaches after the raised hand reaches it. Magnetic tools also
+            // enter the candidate set when they are within their own radius.
             Bounds bounds = handCollider.bounds;
-            Collider[] overlaps = Physics.OverlapBox(bounds.center, bounds.extents,
-                Quaternion.identity, LayerMask.GetMask("Grabbable"), QueryTriggerInteraction.Ignore);
+            int grabbableMask = LayerMask.GetMask("Grabbable");
+            Collider[] contactOverlaps = Physics.OverlapBox(bounds.center, bounds.extents,
+                Quaternion.identity, grabbableMask, QueryTriggerInteraction.Ignore);
+            var overlaps = new HashSet<Collider>(contactOverlaps);
+            const float maxMagneticPickupRadius = 3f;
+            foreach (Collider nearby in Physics.OverlapSphere(handBody.position, maxMagneticPickupRadius,
+                         grabbableMask, QueryTriggerInteraction.Ignore))
+                overlaps.Add(nearby);
+
             GrabbableObject closest = null;
             float closestDistance = float.MaxValue;
             foreach (Collider overlap in overlaps)
@@ -29,11 +37,27 @@ namespace RabbleHouse
                     continue;
 
                 GrabbableObject candidate = overlap.GetComponentInParent<GrabbableObject>();
-                if (candidate == null || candidate.IsHeld || candidate.Rigidbody == null ||
-                    candidate.transform.IsChildOf(transform))
+                if (candidate == null || candidate.Rigidbody == null ||
+                    candidate.transform.IsChildOf(transform) ||
+                    candidate == leftToolEquipTarget || candidate == rightToolEquipTarget)
                     continue;
 
-                float distance = (overlap.ClosestPoint(handBody.position) - handBody.position).sqrMagnitude;
+                // Once one hand owns a two-handed tool, allow the other hand
+                // to connect to that same tool even though it is now marked held.
+                bool isJoiningHeldTwoHandedTool = candidate == playerContactHeldObject &&
+                    candidate.grabbableType == GrabbableType.Tool &&
+                    candidate.GetComponent<ToolBehaviour>() is ToolBehaviour heldTool &&
+                    !heldTool.OneHanded;
+                if (candidate.IsHeld && !isJoiningHeldTwoHandedTool)
+                    continue;
+
+                float distance = Vector3.Distance(overlap.ClosestPoint(handBody.position), handBody.position);
+                bool inHandContact = System.Array.IndexOf(contactOverlaps, overlap) >= 0;
+                bool magneticallyReachable = candidate.grabbableType == GrabbableType.Tool &&
+                    candidate.MagneticPickupEnabled && distance <= candidate.MagneticPickupRadius;
+                if (!inHandContact && !magneticallyReachable)
+                    continue;
+
                 if (distance < closestDistance)
                 {
                     closestDistance = distance;
@@ -49,35 +73,18 @@ namespace RabbleHouse
             // heldObject is assigned only after both contact joints are evaluated.
             ToolBehaviour candidateTool = closest.GetComponent<ToolBehaviour>();
             bool isTool = closest.grabbableType == GrabbableType.Tool && candidateTool != null;
-            bool isLeftHand = handBody == leftHandRb;
             bool usesPrimaryGrip = !isLeftHand || candidateTool == null || candidateTool.OneHanded;
 
-            if (isTool && usesPrimaryGrip && closest.gripPoint != null)
+            if (isTool)
             {
-                Transform toolTransform = closest.transform;
                 Transform handGripPoint = usesPrimaryGrip ? closest.gripPoint : closest.secondaryGripPoint;
 
                 if (handGripPoint != null)
                 {
-                    // Figure out the spatial offset between the tool root and its own grip point
-                    Quaternion gripRotationInToolSpace = Quaternion.Inverse(toolTransform.rotation) * handGripPoint.rotation;
-                    Vector3 gripPositionInToolSpace = toolTransform.InverseTransformPoint(handGripPoint.position);
-
-                    // Match the tool perfectly to the current hand orientation
-                    Quaternion toolRotation = handBody.rotation * Quaternion.Inverse(gripRotationInToolSpace);
-                    if (isLeftHand)
-                        toolRotation *= Quaternion.Euler(candidateTool.Data.leftHandRotationOffset);
-                    Vector3 toolPosition = handBody.position - toolRotation * gripPositionInToolSpace;
-
-                    toolTransform.rotation = toolRotation;
-                    toolTransform.position = toolPosition;
-
-                    // Kill momentum completely so the joint doesn't inherit dirty physics data
-                    closest.Rigidbody.linearVelocity = Vector3.zero;
-                    closest.Rigidbody.angularVelocity = Vector3.zero;
-
-                    // Forces Unity to update the physics engine matrices immediately before the joint attaches
-                    Physics.SyncTransforms();
+                    SetToolEquipInProgress(isLeftHand, true);
+                    SetToolEquipTarget(isLeftHand, closest);
+                    StartCoroutine(SmoothEquipToolRoutine(handBody, closest, handGripPoint, isLeftHand));
+                    return;
                 }
             }
 
@@ -146,6 +153,110 @@ namespace RabbleHouse
             contactJoint = grabJoint;
         }
 
+        private IEnumerator SmoothEquipToolRoutine(Rigidbody handBody, GrabbableObject tool, Transform gripPoint, bool isLeftHand)
+        {
+            Rigidbody toolRb = tool != null ? tool.Rigidbody : null;
+            bool wasKinematic = toolRb != null && toolRb.isKinematic;
+            bool completed = false;
+
+            if (toolRb != null)
+            {
+                tool.GrabByPlayer(this);
+                IgnoreEntireCharacter(tool.gameObject, true);
+                toolRb.isKinematic = true;
+            }
+
+            try
+            {
+                if (handBody == null || tool == null || toolRb == null || gripPoint == null)
+                    yield break;
+
+                Transform toolTransform = tool.transform;
+                Quaternion gripRotationInToolSpace = Quaternion.Inverse(toolTransform.rotation) * gripPoint.rotation;
+                Vector3 gripPositionInToolSpace = toolTransform.InverseTransformPoint(gripPoint.position);
+                ToolBehaviour behaviour = tool.GetComponent<ToolBehaviour>();
+                Quaternion leftHandOffset = isLeftHand && behaviour != null && behaviour.Data != null
+                    ? Quaternion.Euler(behaviour.Data.leftHandRotationOffset)
+                    : Quaternion.identity;
+                Vector3 startPosition = toolTransform.position;
+                Quaternion startRotation = toolTransform.rotation;
+                const float pullDuration = 0.12f;
+                float elapsed = 0f;
+
+                while (elapsed < pullDuration)
+                {
+                    if (handBody == null || tool == null || !IsArmToggleOn(isLeftHand))
+                        yield break;
+
+                    elapsed += Time.fixedDeltaTime;
+                    float t = Mathf.SmoothStep(0f, 1f, elapsed / pullDuration);
+                    Quaternion targetRotation = handBody.rotation * Quaternion.Inverse(gripRotationInToolSpace) * leftHandOffset;
+                    Vector3 targetPosition = handBody.position - targetRotation * gripPositionInToolSpace;
+                    toolTransform.position = Vector3.Lerp(startPosition, targetPosition, t);
+                    toolTransform.rotation = Quaternion.Slerp(startRotation, targetRotation, t);
+                    yield return new WaitForFixedUpdate();
+                }
+
+                if (handBody == null || tool == null || !IsArmToggleOn(isLeftHand))
+                    yield break;
+
+                Quaternion finalRotation = handBody.rotation * Quaternion.Inverse(gripRotationInToolSpace) * leftHandOffset;
+                toolTransform.position = handBody.position - finalRotation * gripPositionInToolSpace;
+                toolTransform.rotation = finalRotation;
+                toolRb.isKinematic = wasKinematic;
+                toolRb.linearVelocity = Vector3.zero;
+                toolRb.angularVelocity = Vector3.zero;
+                Physics.SyncTransforms();
+
+                ConfigurableJoint grabJoint = handBody.gameObject.AddComponent<ConfigurableJoint>();
+                grabJoint.connectedBody = toolRb;
+                grabJoint.anchor = Vector3.zero;
+                grabJoint.autoConfigureConnectedAnchor = false;
+                grabJoint.connectedAnchor = toolRb.transform.InverseTransformPoint(gripPoint.position);
+                grabJoint.xMotion = ConfigurableJointMotion.Locked;
+                grabJoint.yMotion = ConfigurableJointMotion.Locked;
+                grabJoint.zMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularXMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularYMotion = ConfigurableJointMotion.Locked;
+                grabJoint.angularZMotion = ConfigurableJointMotion.Locked;
+                grabJoint.breakForce = 1500f;
+                grabJoint.breakTorque = 1500f;
+                grabJoint.enablePreprocessing = false;
+
+                if (isLeftHand) playerLeftContactJoint = grabJoint;
+                else playerRightContactJoint = grabJoint;
+                completed = true;
+            }
+            finally
+            {
+                if (!completed && toolRb != null)
+                {
+                    toolRb.isKinematic = wasKinematic;
+                    if (tool != null) tool.ReleaseByPlayer();
+                }
+                if (!completed && tool != null &&
+                    GetContactJointTarget(playerLeftContactJoint) != tool &&
+                    GetContactJointTarget(playerRightContactJoint) != tool)
+                    IgnoreEntireCharacter(tool.gameObject, false);
+                if (GetToolEquipTarget(isLeftHand) == tool) SetToolEquipTarget(isLeftHand, null);
+                SetToolEquipInProgress(isLeftHand, false);
+            }
+        }
+
+        private bool IsToolEquipInProgress(bool isLeftHand) => isLeftHand ? leftToolEquipInProgress : rightToolEquipInProgress;
+        private void SetToolEquipInProgress(bool isLeftHand, bool value)
+        {
+            if (isLeftHand) leftToolEquipInProgress = value;
+            else rightToolEquipInProgress = value;
+        }
+        private GrabbableObject GetToolEquipTarget(bool isLeftHand) => isLeftHand ? leftToolEquipTarget : rightToolEquipTarget;
+        private void SetToolEquipTarget(bool isLeftHand, GrabbableObject target)
+        {
+            if (isLeftHand) leftToolEquipTarget = target;
+            else rightToolEquipTarget = target;
+        }
+        private bool IsArmToggleOn(bool isLeftHand) => isLeftHand ? leftArmToggle : rightArmToggle;
+
         private void ReleasePlayerContactJoint(ref Joint contactJoint)
         {
             GrabbableObject releasedObject = GetContactJointTarget(contactJoint);
@@ -181,40 +292,73 @@ namespace RabbleHouse
                 ? rightTarget
                 : leftHandTool != null && leftHandTool.OneHanded
                     ? leftTarget
-                : leftTarget != null && leftTarget == rightTarget
-                    ? leftTarget
-                    : null;
+                    : leftTarget != null && leftTarget == rightTarget
+                        ? leftTarget
+                        : rightHandTool != null
+                            ? rightTarget
+                            : leftHandTool != null
+                                ? leftTarget
+                                : null;
 
-            if (playerContactHeldObject == contactTarget && heldObject == contactTarget)
-                return;
+            var currentTargets = new HashSet<GrabbableObject>();
+            if (leftTarget != null) currentTargets.Add(leftTarget);
+            if (rightTarget != null) currentTargets.Add(rightTarget);
 
-            // Clear only the value owned by this experimental contact path;
-            // a legacy pickup remains untouched.
-            if (playerContactHeldObject != null && heldObject == playerContactHeldObject)
+            foreach (GrabbableObject previouslyHeld in new List<GrabbableObject>(playerContactHeldObjects))
             {
-                if (activeTool != null)
+                if (!currentTargets.Contains(previouslyHeld))
                 {
-                    activeTool.OnToolReleased();
-                    activeTool = null;
-                    activeToolIsLeftHanded = false;
+                    ToolBehaviour releasedTool = previouslyHeld.GetComponent<ToolBehaviour>();
+                    if (releasedTool != null) releasedTool.OnToolReleased();
+                    previouslyHeld.ReleaseByPlayer();
+                    playerContactHeldObjects.Remove(previouslyHeld);
                 }
-                playerContactHeldObject.ReleaseByPlayer();
+            }
+
+            foreach (GrabbableObject currentTarget in currentTargets)
+            {
+                if (!playerContactHeldObjects.Add(currentTarget))
+                    continue;
+
+                currentTarget.GrabByPlayer(this);
+                ToolBehaviour grabbedTool = currentTarget.GetComponent<ToolBehaviour>();
+                if (grabbedTool != null) grabbedTool.OnToolGrabbed(this);
+            }
+
+            GrabbableObject previousActiveTarget = playerContactHeldObject;
+            playerContactHeldObject = contactTarget;
+            if (contactTarget != null &&
+                (heldObject == null || heldObject == previousActiveTarget || playerContactHeldObjects.Contains(heldObject)))
+            {
+                heldObject = contactTarget;
+                activeTool = contactTarget.GetComponent<ToolBehaviour>();
+                activeToolIsLeftHanded = leftTarget == contactTarget && rightTarget != contactTarget;
+                heldGrabbableType = contactTarget.grabbableType;
+            }
+            else if (contactTarget == null && previousActiveTarget != null && heldObject == previousActiveTarget)
+            {
                 heldObject = null;
+                activeTool = null;
+                activeToolIsLeftHanded = false;
                 heldGrabbableType = GrabbableType.SmallObject;
             }
+        }
+
+        private void ReleaseTrackedPlayerContactObjects(GrabbableObject objectBeingThrown = null)
+        {
+            foreach (GrabbableObject contactObject in playerContactHeldObjects)
+            {
+                if (contactObject == null) continue;
+                ToolBehaviour tool = contactObject.GetComponent<ToolBehaviour>();
+                if (tool != null) tool.OnToolReleased();
+                if (contactObject != objectBeingThrown)
+                {
+                    contactObject.ReleaseByPlayer();
+                    IgnoreEntireCharacter(contactObject.gameObject, false);
+                }
+            }
+            playerContactHeldObjects.Clear();
             playerContactHeldObject = null;
-
-            if (contactTarget == null || heldObject != null)
-                return;
-
-            playerContactHeldObject = contactTarget;
-            heldObject = contactTarget;
-            contactTarget.GrabByPlayer(this);
-            activeTool = contactTarget.GetComponent<ToolBehaviour>();
-            activeToolIsLeftHanded = leftTarget == contactTarget && rightTarget != contactTarget;
-            if (activeTool != null)
-                activeTool.OnToolGrabbed(this);
-            heldGrabbableType = contactTarget.grabbableType;
         }
 
         private static GrabbableObject GetContactJointTarget(Joint contactJoint)
@@ -583,11 +727,12 @@ namespace RabbleHouse
 
             // Contact-held objects use separate joints from the legacy grab
             // path, so release both hand connections before applying throw velocity.
-            if (playerContactHeldObject == heldObject)
+            bool hadContactHeldObjects = playerContactHeldObjects.Count > 0;
+            if (hadContactHeldObjects)
             {
                 ReleasePlayerContactJoint(ref playerLeftContactJoint);
                 ReleasePlayerContactJoint(ref playerRightContactJoint);
-                playerContactHeldObject = null;
+                ReleaseTrackedPlayerContactObjects();
                 leftArmToggle = false;
                 rightArmToggle = false;
             }
@@ -597,11 +742,11 @@ namespace RabbleHouse
             if (rightHandJoint != null) Destroy(rightHandJoint);
 
             // Clean up tool
-            if (activeTool != null)
+            if (activeTool != null && !hadContactHeldObjects)
             {
                 activeTool.OnToolReleased();
-                activeTool = null;
             }
+            activeTool = null;
             activeToolIsLeftHanded = false;
 
             heldObject.ReleaseByPlayer();
@@ -622,11 +767,12 @@ namespace RabbleHouse
 
             // Contact-held objects use separate joints from the legacy grab
             // path, so release both hand connections before applying throw velocity.
-            if (playerContactHeldObject == heldObject)
+            bool hadContactHeldObjects = playerContactHeldObjects.Count > 0;
+            if (hadContactHeldObjects)
             {
                 ReleasePlayerContactJoint(ref playerLeftContactJoint);
                 ReleasePlayerContactJoint(ref playerRightContactJoint);
-                playerContactHeldObject = null;
+                ReleaseTrackedPlayerContactObjects();
                 leftArmToggle = false;
                 rightArmToggle = false;
             }
@@ -636,11 +782,11 @@ namespace RabbleHouse
             if (rightHandJoint != null) Destroy(rightHandJoint);
 
             // Clean up tool
-            if (activeTool != null)
+            if (activeTool != null && !hadContactHeldObjects)
             {
                 activeTool.OnToolReleased();
-                activeTool = null;
             }
+            activeTool = null;
             activeToolIsLeftHanded = false;
 
             heldObject.ReleaseByPlayer();
