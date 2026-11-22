@@ -27,7 +27,7 @@ EditorBuildSettings:
     path: Assets/Scenes/Game Map/Kitchen.unity
     guid: 3ea42eb36e33e694bb719c160165935a
   - enabled: 1
-    path: Assets/Scenes/Tutorial.unity
+    path: Assets/Scenes/Game Map/Tutorial.unity
     guid: 4b41f9547d74f2d4d884229f5e5ece27
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
